@@ -13,7 +13,7 @@ __metadata:
     "@prisma/client": "npm:^5.4.2"
     "@types/debug": "npm:^4.1.10"
     "@types/express": "npm:^4.17.20"
-    "@types/express-requests-logger": "npm:^3.0.3"
+    "@types/express-requests-logger": "npm:^3.0.4"
     "@types/form-data": "npm:^2.5.0"
     "@types/globrex": "npm:^0.1.2"
     "@types/js-yaml": "npm:^4.0.8"
@@ -1497,12 +1497,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/express-requests-logger@npm:^3.0.3":
-  version: 3.0.3
-  resolution: "@types/express-requests-logger@npm:3.0.3"
+"@types/express-requests-logger@npm:^3.0.4":
+  version: 3.0.4
+  resolution: "@types/express-requests-logger@npm:3.0.4"
   dependencies:
     "@types/express-serve-static-core": "npm:*"
-  checksum: 9945b84226ae60d914e6a2cf359e5375c6fb72fe7658026abb4b9828a00f0e32c4e54ef6ab333ea515b90ae3614fafab533d558364b5a96e9c5bc86f7066e4a2
+  checksum: c3bd7734a93cf7df6aa6b6116cbe954b74587ea12ae38e1f822df961089dbfe8af29754dd1ac295dc59b5119de483359c541020ac9592efcaf40695a5b0492f6
   languageName: node
   linkType: hard
 
