@@ -15,7 +15,7 @@ __metadata:
     "@types/express": "npm:^4.17.20"
     "@types/express-requests-logger": "npm:^3.0.3"
     "@types/form-data": "npm:^2.5.0"
-    "@types/globrex": "npm:^0.1.2"
+    "@types/globrex": "npm:^0.1.4"
     "@types/js-yaml": "npm:^4.0.8"
     "@types/multer": "npm:^1.4.9"
     "@types/node": "npm:^20.9.2"
@@ -1539,10 +1539,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/globrex@npm:^0.1.2":
-  version: 0.1.2
-  resolution: "@types/globrex@npm:0.1.2"
-  checksum: 48bd0b32997c3102fbc4c41f93cfe983f0e2a7def1fc953b31717ec6b42991503cc04e5289ce29b47dd6d473ad28004b7caa9018685bdbebbb1e06b829b6ecd8
+"@types/globrex@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "@types/globrex@npm:0.1.4"
+  checksum: e5c6f13b942b2b6de28e7a64fc4e5c5113d04ff2af6fa8cc744c7ec8e7601ce3a3b69f9be087936dbadf9f6021f31089f224bbc7b480c47d4a1f69bfe560e915
   languageName: node
   linkType: hard
 
