@@ -19,7 +19,7 @@ __metadata:
     "@types/js-yaml": "npm:^4.0.8"
     "@types/multer": "npm:^1.4.9"
     "@types/node": "npm:^20.9.2"
-    "@types/nunjucks": "npm:^3.2.5"
+    "@types/nunjucks": "npm:^3.2.6"
     "@types/tar": "npm:^6.1.7"
     "@types/tmp": "npm:^0.2.5"
     "@types/traverse": "npm:^0.6.33"
@@ -1654,10 +1654,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/nunjucks@npm:^3.2.5":
-  version: 3.2.5
-  resolution: "@types/nunjucks@npm:3.2.5"
-  checksum: b93de597a1c429460473cb4f95267e46693ed94a610b58eafe70f5a2ff05e4bf660ae63f38ec58cae522bb00425b53e13d1dc38a12ad6f4a9b4dee281552d4b5
+"@types/nunjucks@npm:^3.2.6":
+  version: 3.2.6
+  resolution: "@types/nunjucks@npm:3.2.6"
+  checksum: bc62c5c9305c0c63a49a55c3553393fdc84d123b4831668212380077ee6646c3ba52bc49e3c651257addf3a47d775707dcefeaf5e1b76cf7f680096939894142
   languageName: node
   linkType: hard
 
