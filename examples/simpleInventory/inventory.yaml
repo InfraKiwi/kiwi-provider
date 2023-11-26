@@ -1,0 +1,11 @@
+hostSources:
+  - http:
+      default:
+        baseURL: http://localhost:3099
+      list:
+        url: '/Host'
+        idField: 'hostname'
+      load:
+        url: '/Host'
+        params:
+          hostname: '{{ id }}'

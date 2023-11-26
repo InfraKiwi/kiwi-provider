@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="run" type="NodeJSConfigurationType" application-parameters="-vdebug -i &quot;examples/inventory.yaml&quot; &quot;examples/rb-testing.yaml&quot; -h localhost -s &quot;dir={path='examples'}&quot;" node-parameters="--require ts-node/register" path-to-js-file="cmd/run.ts" working-dir="$PROJECT_DIR$">
+    <method v="2" />
+  </configuration>
+</component>

@@ -1,0 +1,15 @@
+targets:
+  - all
+
+otherHosts:
+  - docker-2
+
+tasks:
+  - info: {}
+  - debug: ${{ getVars() | dump }}
+  - debug: ${{ ctx.inventory.getHostsByPattern("docker-*") | dump }}
+  - load:
+      file: path="${{ pathJoin(__assetsDir, "helo") }}" raw=true
+    out: myFile
+  - debug:
+      content: ${{ myFile.content }}

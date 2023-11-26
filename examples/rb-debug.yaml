@@ -1,0 +1,6 @@
+targets:
+  - docker-1
+
+tasks:
+  - info: {}
+  - debug: ${{ getVars() | dump }}

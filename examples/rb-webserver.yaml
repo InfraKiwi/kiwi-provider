@@ -1,0 +1,25 @@
+targets:
+  - docker-2
+
+recipeSources:
+  - dir: path=recipes
+    trusted: true
+  - dir: path=untrustedRecipes
+
+dependencies:
+  nginx:
+  hella:
+
+groupVars:
+  docker-c:
+    varFromRootRecipeGroup: webserver-docker-c
+  docker-a:
+    varFromRootRecipeGroup: webserver-docker-a
+vars:
+  varFromRootRecipe: webserver
+
+tasks:
+  - label: Install nginx
+    recipe: id=nginx
+  - label: Hella me
+    recipe: id=hella

@@ -1,0 +1,27 @@
+on:
+  workflow_call:
+    #    secrets:
+    #      token:
+    #        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: .nvmrc
+          cache: 'yarn'
+        env:
+          SKIP_YARN_COREPACK_CHECK: true
+      - run: corepack enable
+
+      - run: yarn
+      - run: yarn gen
+      # Check if we have a dirty repo after code generation
+      - run: git diff --exit-code
+      - run: yarn lint
+      - run: yarn test

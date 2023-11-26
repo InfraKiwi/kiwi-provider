@@ -1,0 +1,12 @@
+#!/bin/bash
+
+psql -U "$POSTGRES_USER" -d inventory <<-END
+DROP ROLE IF EXISTS ${DB_ANON_ROLE};
+CREATE ROLE ${DB_ANON_ROLE} NOLOGIN;
+
+GRANT ${DB_ANON_ROLE} TO ${POSTGRES_USER};
+GRANT USAGE ON SCHEMA public TO ${DB_ANON_ROLE};
+
+GRANT pg_read_all_data TO ${DB_ANON_ROLE};
+GRANT pg_write_all_data TO ${DB_ANON_ROLE};
+END

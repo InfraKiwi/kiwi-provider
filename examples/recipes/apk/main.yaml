@@ -1,0 +1,7 @@
+mocks:
+  - shell: (r/^apk.*/).test(config)
+
+tasks:
+  - test: packages != null
+  - shell: apk update
+  - shell: apk add ${{ packages | join(' ') }}

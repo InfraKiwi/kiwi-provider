@@ -1,0 +1,7 @@
+tasks:
+  - set:
+      hello: world
+    out: set1
+  - set:
+      hello2: world2
+    out: set2

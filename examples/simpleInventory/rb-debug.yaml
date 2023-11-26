@@ -1,0 +1,9 @@
+targets:
+  - all
+
+# TODO load other hosts
+
+tasks:
+  - info: {}
+  - debug: |
+      Host IP: ${{ ip }}

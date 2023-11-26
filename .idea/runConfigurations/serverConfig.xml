@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="serverConfig" type="NodeJSConfigurationType" application-parameters="-vdebug -c &quot;cmd\serverConfig.config.dev.yaml&quot;" node-parameters="--require ts-node/register" path-to-js-file="cmd/serverConfig.ts" working-dir="$PROJECT_DIR$">
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="createArchive" run_configuration_type="NodeJSConfigurationType" />
+    </method>
+  </configuration>
+</component>

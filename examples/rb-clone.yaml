@@ -1,0 +1,8 @@
+# This recipe clones the whole repo and makes sure we're on the last update version
+
+targets:
+  - all
+
+tasks:
+  - info: {}
+  - debug: ${{ getVars() | dump }}

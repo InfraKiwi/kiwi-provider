@@ -1,0 +1,3 @@
+tasks:
+  - debug: recipe 2
+  - recipe: ./dep.yaml

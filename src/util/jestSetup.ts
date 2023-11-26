@@ -1,0 +1,1 @@
+import './loadAllRegistryEntries.gen';

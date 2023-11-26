@@ -1,0 +1,9 @@
+.expansible-next-row {
+  & + .collapsed-row {
+    display: none;
+
+    &.show-collapsed-row {
+      display: table-row;
+    }
+  }
+}

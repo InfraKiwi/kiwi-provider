@@ -1,0 +1,7 @@
+rootfs/build
+tool
+download
+firecracker.log
+.tmp_firecracker_socket
+*.ext4
+*.btrfs

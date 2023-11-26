@@ -1,0 +1,9 @@
+dependencies:
+  apk:
+
+groupVars:
+  all:
+    hmmm: hooo
+
+tasks:
+  - debug: Hey

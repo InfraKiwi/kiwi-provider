@@ -1,0 +1,33 @@
+dependencies:
+  apk:
+
+groupVars:
+  docker-a:
+    hey: varFromGroup-nginx-a
+  docker-hide:
+    hey: varFromGroup-nginx-hide
+hostVars:
+  docker-2:
+    huh: varFromHost-nginx-2
+
+tasks:
+  - shell: command -v apk
+    mock: {}
+  - recipe: id=apk
+    vars:
+      packages:
+        - nginx
+
+  - temp: keep=true
+    out: temp
+
+  - load:
+      fileRaw:
+        path: ${{ __dirname }}/files/nginx.conf
+      extract: true
+    out: nginxConfig
+
+  - debug: ${{ nginxConfig.content }}
+
+  - store: path="${{ temp.path }}" content="${{ nginxConfig.content }}" raw=true
+    ignoreMocks: true

@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="createArchive" type="NodeJSConfigurationType" application-parameters="-vdebug &quot;examples/rb-testing.yaml&quot;  -a &quot;test_archive&quot;" node-parameters="--require ts-node/register" path-to-js-file="cmd/createArchive.ts" working-dir="$PROJECT_DIR$">
+    <method v="2" />
+  </configuration>
+</component>

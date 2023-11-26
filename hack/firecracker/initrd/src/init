@@ -1,0 +1,32 @@
+#!/bin/busybox sh
+set -e
+
+log() { echo "$*" 1>&2; }
+fail() { log "$*"; exit 1; }
+
+log "=== args ==="
+log "$*"
+log "=== env ==="
+/bin/busybox env 1>&2
+
+log "Mount system fs"
+mkdir -p /dev /proc /sys /tmp
+mount -t devtmpfs  devtmpfs  /dev
+mount -t proc      proc      /proc
+mount -t sysfs     sysfs     /sys
+mount -t tmpfs     tmpfs     /tmp
+
+ROOTFS="/rootfs"
+mkdir -p "$ROOTFS"
+
+mount /dev/vda "$ROOTFS"
+
+log "Move system mounts"
+mkdir -p "${ROOTFS}/dev" "${ROOTFS}/proc" "${ROOTFS}/sys" "${ROOTFS}/tmp"
+mount --move /dev "${ROOTFS}/dev"
+mount --move /proc "${ROOTFS}/proc"
+mount --move /sys "${ROOTFS}/sys"
+mount --move /tmp "${ROOTFS}/tmp"
+
+log "Switch root"
+exec switch_root "$ROOTFS" /lib/systemd/systemd

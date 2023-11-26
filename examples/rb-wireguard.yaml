@@ -1,0 +1,36 @@
+targets:
+  - all
+
+tasks:
+  - label: Install nginx
+
+vars:
+  dump: ${{ ctx | dump }}
+
+  peers: !!tplJSON >
+    {%
+      set hostnames = ctx.inventory.getHostsByPattern('docker-[1:3],!' + ctx.hostname) | keys
+    %}
+    {%
+      set hosts = {}
+    %}
+    {% for hostname in hostnames %}
+      {% set hosts = hosts|setAttribute(hostname, hostname | replace('docker', 'baaa')) %}
+    {% endfor %}
+    ${{
+
+    hosts
+
+    | toJSON
+    }}
+
+  otherPeers: !!eval |
+    const hosts = Object.entries(ctx.inventory.getHostsByPattern('docker-[1:3],!' + ctx.hostname))
+      .reduce((acc, [hostname, host]) => {
+        acc[hostname] = hostname.replace('docker', 'baaa');
+        return acc;
+      }, {})
+
+    await new Promise(r => setTimeout(r, 22));
+
+    setResult(hosts)

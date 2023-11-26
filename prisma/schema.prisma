@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model HostReport {
+  hostname String
+  release  String
+
+  // E.g. recipe
+  type String
+  // E.g. the recipe id
+  key  String
+
+  status String
+
+  timestamp DateTime
+
+  logs         HostLogs[]
+  @@id([hostname, release, type, key])
+}
+
+model HostLogs {
+  hostname String
+  release  String
+
+  // E.g. recipe
+  type String
+  // E.g. the recipe id
+  key  String
+
+  status String
+  storageKey String
+  completed  Boolean
+
+  timestamp DateTime
+
+  // Used to uniquely identify this entry and acts as a simple auth method
+  hash String @id
+  size Int?
+
+  hostReport HostReport @relation(fields: [hostname, release, type, key], references: [hostname, release, type, key])
+}

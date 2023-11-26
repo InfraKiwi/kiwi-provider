@@ -1,0 +1,22 @@
+import { InventoryEntry } from './inventoryEntry';
+
+import type { DataSourceContext } from '../dataSources/abstractDataSource';
+import type { InventoryGroupInterface } from './inventory.schema.gen';
+import Joi from 'joi';
+import { InventoryGroupSchema } from './inventory.schema';
+import { keepOnlyKeysInJoiSchema } from '../util/joi';
+import { InventoryEntrySchema } from './inventoryEntry.schema';
+
+export class InventoryGroup extends InventoryEntry {
+  readonly pattern: string[];
+
+  constructor(id: string, config: InventoryGroupInterface) {
+    config = Joi.attempt(config, InventoryGroupSchema, `Error validating inventory group config: `);
+    super(id, keepOnlyKeysInJoiSchema(config, InventoryEntrySchema));
+    this.pattern = config.pattern ? (Array.isArray(config.pattern) ? config.pattern : [config.pattern]) : [];
+  }
+
+  protected async internalLoadVars(context: DataSourceContext): Promise<void> {
+    // NOOP
+  }
+}

@@ -1,0 +1,21 @@
+hostSources:
+  - raw:
+      'docker-1': { varFromHost: 1 }
+      'docker-2': { varFromHost: 2 }
+      'docker-3': { varFromHost: 3 }
+      'docker-4': { varFromHost: 4 }
+
+groups:
+  docker-a:
+    pattern: 'docker-[1:2]'
+    vars:
+      varFromGroup: a
+  docker-b:
+    pattern: 'docker-[3:999]'
+    vars:
+      varFromGroup: b
+
+  wireguard-a: docker-[1:3]
+
+vars:
+  varFromInventory: 1

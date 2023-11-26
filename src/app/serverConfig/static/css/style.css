@@ -1,0 +1,8 @@
+.expansible-next-row + .collapsed-row {
+  display: none;
+}
+.expansible-next-row + .collapsed-row.show-collapsed-row {
+  display: table-row;
+}
+
+/*# sourceMappingURL=style.css.map */

@@ -1,0 +1,17 @@
+app:
+  inventoryPath: examples/inventory.yaml
+  archivePath: test_archive
+
+  assetsDistribution:
+    dir:
+      path: test_archive
+
+  logsStorage:
+    dir:
+      path: test_logs
+#  hooks:
+#    report:
+#      if: status == "failure"
+#      http:
+#        url: https://webhook.site/xxx
+#        data: !!json ${{ getVars() | toJson }}
