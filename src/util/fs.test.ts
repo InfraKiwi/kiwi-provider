@@ -5,7 +5,11 @@ import path from 'node:path';
 describe('fs', () => {
   test('getAllFiles', async () => {
     const files = await getAllFiles(path.join(__dirname, 'test', 'fs'));
+    expect(files).toEqual(['dir1/dir2/lol', 'dir1/hello', 'dir1/world', 'hello'].map((p) => path.normalize(p)));
+  });
 
-    expect(files).toEqual(['dir1/dir2/lol', 'dir1/hello', 'dir1/world', 'hello'].map(path.normalize));
+  test('getAllFiles max depth', async () => {
+    const files = await getAllFiles(path.join(__dirname, 'test', 'fs'), 1);
+    expect(files).toEqual(['dir1/hello', 'dir1/world', 'hello'].map((p) => path.normalize(p)));
   });
 });

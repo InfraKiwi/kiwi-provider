@@ -25,8 +25,10 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
   // Get the url we can use to download the logs
   abstract getDownloadUrl(context: LogsStorageContext, hash: string): Promise<string>;
 
-  // Mount any routes that may be needed to handle log uploads.
-  // These routes will be exposed under the /logsStorage router.
+  /*
+   * Mount any routes that may be needed to handle log uploads.
+   * These routes will be exposed under the /logsStorage router.
+   */
   abstract mountRoutes(context: LogsStorageContext, appForHost: e.IRouter, appForAdmin: e.IRouter): void;
 
   static async markUploadAsCompleted(context: LogsStorageContext, hash: string, size?: number): Promise<HostLogs> {
@@ -48,6 +50,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
     appForHost: e.IRouter,
     appForAdmin: e.IRouter,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     appForHost.post('/uploadUrl', async (req, res) => {
       const reqData = Joi.attempt(
         req.body,
@@ -76,11 +79,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
       const uploadUrlWithPrefix = LogsStorageRoutesMountPrefix + uploadUrl;
 
       const data: Prisma.HostLogsCreateInput = {
-        hostReport: {
-          connect: {
-            hostname_release_type_key: reportId,
-          },
-        },
+        hostReport: { connect: { hostname_release_type_key: reportId } },
         status: reqData.status,
         hash,
         storageKey,
@@ -88,9 +87,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
         timestamp: now,
       };
 
-      await context.client.hostLogs.create({
-        data,
-      });
+      await context.client.hostLogs.create({ data });
 
       const resp: AbstractLogsStorageGetUploadUrlResponseInterface = {
         storageKey,
@@ -99,6 +96,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
       res.send(resp);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     appForAdmin.get('/downloadUrl/:hash', async (req, res) => {
       const hash = req.params.hash;
       const downloadUrl = await logsStorage.getDownloadUrl(context, hash);
@@ -109,9 +107,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
         return;
       }
 
-      const resp: AbstractLogsStorageGetDownloadUrlResponseInterface = {
-        downloadUrl: downloadUrlWithPrefix,
-      };
+      const resp: AbstractLogsStorageGetDownloadUrlResponseInterface = { downloadUrl: downloadUrlWithPrefix };
       res.send(resp);
     });
   }

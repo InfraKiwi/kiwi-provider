@@ -1,18 +1,18 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import { ModuleInfo } from './index';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
-import type { ModuleInfoInterface } from './gen.schema.gen';
-
-const debug = newDebug(__filename);
+import type { ModuleInfoInterface } from './schema.gen';
+import { testExamples } from '../../util/testUtils';
 
 describe('info module', () => {
+  testExamples(__dirname);
+
   test('get osInfo', async () => {
     const runContext = getTestRunContext();
 
     const config: ModuleInfoInterface = {
-      osInfo: {},
+      osInfo: true,
       // inetChecksite: { url: 'https://google.com' },
     };
 

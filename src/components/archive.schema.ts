@@ -8,9 +8,9 @@ export const ArchiveConfigFilename = 'config.yaml';
 
 export const ArchiveAssetsCompressedFileName = 'archive.tar.gz';
 
-export const ArchiveRecipeEntrySchema = RecipeForArchiveSchema.append({
-  assetsArchive: Joi.string(),
-}).meta(joiMetaClassName('ArchiveRecipeEntryInterface'));
+export const ArchiveRecipeEntrySchema = RecipeForArchiveSchema.append({ assetsArchive: Joi.string() }).meta(
+  joiMetaClassName('ArchiveRecipeEntryInterface'),
+);
 
 export const ArchiveRecipesMapSchema = joiObjectWithPattern(ArchiveRecipeEntrySchema).meta(
   joiMetaClassName('ArchiveRecipesMapInterface'),

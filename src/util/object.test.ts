@@ -17,7 +17,10 @@ describe('object utils', () => {
       expect: false,
     },
     {
-      args: { hey: 2, waa: 5 },
+      args: {
+        hey: 2,
+        waa: 5,
+      },
       expect: false,
     },
   ];

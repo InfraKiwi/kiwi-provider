@@ -21,25 +21,13 @@ describe('compileArchiveForHost', () => {
       groups: {
         'debug-all': {
           pattern: 'debug-*',
-          vars: {
-            groupVar: 'debug',
-          },
+          vars: { groupVar: 'debug' },
         },
         'debug-first': 'debug-1,debug-2',
         never: 'never*',
       },
-      vars: {
-        inventoryVar: 1,
-      },
-      hostSources: [
-        {
-          raw: {
-            'debug-1': {
-              hello: 'world',
-            },
-          },
-        },
-      ],
+      vars: { inventoryVar: 1 },
+      hostSources: [{ raw: { 'debug-1': { hello: 'world' } } }],
     });
     await inventory.loadGroupsAndStubs(context);
 

@@ -1,7 +1,6 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleRecipeSchema } from './schema';
 import type { ModuleRecipeFullInterface, ModuleRecipeInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import { tryOrThrowAsync } from '../../util/try';
 import type { Recipe } from '../../components/recipe';
@@ -10,8 +9,6 @@ import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
 import { getErrorPrintfClass } from '../../util/error';
 
-const debug = newDebug(__filename);
-
 export const ModuleRecipeErrorRecipeSourcesNotDefined = getErrorPrintfClass(
   'ModuleRecipeErrorRecipeSourcesNotDefined',
   'No recipe sources defined',
@@ -19,11 +16,7 @@ export const ModuleRecipeErrorRecipeSourcesNotDefined = getErrorPrintfClass(
 
 export class ModuleRecipe extends AbstractModuleBase<ModuleRecipeInterface, VarsInterface> {
   get fullConfig(): ModuleRecipeFullInterface {
-    return typeof this.config == 'string'
-      ? {
-          id: this.config,
-        }
-      : this.config;
+    return typeof this.config == 'string' ? { id: this.config } : this.config;
   }
 
   get label(): string | undefined {
@@ -47,10 +40,6 @@ export class ModuleRecipe extends AbstractModuleBase<ModuleRecipeInterface, Vars
       vars: runResult.vars,
       changed: runResult.changed,
     };
-  }
-
-  protected get disableShortie(): boolean {
-    return true;
   }
 }
 

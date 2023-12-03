@@ -1,6 +1,5 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleHTTPSchema } from './schema';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import type { ModuleHTTPInterface } from './schema.gen';
 
@@ -8,8 +7,6 @@ import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
 import type { DataSourceHTTPResult } from '../../dataSources/http';
 import { DataSourceHTTP } from '../../dataSources/http';
-
-const debug = newDebug(__filename);
 
 export interface ModuleHTTPResult extends DataSourceHTTPResult {}
 

@@ -57,7 +57,7 @@ export class MultiDataSourceGlob<DataType> extends AbstractMultiDataSource<Multi
   async loadEntry(context: DataSourceContext, entry: string): Promise<DataType> {
     const workDir = this.#getWorkDir(context);
     const filePath = workDir ? path.resolve(workDir, entry) : entry;
-    const data = await new DataSourceFile<DataType>({ path: filePath }).load(context);
+    const data = await new DataSourceFile<DataType>({ path: filePath }).loadVars(context);
     return data;
   }
 }

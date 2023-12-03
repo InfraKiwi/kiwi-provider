@@ -106,19 +106,21 @@ describe('hostPattern', () => {
     }
   });
 
-  // NOTE: not supported
-  // it('test separator in range', () => {
-  //   check('a/b', 'a[.-0]b', !normsep);
-  //   check('a\\b', 'a[.-0]b', false);
-  //   check('a\\b', 'a[Z-^]b', !normsep);
-  //   check('a/b', 'a[Z-^]b', false);
-  //
-  //   check('a/b', 'a[/-0]b', !normsep);
-  //   check('a[/-0]b', 'a[/-0]b', false);
-  //
-  //   check('a/b', 'a[.-/]b');
-  //   check('a[.-/]b', 'a[.-/]b', false);
-  // });
+  /*
+   * NOTE: not supported
+   * it('test separator in range', () => {
+   *   check('a/b', 'a[.-0]b', !normsep);
+   *   check('a\\b', 'a[.-0]b', false);
+   *   check('a\\b', 'a[Z-^]b', !normsep);
+   *   check('a/b', 'a[Z-^]b', false);
+   *
+   *   check('a/b', 'a[/-0]b', !normsep);
+   *   check('a[/-0]b', 'a[/-0]b', false);
+   *
+   *   check('a/b', 'a[.-/]b');
+   *   check('a[.-/]b', 'a[.-/]b', false);
+   * });
+   */
 
   describe('test subscript', () => {
     test('subscript simple', () => {

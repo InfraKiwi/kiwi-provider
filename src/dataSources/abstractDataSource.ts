@@ -3,8 +3,27 @@ import type { ContextLogger, ContextWorkDir } from '../util/context';
 
 export interface DataSourceContext extends ContextLogger, ContextWorkDir {}
 
-export abstract class AbstractDataSource<ConfigType, ResultType> extends AbstractRegistryEntry<ConfigType> {
+export abstract class AbstractDataSource<
+  ConfigType,
+  ResultType,
+  LoadVarsType = ResultType,
+> extends AbstractRegistryEntry<ConfigType> {
   abstract load(context: DataSourceContext): Promise<ResultType>;
+
+  /*
+   * `getVarsFromLoadResult` can be overridden when a data source returns
+   * also additional data other than just vars, and we need to e.g. return
+   * a subset of such data.
+   */
+  protected async getVarsFromLoadResult(result: ResultType): Promise<LoadVarsType> {
+    return result as unknown as LoadVarsType;
+  }
+
+  // `loadVars` is a utility function invoked to load vars for a varsSource.
+  async loadVars(context: DataSourceContext): Promise<LoadVarsType> {
+    const loadResult = await this.load(context);
+    return this.getVarsFromLoadResult(loadResult);
+  }
 }
 
 export abstract class AbstractMultiDataSource<ConfigType, DataType> extends AbstractRegistryEntry<ConfigType> {

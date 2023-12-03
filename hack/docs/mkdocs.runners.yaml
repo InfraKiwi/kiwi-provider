@@ -1,0 +1,9 @@
+site_name: runners
+docs_dir: ../../src/runners
+
+nav:
+  - README.md
+  ### REPLACE NAV BEGIN
+  - 'docker': ./docker/README.md
+  - 'local': ./local/README.md
+  ### REPLACE NAV END

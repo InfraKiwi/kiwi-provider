@@ -1,6 +1,8 @@
-// Very inspired by ansible here
-// https://github.com/ansible/ansible/blob/devel/lib/ansible/inventory/manager.py#L429
-// I mean, they did it well
+/*
+ * Very inspired by ansible here
+ * https://github.com/ansible/ansible/blob/devel/lib/ansible/inventory/manager.py#L429
+ * I mean, they did it well
+ */
 
 import globrex from 'globrex';
 import { escapeRegex } from './regex';
@@ -20,8 +22,10 @@ interface HostPatternSubscriptResult {
   subscript?: HostPatternSubscript;
 }
 
-// Gosh I wish we had proper multiline regexes here
-// https://github.com/ansible/ansible/blob/devel/lib/ansible/inventory/manager.py#L53C6-L53C6
+/*
+ * Gosh I wish we had proper multiline regexes here
+ * https://github.com/ansible/ansible/blob/devel/lib/ansible/inventory/manager.py#L53C6-L53C6
+ */
 const patternWithSubscriptRegex = /^(.+)\[(?:([0-9]+)|([0-9]+):([0-9]*))](.*)$/;
 
 const normalizeSeparatorCheck = path.normalize('\\') == path.normalize('/');
@@ -46,13 +50,13 @@ export class HostPattern {
     }
     this.raw = pattern;
 
-    if (pattern[0] == '&') {
+    if (pattern.startsWith('&')) {
       this.forceInclusion = true;
       this.rawWithoutModifiers = pattern.substring(1);
-    } else if (pattern[0] == '!') {
+    } else if (pattern.startsWith('!')) {
       this.forceInclusion = false;
       this.rawWithoutModifiers = pattern.substring(1);
-    } else if (pattern[0] == '~') {
+    } else if (pattern.startsWith('~')) {
       this.rawWithoutModifiers = pattern.substring(1);
     } else {
       this.rawWithoutModifiers = this.raw;
@@ -60,7 +64,7 @@ export class HostPattern {
 
     // Process subscript
     let valueForSubscriptEvaluation = pattern;
-    if (valueForSubscriptEvaluation[0] == '&' || valueForSubscriptEvaluation[0] == '!') {
+    if (valueForSubscriptEvaluation.startsWith('&') || valueForSubscriptEvaluation.startsWith('!')) {
       valueForSubscriptEvaluation = valueForSubscriptEvaluation.substring(1);
     }
     const subscriptResult = HostPattern.splitSubscript(valueForSubscriptEvaluation);
@@ -71,21 +75,23 @@ export class HostPattern {
 
   static splitSubscript(pattern: string): HostPatternSubscriptResult {
     // Do not parse regexes for enumeration info
-    if (pattern[0] == '~') {
-      return {
-        subPattern: HostPattern.compilePattern(pattern),
-      };
+    if (pattern.startsWith('~')) {
+      return { subPattern: HostPattern.compilePattern(pattern) };
     }
 
     const match = patternWithSubscriptRegex.exec(pattern);
     if (match == null) {
-      return {
-        subPattern: HostPattern.compilePattern(pattern),
-      };
+      return { subPattern: HostPattern.compilePattern(pattern) };
     }
 
     let subscript: HostPatternSubscript;
-    const [, patternBefore, idxStr, startStr, endStr, patternAfter] = match;
+    const [
+, patternBefore,
+idxStr,
+startStr,
+endStr,
+patternAfter
+] = match;
     if (idxStr) {
       const idx = parseInt(idxStr, 10);
       subscript = {
@@ -95,7 +101,7 @@ export class HostPattern {
         zeroPadding: getNumberPaddingZeroes(idxStr),
       };
     } else {
-      let end: number = -1;
+      let end = -1;
       if (endStr != '') {
         end = parseInt(endStr, 10);
       }
@@ -126,13 +132,11 @@ export class HostPattern {
   }
 
   static compilePattern(pattern: string): RegExp {
-    if (pattern[0] == '~') {
+    if (pattern.startsWith('~')) {
       return new RegExp(pattern.substring(1));
     }
 
-    return globrex(pattern, {
-      extended: true,
-    }).regex;
+    return globrex(pattern, { extended: true }).regex;
   }
 
   matchString(el: string): boolean {
@@ -165,9 +169,11 @@ export class HostPattern {
 }
 
 function getNumberPaddingZeroes(str: string): number {
-  // 1
-  // 01
-  // 001
+  /*
+   * 1
+   * 01
+   * 001
+   */
   let count = 0;
   for (const char of str) {
     if (char == '0') {

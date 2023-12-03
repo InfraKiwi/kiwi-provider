@@ -1,10 +1,19 @@
 import util from 'node:util';
 
-export function getErrorPrintfClass(name: string, message: string) {
+interface ErrorPrintfClass {
+  new (...args: unknown[]): Error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  withCause(cause: any, ...args: unknown[]): Error;
+}
+
+export function getErrorPrintfClass(name: string, message: string): ErrorPrintfClass {
   return class extends Error {
     constructor(...args: unknown[]) {
-      // https://stackoverflow.com/a/26673461
-      // Prevent inspect depth issues
+      /*
+       * https://stackoverflow.com/a/26673461
+       * Prevent inspect depth issues
+       */
+      // eslint-disable-next-line @typescript-eslint/no-for-in-array
       for (const k in args) {
         if (typeof args[k] !== 'string') {
           args[k] = util.inspect(args[k], { depth: null });

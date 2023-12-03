@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import type { ModuleSetResult } from './index';
 import { ModuleSet } from './index';
@@ -7,16 +6,15 @@ import type { ModuleSetInterface } from './schema.gen';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
 
 describe('set module', () => {
+  testExamples(__dirname);
+
   test('writes new vars in the context', async () => {
     const runContext = getTestRunContext();
 
-    const config: ModuleSetInterface = {
-      myVar: 'hello',
-    };
+    const config: ModuleSetInterface = { myVar: 'hello' };
 
     const module = new ModuleSet(config);
 

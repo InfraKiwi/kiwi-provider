@@ -1,0 +1,7 @@
+site_name: hooks
+docs_dir: ../../src/hooks
+
+nav:
+  ### REPLACE NAV BEGIN
+  - 'http': ./http/README.md
+  ### REPLACE NAV END

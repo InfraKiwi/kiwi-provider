@@ -1,0 +1,13 @@
+.md-grid {
+  max-width: 100%;
+}
+
+.md-sidebar {
+  width: auto;
+  min-width: 12.1rem;
+  max-width: 24rem;
+}
+
+.md-sidebar__inner {
+  padding-right: unset !important;
+}

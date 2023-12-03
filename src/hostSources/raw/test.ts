@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import { HostSourceRaw } from './index';
 import type { HostSourceRawInterface } from './schema.gen';
@@ -8,8 +7,8 @@ import type { InventoryHost } from '../../components/inventoryHost';
 
 import type { HostSourceContext } from '../abstractHostSource';
 import { HostSourceRawInterfaceConfigKeyFirst } from './schema.gen';
+import { testExamples } from '../../util/testUtils';
 
-const debug = newDebug(__filename);
 const logger = newLogger();
 const context: HostSourceContext = {
   logger,
@@ -24,6 +23,8 @@ interface HostSourceRawTest {
 }
 
 describe('host source raw', () => {
+  testExamples(__dirname);
+
   const tests: HostSourceRawTest[] = [
     {
       config: { 'host-1': {} },
@@ -48,9 +49,7 @@ describe('host source raw', () => {
   ];
 
   test.each(tests)('$#', async (args: HostSourceRawTest) => {
-    const source = new HostSourceRaw({
-      [HostSourceRawInterfaceConfigKeyFirst]: args.config,
-    });
+    const source = new HostSourceRaw({ [HostSourceRawInterfaceConfigKeyFirst]: args.config });
 
     const hosts = await source.loadAllHosts(context);
 

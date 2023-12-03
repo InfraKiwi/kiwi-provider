@@ -1,0 +1,9 @@
+site_name: recipeSources
+docs_dir: ../../src/recipeSources
+
+nav:
+  - README.md
+  ### REPLACE NAV BEGIN
+  - 'dir': ./dir/README.md
+  - 'git': ./git/README.md
+  ### REPLACE NAV END

@@ -1,15 +1,12 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleLoadSchema } from './schema';
 import type { ModuleLoadInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 import { VarsSource } from '../../components/varsSource';
 import { resolveTemplates } from '../../util/tpl';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
 
 export interface ModuleLoadResult {}
 

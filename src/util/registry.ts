@@ -1,17 +1,18 @@
 import Joi from 'joi';
-import { newDebug } from './debug';
 import { toPascalCase } from 'js-convert-case';
 import { shortieToArray, shortieToObject } from './shortie';
+import { joiSchemaAcceptsString } from './joi';
 
-const debug = newDebug(__filename);
+export const joiExampleDisableShortie = '//disableShortie:true';
 
 export abstract class AbstractRegistryEntry<ConfigType> {
   readonly config: ConfigType;
   static registryEntry: RegistryEntry;
 
   constructor(config: ConfigType) {
-    if (!this.disableShortie && typeof config == 'string') {
-      if (config.length && config[0] == '[') {
+    const disableShortie = joiSchemaAcceptsString(this.registryEntry.schema);
+    if (!disableShortie && typeof config == 'string') {
+      if (config.length && config.startsWith('[')) {
         config = shortieToArray(config) as ConfigType;
       } else {
         config = shortieToObject(config) as ConfigType;
@@ -20,10 +21,6 @@ export abstract class AbstractRegistryEntry<ConfigType> {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.config = Joi.attempt(config, this.registryEntry.schema, `Error validating ${this.registryEntry.entryName}:`);
-  }
-
-  protected get disableShortie(): boolean {
-    return false;
   }
 
   get registryEntry(): RegistryEntry {
@@ -39,7 +36,7 @@ export type WrapperInterfaceWithConfigKey<
 > = RemoveIndex<WrapperConfigType> & { [K in ConfigKey]: ConfigType };
 
 /*
-This class exists for the purpose of having registry entries that are configured with an outer wrapper config, like the recipeSources ones
+ *This class exists for the purpose of having registry entries that are configured with an outer wrapper config, like the recipeSources ones
  */
 export abstract class AbstractRegistryEntryWrappedConfig<
   WrapperConfigType extends RegistryEntryGenericConfig,
@@ -54,7 +51,7 @@ export abstract class AbstractRegistryEntryWrappedConfig<
     config: WrapperInterfaceWithConfigKey<WrapperConfigType, ConfigType, ConfigKey> | string,
   ) {
     if (typeof config == 'string') {
-      if (config.length && config[0] == '[') {
+      if (config.length && config.startsWith('[')) {
         throw new Error(`Invalid shortie config for RecipeSourceWrapperInterface`);
       } else {
         config = shortieToObject(config) as WrapperInterfaceWithConfigKey<WrapperConfigType, ConfigType, ConfigKey>;
@@ -89,9 +86,7 @@ export interface RegistryEntry {
   clazz: RegistryEntryClazz<any, any>;
 }
 
-export interface RegistryEntryGenericConfig {
-  [x: string]: unknown;
-}
+export type RegistryEntryGenericConfig = Record<string, unknown>;
 
 export class Registry {
   readonly #entryLabel: string;
@@ -132,9 +127,7 @@ export class Registry {
     const allEntryKeys = Object.keys(this.#entries);
 
     for (const entryKey in this.#entries) {
-      baseSchema = baseSchema.keys({
-        [entryKey]: this.#entries[entryKey].schema,
-      });
+      baseSchema = baseSchema.keys({ [entryKey]: this.#entries[entryKey].schema });
     }
     // Allow only one entry at a time
     baseSchema = baseSchema.xor(...allEntryKeys);
@@ -142,8 +135,10 @@ export class Registry {
     return baseSchema;
   }
 
-  // This aggregated schema is used to purely validate that we're using the right keys,
-  // but does not go deeper in the validation flow
+  /*
+   * This aggregated schema is used to purely validate that we're using the right keys,
+   * but does not go deeper in the validation flow
+   */
   getAggregatedObjectSchemaWeak(baseSchema?: Joi.ObjectSchema): Joi.Schema {
     if (baseSchema == null) {
       baseSchema = Joi.object();
@@ -151,9 +146,7 @@ export class Registry {
     const allEntryKeys = Object.keys(this.#entries);
 
     for (const entryKey in this.#entries) {
-      baseSchema = baseSchema.keys({
-        [entryKey]: Joi.any(),
-      });
+      baseSchema = baseSchema.keys({ [entryKey]: Joi.any() });
     }
     // Allow only one entry at a time
     baseSchema = baseSchema.xor(...allEntryKeys);
@@ -211,8 +204,10 @@ export class Registry {
   ): ReturnType {
     const registryEntry = this.findRegistryEntryFromIndexedConfig(config, baseSchema, label);
 
-    // We DO NOT unwrap the config here!
-    // This means the source needs to unwrap it by itself!
+    /*
+     * We DO NOT unwrap the config here!
+     * This means the source needs to unwrap it by itself!
+     */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const moduleConfig = config as any;
     const instance = new registryEntry.clazz(moduleConfig);
@@ -259,10 +254,15 @@ export class RegistryEntryFactory {
       : entryNameWithoutPath;
     options ??= {};
     options.label ??= toPascalCase(this.typeName) + toPascalCase(entryNameBase) + 'Interface';
-    return schema.meta({
+    schema = schema.meta({
       className: options.label,
       entryNames: [entryNameBase, ...(options.aliases ?? [])],
     });
+    const disableShortie = joiSchemaAcceptsString(schema);
+    if (disableShortie) {
+      schema = schema.example(joiExampleDisableShortie);
+    }
+    return schema;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

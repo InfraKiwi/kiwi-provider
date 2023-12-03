@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { HostSourceRawSchema } from './schema';
 import type { HostSourceRawInterface, HostSourceRawInterfaceConfigKey } from './schema.gen';
 import { hostSourceRegistryEntryFactory } from '../registry';
@@ -7,8 +6,6 @@ import { InventoryHost } from '../../components/inventoryHost';
 import type { HostSourceContext } from '../abstractHostSource';
 import { AbstractHostSource } from '../abstractHostSource';
 import type { VarsInterface } from '../../components/varsContainer.schema.gen';
-
-const debug = newDebug(__filename);
 
 export class HostSourceRaw extends AbstractHostSource<HostSourceRawInterface, HostSourceRawInterfaceConfigKey> {
   async loadHostsStubs(context: HostSourceContext): Promise<Record<string, InventoryHost>> {

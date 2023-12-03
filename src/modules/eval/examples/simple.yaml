@@ -1,0 +1,8 @@
+tasks:
+  # Set a variable in the module's result
+  - eval:
+      code: |
+        result.vars.hello = 'World';
+    out: evalVars
+
+  - test: evalVars.hello == "World"

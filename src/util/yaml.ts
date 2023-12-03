@@ -1,14 +1,14 @@
+/* eslint @typescript-eslint/no-base-to-string: 0 */
+
 import type { TypeConstructorOptions } from 'js-yaml';
 import { DEFAULT_SCHEMA, dump, load, Type } from 'js-yaml';
-import { newDebug } from './debug';
 import { Template } from './tpl';
 
 import { TemplateEval } from './tpl/templateEval';
 import { TemplateJoi } from './tpl/templateJoi';
 import Joi from 'joi';
+import { isShortie, shortieToObject } from './shortie';
 import { fsPromiseReadFile } from './fs';
-
-const debug = newDebug(__filename);
 
 // ---
 
@@ -19,11 +19,15 @@ const yamlTypeTpl = new Type('tag:yaml.org,2002:tpl', {
     if (typeof data != 'string') {
       return false;
     }
-    try {
-      new Template(data);
-    } catch (err) {
-      return false;
-    }
+    new Template(data);
+
+    /*
+     * try {
+     *   new Template(data);
+     * } catch (err) {
+     *   return false;
+     * }
+     */
     return true;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,11 +50,15 @@ const yamlTypeTplJSON = new Type('tag:yaml.org,2002:tplJSON', {
     if (typeof data != 'string') {
       return false;
     }
-    try {
-      new Template(data, true);
-    } catch (err) {
-      return false;
-    }
+    new Template(data, true);
+
+    /*
+     * try {
+     *   new Template(data, true);
+     * } catch (err) {
+     *   return false;
+     * }
+     */
     return true;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,11 +81,15 @@ const yamlTypeCtorRegex: TypeConstructorOptions = {
     if (typeof data != 'string') {
       return false;
     }
-    try {
-      new RegExp(data);
-    } catch (err) {
-      return false;
-    }
+    new RegExp(data);
+
+    /*
+     * try {
+     *   new RegExp(data);
+     * } catch (err) {
+     *   return false;
+     * }
+     */
     return true;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,11 +115,15 @@ const yamlTypeJSON = new Type('tag:yaml.org,2002:json', {
     if (typeof data != 'string') {
       return false;
     }
-    try {
-      new Template(data, true);
-    } catch (err) {
-      return false;
-    }
+    new Template(data, true);
+
+    /*
+     * try {
+     *   new Template(data, true);
+     * } catch (err) {
+     *   return false;
+     * }
+     */
     return true;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -130,11 +146,15 @@ const yamlTypeEval = new Type('tag:yaml.org,2002:eval', {
     if (typeof data != 'string') {
       return false;
     }
-    try {
-      new TemplateEval(data);
-    } catch (err) {
-      return false;
-    }
+    new TemplateEval(data);
+
+    /*
+     * try {
+     *   new TemplateEval(data);
+     * } catch (err) {
+     *   return false;
+     * }
+     */
     return true;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,11 +177,15 @@ const yamlTypeJoi = new Type('tag:yaml.org,2002:joi', {
     if (typeof data != 'string') {
       return false;
     }
-    try {
-      Joi.isSchema(new TemplateJoi(data).render({}));
-    } catch (err) {
-      return false;
-    }
+    Joi.isSchema(new TemplateJoi(data).render({}));
+
+    /*
+     * try {
+     *   Joi.isSchema(new TemplateJoi(data).render({}));
+     * } catch (err) {
+     *   return false;
+     * }
+     */
     return true;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -177,6 +201,32 @@ const yamlTypeJoi = new Type('tag:yaml.org,2002:joi', {
   },
 });
 
+const yamlTypeCtorShortie: TypeConstructorOptions = {
+  kind: 'scalar',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resolve: (data: any): boolean => {
+    if (typeof data != 'string') {
+      return false;
+    }
+    shortieToObject(data);
+    return true;
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  construct: (data: any): any => {
+    return shortieToObject(data);
+  },
+  predicate: (data: object): boolean => {
+    return isShortie(data);
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  represent: (data: object): any => {
+    return JSON.stringify(data);
+  },
+};
+
+const yamlTypeShortie = new Type('tag:yaml.org,2002:shortie', yamlTypeCtorShortie);
+const yamlTypeShortieShort = new Type('tag:yaml.org,2002:s', yamlTypeCtorShortie);
+
 // ---
 
 const customYAMLFunctions: Type[] = [
@@ -187,6 +237,8 @@ const customYAMLFunctions: Type[] = [
   yamlTypeRegex,
   yamlTypeRegexShort,
   yamlTypeJoi,
+  yamlTypeShortie,
+  yamlTypeShortieShort,
 ];
 
 const YAMLSchema = DEFAULT_SCHEMA.extend(customYAMLFunctions);

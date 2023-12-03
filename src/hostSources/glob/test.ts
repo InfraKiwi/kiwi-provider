@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import { HostSourceGlob } from './index';
 import path from 'node:path';
@@ -6,8 +5,8 @@ import { newLogger } from '../../util/logger';
 
 import type { HostSourceContext } from '../abstractHostSource';
 import { HostSourceGlobInterfaceConfigKeyFirst } from './schema.gen';
+import { testExamples } from '../../util/testUtils';
 
-const debug = newDebug(__filename);
 const logger = newLogger();
 const context: HostSourceContext = {
   logger,
@@ -15,6 +14,8 @@ const context: HostSourceContext = {
 };
 
 describe('host source glob', () => {
+  testExamples(__dirname);
+
   test('gets the right files', async () => {
     const source = new HostSourceGlob({
       [HostSourceGlobInterfaceConfigKeyFirst]: {

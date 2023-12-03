@@ -1,0 +1,34 @@
+tasks:
+  # Fake the list/load HTTP server
+  - httpListener:
+      routes:
+        '/list':
+          get:
+            json:
+              - id1
+              - id2
+        '/load/:id':
+          get: !!eval |
+            const entries = {
+              id1: { text: "Hello" },
+              id2: { text: "World" },
+            }
+            return (req, res) => {
+              res.json(entries[req.params.id]);
+            }
+    out: listener
+
+  - load:
+      httpList:
+        default:
+          baseURL: http://${{ listener.address }}
+        list:
+          http:
+            url: /list
+        load:
+          http:
+            url: /load/{{ id }}
+    out: httpVars
+
+  - test: httpVars.id1.text == "Hello"
+  - test: httpVars.id2.text == "World"

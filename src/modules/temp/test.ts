@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import { ModuleTemp } from './index';
 
@@ -7,8 +6,8 @@ import { promisify } from 'node:util';
 import fs from 'node:fs';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
+import { testExamples } from '../../util/testUtils';
 
-const debug = newDebug(__filename);
 const promiseExists = promisify(fs.exists);
 
 interface ModuleStoreTest {
@@ -16,6 +15,8 @@ interface ModuleStoreTest {
 }
 
 describe('temp module', () => {
+  testExamples(__dirname);
+
   const tests: ModuleStoreTest[] = [
     { args: {} },
     { args: { keep: true } },

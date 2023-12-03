@@ -1,8 +1,5 @@
-import { newDebug } from '../../util/debug';
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
-
-const debug = newDebug(__filename);
 
 const ModuleStoreSchemaBase = Joi.object({
   path: Joi.string().required(),

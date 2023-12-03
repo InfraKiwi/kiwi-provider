@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import type { LogsStorageContext } from '../abstractLogsStorage';
 import { AbstractLogsStorage } from '../abstractLogsStorage';
 import { logsStorageRegistryEntryFactory } from '../registry';
@@ -10,8 +9,6 @@ import multer from 'multer';
 import path from 'node:path';
 import type { HostLogs } from '@prisma/client';
 import { mkdirp } from 'mkdirp';
-
-const debug = newDebug(__filename);
 
 interface LogsStorageUploadRequest extends e.Request {
   record: HostLogs;
@@ -52,6 +49,7 @@ export class LogsStorageDir extends AbstractLogsStorage<LogsStorageDirInterface>
   mountRoutes(context: LogsStorageContext, appForHost: e.IRouter, appForAdmin: e.IRouter) {
     appForHost.put(
       '/upload/:hash',
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async (req, res, next) => {
         const hash = req.params.hash;
         // Make sure there is a database entry for this
@@ -65,6 +63,7 @@ export class LogsStorageDir extends AbstractLogsStorage<LogsStorageDirInterface>
         next();
       },
       this.#upload.single('file'),
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async (req, res) => {
         const record = await AbstractLogsStorage.markUploadAsCompleted(
           context,
@@ -72,31 +71,36 @@ export class LogsStorageDir extends AbstractLogsStorage<LogsStorageDirInterface>
           req.file?.size,
         );
         // Handle the uploaded file
-        res.json({ message: 'Logs uploaded successfully!', record });
+        res.json({
+          message: 'Logs uploaded successfully!',
+          record,
+        });
       },
     );
 
-    appForAdmin.get('/download/:hash', async (req, res) => {
-      const hash = req.params.hash;
-      const record = await context.client.hostLogs.findFirstOrThrow({
-        where: {
-          hash,
-          completed: true,
-        },
-      });
-      const filePath = path.join(this.#storagePath, record.storageKey);
-
-      if (req.query.download) {
-        res.download(filePath, record.storageKey);
-      } else {
-        res.sendFile(filePath, {
-          root: context.workDir,
-          headers: {
-            'Content-Type': 'text/plain',
+    appForAdmin.get(
+      '/download/:hash',
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      async (req, res) => {
+        const hash = req.params.hash;
+        const record = await context.client.hostLogs.findFirstOrThrow({
+          where: {
+            hash,
+            completed: true,
           },
         });
-      }
-    });
+        const filePath = path.join(this.#storagePath, record.storageKey);
+
+        if (req.query.download) {
+          res.download(filePath, record.storageKey);
+        } else {
+          res.sendFile(filePath, {
+            root: context.workDir,
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        }
+      },
+    );
   }
 
   async getUploadUrl(context: LogsStorageContext, storageKey: string): Promise<string> {

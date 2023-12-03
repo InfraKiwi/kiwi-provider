@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import type { RecipeSourceDirInterface, RecipeSourceDirInterfaceConfigKey } from './schema.gen';
 import { RecipeSourceDirSchema } from './schema';
 
@@ -8,14 +7,13 @@ import type { RecipeCtorContext } from '../../components/recipe';
 import { Recipe } from '../../components/recipe';
 import { fsPromiseExists, fsPromiseReadDir, fsPromiseStat } from '../../util/fs';
 import path from 'node:path';
-import { DataSourceFile, getAvailableFileLoadersExtensions } from '../../dataSources/file';
+import { DataSourceFile } from '../../dataSources/file';
 import type { Stats } from 'node:fs';
 import type { RecipeInterface } from '../../components/recipe.schema.gen';
 import { getErrorPrintfClass } from '../../util/error';
 import type { DataSourceContext } from '../../dataSources/abstractDataSource';
 import type { ContextWorkDir } from '../../util/context';
-
-const debug = newDebug(__filename);
+import { getAvailableFileLoadersExtensions } from '../../dataSources/file/schema';
 
 const availableExtensions = getAvailableFileLoadersExtensions();
 
@@ -123,7 +121,7 @@ export class RecipeSourceDir extends AbstractRecipeSource<RecipeSourceDirInterfa
       throw new RecipeSourceDirRecipeNotFound(id);
     }
 
-    const data = await new DataSourceFile({ path: file }).load(context);
+    const data = await new DataSourceFile({ path: file }).loadVars(context);
     if (data == null) {
       throw new Error(`Empty recipe found at ${file}`);
     }

@@ -1,4 +1,4 @@
-import { areWeTestingWithJest } from './testUtils';
+import { areWeTestingWithJest } from './constants';
 
 export async function tryOrThrowAsync<T>(fn: () => Promise<T>, wrapMessage: string): Promise<T> {
   try {

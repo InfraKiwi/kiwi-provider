@@ -1,0 +1,28 @@
+tasks:
+  - label: Remap some values from the OS map
+    set:
+      # These example binaries are distributed as archives and with a filename
+      # similar to minimal-hello_Windows_arm64.zip
+      # In this example we remap the platform (win32 -> Windows), the architecture,
+      # and we define the archive extension.
+      platform: ${{ {win32:'Windows', darwin:'Darwin', linux:'Linux'}[os().platform] }}
+      arch: ${{ {x64:'x86_64', arm:'armv6', arm64:'arm64'}[os().arch] }}
+      ext: ${{ {win32:'zip', darwin:'tar.gz', linux:'tar.gz'}[os().platform] }}
+    global: true
+
+  - label: Download a hello world binary archive and extract it to a temporary directory
+    download:
+      http:
+        url: https://github.com/10infra/minimal-hello/releases/download/v1.0.1/minimal-hello_${{ platform }}_${{ arch }}.${{ ext }}
+      extract: ${{ ext }}
+    out: download
+  - debug: |
+      Download result: ${{ download | dump }}
+
+  - label: Execute the binary
+    exec:
+      cmd: ${{ download.path }}/minimal-hello${{ '.exe' if platform == 'Windows' else '' }}
+    out: execVars
+
+  - test: |
+      "Hello world!" in execVars.stdout

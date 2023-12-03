@@ -1,12 +1,12 @@
 import '../util/loadAllRegistryEntries.gen';
 import type { RecipeSourceList } from '../recipeSources/recipeSourceList';
-import { fsPromiseWriteFile, getAllFiles } from '../util/fs';
-import { dumpYAML } from '../util/yaml';
+import { fsPromiseWriteFile } from '../util/fs';
 import type { RecipeCtorContext } from '../components/recipe';
 import { Recipe } from '../components/recipe';
-import * as tar from 'tar';
 import type { ContextLogger } from '../util/context';
 import { Archive } from '../components/archive';
+
+import { dumpYAML } from '../util/yaml';
 
 export interface CreateArchiveArgs {
   archiveDir?: string;
@@ -30,17 +30,7 @@ export async function createArchiveFile(context: ContextLogger, args: CreateArch
   });
 
   if (args.archiveTarFilename) {
-    const allFiles = await getAllFiles(archive.assetsDir);
-
-    // Write archive for serverConfig
-    await tar.c(
-      {
-        gzip: true,
-        cwd: archive.assetsDir,
-        file: args.archiveTarFilename,
-      },
-      allFiles,
-    );
+    await archive.saveToTarArchive(args.archiveTarFilename);
   }
 
   if (args.configDumpFilename) {

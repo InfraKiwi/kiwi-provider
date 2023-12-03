@@ -1,0 +1,13 @@
+tasks:
+  # Set a variable in the context
+  - set:
+      myVar: Hello world!
+    # Set the var in the global context
+    global: true
+  - test: myVar == "Hello world!"
+
+  # Print the variable
+  - debug: ${{ myVar }}
+
+  # Print the whole context
+  - debug: ${{ getVars() | dump }}

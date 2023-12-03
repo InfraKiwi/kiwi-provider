@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, test } from '@jest/globals';
 import { HostSourceFile } from './index';
 import path from 'node:path';
@@ -10,8 +9,8 @@ import type { InventoryHost } from '../../components/inventoryHost';
 
 import type { HostSourceContext } from '../abstractHostSource';
 import { HostSourceFileInterfaceConfigKeyFirst } from './schema.gen';
+import { testExamples } from '../../util/testUtils';
 
-const debug = newDebug(__filename);
 const logger = newLogger();
 const context: HostSourceContext = {
   logger,
@@ -28,6 +27,8 @@ interface HostSourceFileTest {
 }
 
 describe('host source file', () => {
+  testExamples(__dirname);
+
   const tests: HostSourceFileTest[] = [
     {
       filename: 'ok.yaml',

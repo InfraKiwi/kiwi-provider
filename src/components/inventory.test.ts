@@ -1,4 +1,3 @@
-import { newDebug } from '../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import type { InventoryInterface } from './inventory.schema.gen';
 import { Inventory } from './inventory';
@@ -11,7 +10,6 @@ import { InventoryHost } from './inventoryHost';
 import { deepcopy } from '../util/deepcopy';
 import { InventoryEntryVarsRelationsKeyDefault } from './inventoryEntry.schema';
 
-const debug = newDebug(__filename);
 const logger = newLogger();
 const context: HostSourceContext = {
   logger,
@@ -89,7 +87,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
       const inventory = args.config ? new Inventory(args.config) : getInventory();
       await inventory.loadGroupsAndStubs(context);
 
-      const hosts = inventory.getHostsByPattern(args.query);
+      const hosts = inventory.getHostsByPattern(context, args.query);
       const hostnames = Object.keys(hosts);
       hostnames.sort(naturalSortCompareFn);
       args.expectedHostnames.sort(naturalSortCompareFn);
@@ -100,18 +98,22 @@ describe('inventory - can get the right hosts in the right groups', () => {
       const inventory = getInventory();
       await inventory.loadGroupsAndStubs(context);
 
-      expect(inventory.getGroupNamesForHost(inventory.getRawHostObject('test-another-3.hello.io')!)).toEqual([
+      expect(inventory.getGroupNamesForHost(context, inventory.getRawHostObject('test-another-3.hello.io')!)).toEqual([
         'another',
         'test',
       ]);
       expect(
-        inventory.getGroupNamesForHost(inventory.getRawHostObject('test-another-3.hello.io')!, undefined, true),
+        inventory.getGroupNamesForHost(
+          context,
+          inventory.getRawHostObject('test-another-3.hello.io')!,
+          undefined,
+          true,
+        ),
       ).toEqual([groupNameAll, 'another', groupNameGrouped, 'test'].sort(naturalSortCompareFn));
-      expect(inventory.getGroupNamesForHost(inventory.getRawHostObject('ungroupedforever')!)).toEqual([]);
-      expect(inventory.getGroupNamesForHost(inventory.getRawHostObject('ungroupedforever')!, undefined, true)).toEqual([
-        groupNameAll,
-        groupNameUngrouped,
-      ]);
+      expect(inventory.getGroupNamesForHost(context, inventory.getRawHostObject('ungroupedforever')!)).toEqual([]);
+      expect(
+        inventory.getGroupNamesForHost(context, inventory.getRawHostObject('ungroupedforever')!, undefined, true),
+      ).toEqual([groupNameAll, groupNameUngrouped]);
     });
 
     test('implicit host', async () => {
@@ -119,7 +121,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
       const inventory = new Inventory({});
       await inventory.loadGroupsAndStubs(context);
 
-      const hosts = inventory.getHostsByPattern('localhost');
+      const hosts = inventory.getHostsByPattern(context, 'localhost');
       const hostnames = Object.keys(hosts);
       expect(hostnames).toEqual(['localhost']);
       expect(hosts[hostnames[0]]?.id).toEqual('localhost');
@@ -134,7 +136,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
         expect(Object.keys(config.groups!)).toContain('test');
       }
 
-      inventory.setHost(new InventoryHost('test-5', {}));
+      inventory.setHost(context, new InventoryHost('test-5', {}));
       {
         const config = await inventory.createRawSubInventoryConfig(context, ['test-5']);
         expect(Object.keys(config.groups!)).toContain('test');
@@ -147,15 +149,11 @@ describe('inventory - can get the right hosts in the right groups', () => {
       hostSources: [
         {
           raw: {
-            'rel-1': {
-              [InventoryEntryVarsRelationsKeyDefault]: ['rel-2'],
-            },
+            'rel-1': { [InventoryEntryVarsRelationsKeyDefault]: ['rel-2'] },
             // Belongs to relationsTest, which in turn has a relation to rel-1
             'rel-2': {},
 
-            'rel-3': {
-              [InventoryEntryVarsRelationsKeyDefault]: ['rel-*'],
-            },
+            'rel-3': { [InventoryEntryVarsRelationsKeyDefault]: ['rel-*'] },
             'rel-4': {},
 
             'rel-another-1': {},

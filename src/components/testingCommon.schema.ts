@@ -8,6 +8,6 @@ export const ConditionSetSchema = Joi.alternatives([ConditionSchema, Joi.array()
   joiMetaClassName('ConditionSetInterface'),
 );
 
-export const TestMockBaseSchema = Joi.object({
-  result: ModuleRunResultSchema.required(),
-}).meta(joiMetaClassName('TestMockBaseInterface'));
+export const TestMockBaseSchema = Joi.object({ result: ModuleRunResultSchema.required() }).meta(
+  joiMetaClassName('TestMockBaseInterface'),
+);

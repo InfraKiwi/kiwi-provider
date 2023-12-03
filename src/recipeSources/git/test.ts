@@ -8,6 +8,7 @@ import { execCmd } from '../../util/exec';
 import path from 'node:path';
 import { fsPromiseCp, fsPromiseMkdir, fsPromiseTmpDir } from '../../util/fs';
 import { RecipeSourceGitDefaultRootPath } from './schema';
+import { testExamples } from '../../util/testUtils';
 
 const logger = newLogger();
 const context: ContextLogger & ContextRecipeSourceList & ContextWorkDir = {
@@ -43,6 +44,8 @@ beforeAll(async () => {
 });
 
 describe('recipe source git', () => {
+  testExamples(__dirname);
+
   const tests: RecipeSourceGitTest[] = [
     {
       ref,

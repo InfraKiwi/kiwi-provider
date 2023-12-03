@@ -1,4 +1,3 @@
-import { newDebug } from '../util/debug';
 import { describe, expect, it, test } from '@jest/globals';
 import { Task, TaskErrorFailedWithIfCondition } from './task';
 import type { TaskInterface } from './task.schema.gen';
@@ -7,8 +6,6 @@ import { loggingMaskedPlaceholder } from '../util/logger';
 import { getTestRunContext } from './inventory.testutils';
 import type { ModuleFailInterface } from '../modules/fail/schema.gen';
 import type { ModuleSetInterface } from '../modules/set/schema.gen';
-
-const debug = newDebug(__filename);
 
 interface FailTest {
   fail: ModuleFailInterface;
@@ -24,9 +21,7 @@ interface ExitTest {
 
 describe('task', () => {
   it('should run a basic task', async () => {
-    const taskConfig: TaskInterface = {
-      set: { myVar: true },
-    };
+    const taskConfig: TaskInterface = { set: { myVar: true } };
 
     const task = new Task(taskConfig);
     const result = await task.run(getTestRunContext());
@@ -66,24 +61,6 @@ describe('task', () => {
       failedIf: 'false',
       expectFail: false,
     },
-    {
-      fail: {
-        vars: {
-          hello: 'world',
-        },
-      },
-      failedIf: 'result.vars.hello == "world"',
-      expectFail: true,
-    },
-    {
-      fail: {
-        vars: {
-          hello: 'world',
-        },
-      },
-      failedIf: 'result.vars.hello == "worldz"',
-      expectFail: false,
-    },
   ];
 
   test.each(failTests)('fail test %#', async (test) => {
@@ -102,16 +79,12 @@ describe('task', () => {
 
   const exitTests: ExitTest[] = [
     {
-      set: {
-        iShouldExit: true,
-      },
+      set: { iShouldExit: true },
       exitIf: 'result.vars.iShouldExit == true',
       expectExit: true,
     },
     {
-      set: {
-        iShouldExit: false,
-      },
+      set: { iShouldExit: false },
       exitIf: 'result.vars.iShouldExit == true',
       expectExit: false,
     },
@@ -137,9 +110,7 @@ describe('task', () => {
       out: '${{ myVarOut }}',
     };
 
-    const runContext = getTestRunContext({
-      vars: { myVarOut: 'output' },
-    });
+    const runContext = getTestRunContext({ vars: { myVarOut: 'output' } });
 
     const task = new Task(taskConfig);
     const result = await task.run(runContext);
@@ -149,9 +120,7 @@ describe('task', () => {
   });
 
   it('should accept the sensitive arg', async () => {
-    let ctx = getTestRunContext({
-      vars: { myVarOut: 'output' },
-    });
+    let ctx = getTestRunContext({ vars: { myVarOut: 'output' } });
 
     {
       const taskConfig: TaskInterface = {
@@ -185,9 +154,7 @@ describe('task', () => {
       const t = new DebuggingTransport();
       ctx.logger.add(t);
 
-      const taskConfig: TaskInterface = {
-        debug: 'Hello ${{ set.myVar }}',
-      };
+      const taskConfig: TaskInterface = { debug: 'Hello ${{ set.myVar }}' };
       const task = new Task(taskConfig);
       await task.run(ctx);
       ctx.logger.remove(t);

@@ -1,28 +1,19 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import { ModuleFail } from './index';
 
 import type { ModuleFailInterface } from './schema.gen';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
 
 interface ModuleStoreTest {
   args: ModuleFailInterface;
-  expectVars?: object;
 }
 
 describe('fail module', () => {
-  const tests: ModuleStoreTest[] = [
-    {
-      args: { message: 'hello' },
-    },
-    {
-      args: { message: 'hello', vars: { myVar: 'world' } },
-      expectVars: { myVar: 'world' },
-    },
-  ];
+  testExamples(__dirname);
+
+  const tests: ModuleStoreTest[] = [{ args: { message: 'hello' } }];
 
   test.each(tests)('$#', async (t) => {
     const runContext = getTestRunContext();
@@ -30,9 +21,5 @@ describe('fail module', () => {
 
     const result = await module.run(runContext);
     expect(result.failed).toContain('hello');
-
-    if (t.expectVars) {
-      expect(result.vars).toEqual(t.expectVars);
-    }
   });
 });

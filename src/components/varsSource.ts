@@ -6,6 +6,7 @@ import type { AbstractDataSourceTypes, DataSourceContext } from '../dataSources/
 import { AbstractMultiDataSource } from '../dataSources/abstractDataSource';
 import Joi from 'joi';
 import type { VarsInterface } from './varsContainer.schema.gen';
+import { VarsSchema } from './varsContainer.schema';
 
 export class VarsSource {
   config: VarsSourceInterface;
@@ -22,13 +23,11 @@ export class VarsSource {
 
   static #processLoadedValues(value: VarsInterface, config: VarsSourceInterface): VarsInterface {
     const vars: VarsInterface = {};
-    if (config.extract) {
+    if (config.template) {
       value = extractAllTemplates(value);
     }
     if (typeof value != 'object' || value instanceof AbstractTemplate) {
-      Object.assign(vars, {
-        content: value,
-      });
+      Object.assign(vars, { content: value });
     } else {
       Object.assign(vars, value);
     }
@@ -43,13 +42,22 @@ export class VarsSource {
       context.logger?.debug(`Loading vars from multi data source ${source.registryEntry.entryName}`);
       const records = await source.loadAllEntries(context);
       for (const key in records) {
-        // const value = Joi.attempt(records[key], VarsSchema, 'Error validating vars:');
-        Object.assign(vars, VarsSource.#processLoadedValues(records[key], this.config));
+        if (this.config.flatten) {
+          Object.assign(vars, VarsSource.#processLoadedValues(records[key], this.config));
+        } else {
+          vars[key] = VarsSource.#processLoadedValues(records[key], this.config);
+        }
       }
     } else {
       context.logger?.debug(`Loading vars from data source ${source.registryEntry.entryName}`);
-      const value = await source.load(context); // Joi.attempt(await source.load(context), VarsSchema, 'Error validating vars:');
-      Object.assign(vars, VarsSource.#processLoadedValues(value, this.config));
+      const value = Joi.attempt(await source.loadVars(context), VarsSchema, 'Error validating vars:');
+      if (this.config.flatten) {
+        for (const key in value) {
+          vars[key] = VarsSource.#processLoadedValues(value[key], this.config);
+        }
+      } else {
+        Object.assign(vars, VarsSource.#processLoadedValues(value, this.config));
+      }
     }
 
     return vars;

@@ -1,20 +1,22 @@
 import Joi from 'joi';
 import { joiMetaClassName, joiValidateValidIfTemplate } from '../../util/joi';
+import { localhost127 } from '../../util/constants';
+import type { ServerListenerInterface } from './server.schema.gen';
 
 export const ServerHooksPrefix = '10infra-config:hooks';
 
 export const ServerListenerSchema = Joi.object({
-  addr: Joi.string().hostname().default('localhost'),
-  port: Joi.number().port().default(3000),
+  addr: Joi.string().hostname().default(localhost127).description(`The address to listen on`).optional(),
+  port: Joi.number().port().description(`The port to listen on`).required(),
+  externalUrl: Joi.string().uri(),
 }).meta(joiMetaClassName('ServerListenerInterface'));
 
-export interface ServerDefaults {
-  port?: number;
-}
-
-export function getServerListenerSchemaObject(defaults?: ServerDefaults) {
+export function getServerListenerSchemaObject(defaults?: ServerListenerInterface) {
   return {
-    listener: ServerListenerSchema.default(defaults),
+    listener: ServerListenerSchema.default({
+      ...defaults,
+      externalUrl: defaults?.externalUrl ?? `http://${defaults?.addr ?? localhost127}:${defaults?.port}`,
+    }),
   };
 }
 
@@ -24,7 +26,7 @@ export const ServerListenerWrapperSchema = Joi.object(getServerListenerSchemaObj
 );
 
 export const ServerHookSchema = Joi.object({
-  if: Joi.string().custom(joiValidateValidIfTemplate),
+  if: Joi.string().custom(joiValidateValidIfTemplate).description(`The condition that will trigger the hook`),
 })
   .unknown(true)
   .meta(joiMetaClassName('ServerHookInterface'));

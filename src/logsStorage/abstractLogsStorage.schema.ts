@@ -13,9 +13,11 @@ export const AbstractLogsStorageGetUploadUrlResponseSchema = Joi.object({
   uploadUrl: Joi.string().required(),
 }).meta(joiMetaClassName('AbstractLogsStorageGetUploadUrlResponseInterface'));
 
-// export const AbstractLogsStorageGetDownloadUrlRequestSchema = Joi.object({
-//   storageKey: Joi.string().required(),
-// }).meta(joiMetaClassName('AbstractLogsStorageGetDownloadUrlRequestInterface'));
+/*
+ * export const AbstractLogsStorageGetDownloadUrlRequestSchema = Joi.object({
+ *   storageKey: Joi.string().required(),
+ * }).meta(joiMetaClassName('AbstractLogsStorageGetDownloadUrlRequestInterface'));
+ */
 
 export const AbstractLogsStorageGetDownloadUrlResponseSchema = Joi.object({
   downloadUrl: Joi.string().required(),

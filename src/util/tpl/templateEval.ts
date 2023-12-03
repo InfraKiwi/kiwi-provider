@@ -9,8 +9,8 @@ export async function evalCodeWithSetResult(code: string, context?: Record<strin
   context ??= {};
   context.setResult = setResult;
 
-  await evalCodeWithBuiltins(code, context);
-  return result;
+  const evalResult = await evalCodeWithBuiltins(code, context);
+  return result ?? evalResult;
 }
 
 export class TemplateEval extends AbstractTemplate {

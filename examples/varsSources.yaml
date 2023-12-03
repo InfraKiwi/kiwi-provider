@@ -1,0 +1,54 @@
+varsSources:
+  - file: path=./vars/someVars.yaml
+  - glob: pattern=./vars/*.yaml
+
+tasks:
+  # Outputs Hello world
+  - debug: Hello ${{ hello }}
+  # Outputs "It's my life! Hello world!"
+  - debug: It's ${{ its }}! Hello ${{ hello }}!
+
+  - load:
+      file: path=./vars/someVars.yaml
+    out: someVars
+  # Outputs "Hello world"
+  - debug: Hello ${{ someVars.hello }}
+
+  - load:
+      file: path=./vars/someVars.yaml raw=true
+    out: someVarsRaw
+  # Outputs
+  # Raw content: "hello: world"
+  - debug: >
+      Raw content: "${{ someVarsRaw.content }}"
+
+  - load:
+      fileRaw: path=./vars/someVars.yaml
+    out: someVarsRaw
+  # Outputs
+  # Raw content: "hello: world"
+  - debug: >
+      Raw content: "${{ someVarsRaw }}"
+
+  - load:
+      glob: pattern=./vars/*.yaml
+    out: globVars
+  # Outputs "It's my life! Hello world!"
+  - debug: It's ${{ globVars.its }}! Hello ${{ globVars.hello }}!
+
+  - load:
+      httpList:
+        default:
+          baseURL: https://reqres.in/api
+        list:
+          idField: 'id'
+          http:
+            url: /users
+            filters:
+              jsonPath: '$.data'
+        load:
+          http:
+            url: /users/{{ id }}
+    out: users
+  - debug: >
+      First user: ${{ users["7"] | dump }}

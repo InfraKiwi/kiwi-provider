@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import type { RecipeSourceGitInterface, RecipeSourceGitInterfaceConfigKey } from './schema.gen';
 import { RecipeSourceGitSchema } from './schema';
 
@@ -14,8 +13,6 @@ import { RecipeSourceDir } from '../dir';
 import { getErrorPrintfClass } from '../../util/error';
 import { lookpath } from 'lookpath';
 import type { DataSourceContext } from '../../dataSources/abstractDataSource';
-
-const debug = newDebug(__filename);
 
 export const RecipeSourceGitRecipeNotFoundOnCheckout = getErrorPrintfClass(
   'RecipeSourceGitRecipeNotFoundOnCheckout',
@@ -60,25 +57,29 @@ export class RecipeSourceGit extends AbstractRecipeSource<RecipeSourceGitInterfa
     await execGitCmd('remote', 'add', '-f', 'origin', url);
     // Enable the tree check feature
     await execGitCmd('config', 'core.sparseCheckout', 'true');
+
     /*
-    # Create a file in the path: .git/info/sparse-checkout
-    # That is inside the hidden .git directory that was created
-    # by running the command: git init
-    # And inside it enter the name of the sub directory you only want to clone
-    echo 'files' >> .git/info/sparse-checkout
+     *# Create a file in the path: .git/info/sparse-checkout
+     *# That is inside the hidden .git directory that was created
+     *# by running the command: git init
+     *# And inside it enter the name of the sub directory you only want to clone
+     *echo 'files' >> .git/info/sparse-checkout
      */
     const sparseCheckoutFile = path.join(tmpDir, '.git', 'info', 'sparse-checkout');
     const recipesPathRoot = this.config.rootPath.replaceAll(path.sep, '/');
     const pathForCheckout = `${recipesPathRoot}/${id}`;
-    await fsPromiseWriteFile(sparseCheckoutFile, pathForCheckout, { flag: 'a', encoding: 'ascii' });
+    await fsPromiseWriteFile(sparseCheckoutFile, pathForCheckout, {
+      flag: 'a',
+      encoding: 'ascii',
+    });
     context.logger.debug(`Using sparse checkout path ${pathForCheckout}`);
 
     try {
       await execGitCmd('pull', 'origin', this.config.ref);
     } catch (ex) {
       /*
-      The failure behavior depends on the git binary itself, it can fail with an error message, or it can
-      succeed and just not pull any file if it just does not exist.
+       *The failure behavior depends on the git binary itself, it can fail with an error message, or it can
+       *succeed and just not pull any file if it just does not exist.
        */
       if (
         ex instanceof ExecCmdErrorThrow &&
@@ -97,18 +98,14 @@ export class RecipeSourceGit extends AbstractRecipeSource<RecipeSourceGitInterfa
     const ds = new RecipeSourceDir({
       workDir: tmpDir,
       trusted: this.wrapperConfig.trusted,
-      dir: {
-        path: recipesPathRoot,
-      },
+      dir: { path: recipesPathRoot },
     });
 
     if (!(await ds.has(context, id))) {
       throw new RecipeSourceGitRecipeNotFound(id);
     }
 
-    const result = {
-      ds,
-    };
+    const result = { ds };
     if (this.config.cache) {
       gitCloneCache[cacheKey] = result;
     }

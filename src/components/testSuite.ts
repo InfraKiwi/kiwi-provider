@@ -11,14 +11,13 @@ import type { RecipeCtorContext } from './recipe';
 import { Recipe } from './recipe';
 import { Archive } from './archive';
 import type { ContextLogger } from '../util/context';
-import { fsPromiseTmpDir, fsPromiseTmpFile, getAllFiles } from '../util/fs';
+import { fsPromiseTmpDir, fsPromiseTmpFile } from '../util/fs';
 import type { TestSuiteInterface } from './testSuite.schema.gen';
 import type { AbstractRunnerInstance } from '../runners/abstractRunner';
 import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { RecipeMinimalSchema } from './recipe.schema';
 import type { RecipeInterface } from './recipe.schema.gen';
 import { runnerRegistry } from '../runners/registry';
-import * as tar from 'tar';
 import type { RunStatistics } from '../util/runContext';
 import '../util/loadAllRegistryEntries.testSuite.gen';
 import { Table } from 'console-table-printer';
@@ -74,37 +73,23 @@ export class TestSuite {
     const testRecipes: TestRecipe[] = [];
 
     if (this.config.beforeAll) {
-      const recipe = new Recipe(recipeCtorContext, this.config.beforeAll, {
-        id: testSuiteRecipeIdBeforeAll,
-      });
+      const recipe = new Recipe(recipeCtorContext, this.config.beforeAll, { id: testSuiteRecipeIdBeforeAll });
       recipes.push(recipe);
-      testRecipes.push({
-        recipeId: recipe.fullId!,
-      });
+      testRecipes.push({ recipeId: recipe.fullId! });
     }
 
     if (this.config.beforeEach) {
-      recipes.push(
-        new Recipe(recipeCtorContext, this.config.beforeEach, {
-          id: testSuiteRecipeIdBeforeEach,
-        }),
-      );
+      recipes.push(new Recipe(recipeCtorContext, this.config.beforeEach, { id: testSuiteRecipeIdBeforeEach }));
     }
     if (this.config.afterEach) {
-      recipes.push(
-        new Recipe(recipeCtorContext, this.config.afterEach, {
-          id: testSuiteRecipeIdAfterEach,
-        }),
-      );
+      recipes.push(new Recipe(recipeCtorContext, this.config.afterEach, { id: testSuiteRecipeIdAfterEach }));
     }
 
     for (let i = 0; i < this.config.tests.length; i++) {
       const testConfig = this.config.tests[i];
       const id = Recipe.cleanId(testConfig.testId ?? testConfig.label ?? `test_${i}`);
       const recipeConfig: RecipeInterface = joiKeepOnlyKeysInJoiSchema(testConfig, RecipeMinimalSchema);
-      const recipe = new Recipe(recipeCtorContext, recipeConfig, {
-        id,
-      });
+      const recipe = new Recipe(recipeCtorContext, recipeConfig, { id });
       recipes.push(recipe);
 
       testRecipes.push({
@@ -115,13 +100,9 @@ export class TestSuite {
     }
 
     if (this.config.afterAll) {
-      const recipe = new Recipe(recipeCtorContext, this.config.afterAll, {
-        id: testSuiteRecipeIdAfterAll,
-      });
+      const recipe = new Recipe(recipeCtorContext, this.config.afterAll, { id: testSuiteRecipeIdAfterAll });
       recipes.push(recipe);
-      testRecipes.push({
-        recipeId: recipe.fullId!,
-      });
+      testRecipes.push({ recipeId: recipe.fullId! });
     }
 
     const archiveDir = await fsPromiseTmpDir({});
@@ -129,19 +110,12 @@ export class TestSuite {
       archiveDir,
       recipes,
     });
-
-    const archiveFile = await fsPromiseTmpFile({ keep: false, discardDescriptor: true, postfix: '.tar.gz' });
-    const allFiles = await getAllFiles(archive.assetsDir);
-
-    // Write archive for serverConfig
-    await tar.c(
-      {
-        gzip: true,
-        cwd: archive.assetsDir,
-        file: archiveFile,
-      },
-      allFiles,
-    );
+    const archiveFile = await fsPromiseTmpFile({
+      keep: false,
+      discardDescriptor: true,
+      postfix: '.tar.gz',
+    });
+    await archive.saveToTarArchive(archiveFile);
 
     return {
       archive,
@@ -157,8 +131,9 @@ export class TestSuite {
     };
 
     const { testRecipes, archiveFile } = await this.#prepareTestArchive(context);
+
     if (testIds) {
-      testIds = testIds.map(Recipe.cleanId);
+      testIds = testIds.map((id) => Recipe.cleanId(id));
       Joi.assert(
         testIds,
         Joi.array().items(Joi.string().valid(...testRecipes.map((r) => r.recipeId))),
@@ -168,14 +143,21 @@ export class TestSuite {
 
     const recipesToRun: string[] = [];
     for (const testRecipe of testRecipes) {
-      if (testIds && !testIds.includes(testRecipe.recipeId)) {
+      const recipeId = testRecipe.recipeId;
+      if (
+        testIds &&
+        !testIds.includes(recipeId) &&
+        // Before all and after all will always run!
+        recipeId != testSuiteRecipeIdBeforeAll &&
+        recipeId != testSuiteRecipeIdAfterAll
+      ) {
         continue;
       }
-      recipesToRun.push(testRecipe.recipeId);
+      recipesToRun.push(recipeId);
 
       // Set to null which means we started the test at least
-      testSuiteResult.testResults[testRecipe.recipeId] = null;
-      testSuiteResult.runOrder.push(testRecipe.recipeId);
+      testSuiteResult.testResults[recipeId] = null;
+      testSuiteResult.runOrder.push(recipeId);
     }
 
     if (this.config.clean) {
@@ -235,7 +217,10 @@ export class TestSuite {
     testRecipe: TestRecipe,
     testSuiteResult: TestSuiteResult,
   ) {
-    const restResult: TestSuiteTestSetResult = { tests: {}, runOrder: [] };
+    const restResult: TestSuiteTestSetResult = {
+      tests: {},
+      runOrder: [],
+    };
     testSuiteResult.testResults[testRecipe.recipeId] = restResult;
 
     const recipeIds = [
@@ -244,7 +229,10 @@ export class TestSuite {
       ...(testRecipe.after ? [testRecipe.after] : []),
     ];
 
-    context.logger.info(`Running recipes`, { recipeId: testRecipe.recipeId, allIds: recipeIds });
+    context.logger.info(`Running recipes`, {
+      recipeId: testRecipe.recipeId,
+      allIds: recipeIds,
+    });
     const runResult = await runner.runRecipes(
       {
         ...context,
@@ -270,15 +258,7 @@ export class TestSuite {
         continue;
       }
 
-      const table = new Table({
-        columns: [
-          {
-            name: 'recipeId',
-          },
-          { name: 'elapsed' },
-          { name: 'status' },
-        ],
-      });
+      const table = new Table({ columns: [{ name: 'recipeId' }, { name: 'elapsed' }, { name: 'status' }] });
 
       for (const recipeId of testResults.runOrder) {
         const result = testResults.tests[recipeId];
@@ -290,9 +270,7 @@ export class TestSuite {
             elapsed,
             status,
           },
-          {
-            color: result.failed ? 'red' : undefined,
-          },
+          { color: result.failed ? 'red' : undefined },
         );
       }
 

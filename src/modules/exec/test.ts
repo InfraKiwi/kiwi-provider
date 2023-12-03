@@ -1,19 +1,21 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
-import type { ModuleExecResult } from './index';
 import { ModuleExec } from './index';
-import type { ModuleExecInterface } from './schema.gen';
+import type { ModuleExecInterface, ModuleExecResultInterface } from './schema.gen';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
-import { platformIsWin, platformNewLine } from '../../util/os';
 import { fsPromiseTmpFile, fsPromiseWriteFile } from '../../util/fs';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
+import { platformIsWin, platformNewLine } from '../../util/constants';
 
 describe('exec module', () => {
+  testExamples(__dirname);
+
   test('invokes exec', async () => {
-    const file = await fsPromiseTmpFile({ keep: false, discardDescriptor: true });
+    const file = await fsPromiseTmpFile({
+      keep: false,
+      discardDescriptor: true,
+    });
     await fsPromiseWriteFile(file, 'Hello');
     const config: ModuleExecInterface = platformIsWin
       ? ['PowerShell', '-Command', 'echo "Hello"']
@@ -21,7 +23,7 @@ describe('exec module', () => {
 
     const module = new ModuleExec(config);
 
-    const expected: ModuleRunResult<ModuleExecResult> = {
+    const expected: ModuleRunResult<ModuleExecResultInterface> = {
       vars: {
         stdout: `Hello${platformNewLine}`,
         stderr: '',

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { newLogger } from '../../util/logger';
 import type { DataSourceFileInterface } from './schema.gen';
 import type { DataSourceContext } from '../abstractDataSource';
+import { testExamples } from '../../util/testUtils';
 
 const logger = newLogger();
 const context: DataSourceContext = {
@@ -22,29 +23,50 @@ interface DataSourceFileTest {
 const workDir = path.resolve(__dirname, 'test');
 
 describe('data source file', () => {
+  testExamples(__dirname);
+
   const tests: DataSourceFileTest[] = [
     {
-      args: { path: 'number.yaml', workDir },
+      args: {
+        path: 'number.yaml',
+        workDir,
+      },
       expect: 123,
     },
     {
-      args: { path: 'number', workDir },
+      args: {
+        path: 'number',
+        workDir,
+      },
       expect: 123,
     },
     {
-      args: { path: 'object.yaml', workDir },
+      args: {
+        path: 'object.yaml',
+        workDir,
+      },
       expect: { myVar: 'hey' },
     },
     {
-      args: { path: 'nonexistent.yaml', workDir },
+      args: {
+        path: 'nonexistent.yaml',
+        workDir,
+      },
       failExists: true,
     },
     {
-      args: { path: 'hmm.whatami', workDir },
+      args: {
+        path: 'hmm.whatami',
+        workDir,
+      },
       failExtension: true,
     },
     {
-      args: { path: 'hmm.whatami', workDir, raw: true },
+      args: {
+        path: 'hmm.whatami',
+        workDir,
+        raw: true,
+      },
       expect: 'A joke!',
     },
   ];
@@ -53,18 +75,18 @@ describe('data source file', () => {
     const source = new DataSourceFile(args.args);
 
     if (args.failExists) {
-      await expect(source.load(context)).rejects.toThrowError(DataSourceFileErrorFileNotFound);
+      await expect(source.loadVars(context)).rejects.toThrowError(DataSourceFileErrorFileNotFound);
       return;
     }
 
     if (args.failExtension) {
-      await expect(source.load(context)).rejects.toThrowError(DataSourceFileUnknownFileExtension);
+      await expect(source.loadVars(context)).rejects.toThrowError(DataSourceFileUnknownFileExtension);
       return;
     }
 
     await source.valid(context);
 
-    const content = await source.load(context);
+    const content = await source.loadVars(context);
     expect(content).toEqual(args.expect);
   });
 });

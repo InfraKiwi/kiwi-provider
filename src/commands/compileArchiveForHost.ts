@@ -1,4 +1,3 @@
-import { newDebug } from '../util/debug';
 import { newLogger } from '../util/logger';
 import type { HostSourceContext } from '../hostSources/abstractHostSource';
 import { InventoryHost } from '../components/inventoryHost';
@@ -9,8 +8,6 @@ import type {
 } from './compileArchiveForHost.schema.gen';
 import Joi from 'joi';
 import { CompileArchiveForHostArgsSchema } from './compileArchiveForHost.schema';
-
-const debug = newDebug(__filename);
 
 export async function compileArchiveForHost(
   context: HostSourceContext,
@@ -29,7 +26,7 @@ export async function compileArchiveForHost(
     if (inventory.hasHost(implicitHost)) {
       continue;
     }
-    inventory.setHost(new InventoryHost(implicitHost, {}));
+    inventory.setHost(context, new InventoryHost(implicitHost, {}));
   }
 
   // const visitedCache: VisitedCache = {groups: {}};

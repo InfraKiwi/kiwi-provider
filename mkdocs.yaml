@@ -1,0 +1,49 @@
+site_name: My Docs
+#strict: true
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.path
+    - toc.integrate
+    - content.code.annotate
+    - content.code.copy
+
+dev_addr: 127.0.0.1:8000
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - monorepo
+  - mkdocs-simple-hooks:
+      hooks:
+        on_page_read_source: 'docs.hooks:on_page_read_source'
+
+nav:
+  - Core docs: '!include ./hack/docs/mkdocs.main.yaml'
+  - Task modules: '!include ./hack/docs/mkdocs.modules.yaml'
+  - Data Sources: '!include ./hack/docs/mkdocs.dataSources.yaml'
+  - Host Sources: '!include ./hack/docs/mkdocs.hostSources.yaml'
+  - Runners: '!include ./hack/docs/mkdocs.runners.yaml'
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 5
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format

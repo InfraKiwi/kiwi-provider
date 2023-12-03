@@ -1,0 +1,21 @@
+tasks:
+  # Create a temporary HTTP server
+  - httpListener:
+      routes:
+        /hello:
+          get:
+            json:
+              text: 'world'
+    out: listener
+
+  # Loads the vars at run-time
+  - load:
+      http:
+        url: http://${{ listener.address }}/hello
+    out: httpVars
+
+  # Outputs "Hello world!"
+  - debug: Hello ${{ httpVars.text }}!
+
+  ### Testing
+  - test: httpVars.text == "world"

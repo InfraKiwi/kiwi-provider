@@ -1,12 +1,11 @@
 version: '3'
 
 services:
-
   db:
     container_name: db
     image: postgres:14-alpine
     ports:
-      - "5439:5432"
+      - '5439:5432'
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -15,7 +14,7 @@ services:
     volumes:
       # anything in initdb directory is created in the database
       # see "How to extend this image" section at https://hub.docker.com/r/_/postgres/
-      - "./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d"
+      - './docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d'
     networks:
       - postgrest-backend
     restart: always
@@ -27,7 +26,7 @@ services:
     container_name: postgrest
     image: postgrest/postgrest:latest
     ports:
-      - "3099:3000"
+      - '3099:3000'
     # Available environment variables documented here:
     # https://postgrest.org/en/latest/configuration.html#environment-variables
     environment:

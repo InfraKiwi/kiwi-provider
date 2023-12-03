@@ -6,7 +6,10 @@ import type {
   AbstractAssetsDistributionGetDownloadUrlResponseInterface,
 } from './abstractAssetsDistribution.schema.gen';
 import Joi from 'joi';
-import { AbstractAssetsDistributionGetDownloadUrlRequestSchema } from './abstractAssetsDistribution.schema';
+import {
+  AbstractAssetsDistributionGetDownloadUrlRequestSchema,
+  AbstractAssetsDistributionGetDownloadUrlRoutePath,
+} from './abstractAssetsDistribution.schema';
 
 export interface AssetsDistributionContext extends ContextLogger {}
 
@@ -14,8 +17,10 @@ export abstract class AbstractAssetsDistribution<ConfigType> extends AbstractReg
   // Provides the client an url that can be used to download the desired archive file
   abstract getDownloadUrl(context: AssetsDistributionContext, assetsFile: string): Promise<string>;
 
-  // Mount any routes that may be needed to download the provided file
-  // These routes will be exposed under the /assetsDistribution router.
+  /*
+   * Mount any routes that may be needed to download the provided file
+   * These routes will be exposed under the /assetsDistribution router.
+   */
   abstract mountRoutes(context: AssetsDistributionContext, app: IRouter): void;
 
   static mountStaticRoutes(
@@ -23,15 +28,18 @@ export abstract class AbstractAssetsDistribution<ConfigType> extends AbstractReg
     app: IRouter,
     assetsDistribution: AbstractAssetsDistributionInstance,
   ) {
-    app.get('/downloadUrl', async (req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    app.get(AbstractAssetsDistributionGetDownloadUrlRoutePath, async (req, res) => {
       const reqData = Joi.attempt(
         req.query,
         AbstractAssetsDistributionGetDownloadUrlRequestSchema,
       ) as AbstractAssetsDistributionGetDownloadUrlRequestInterface;
       const url = await assetsDistribution.getDownloadUrl(context, reqData.assetFile);
-      const resData: AbstractAssetsDistributionGetDownloadUrlResponseInterface = {
-        downloadUrl: url,
-      };
+      if (reqData.plain) {
+        res.send(url);
+        return;
+      }
+      const resData: AbstractAssetsDistributionGetDownloadUrlResponseInterface = { downloadUrl: url };
       res.send(resData);
     });
   }

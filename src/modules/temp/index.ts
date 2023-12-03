@@ -1,14 +1,11 @@
 import type { RunContext } from '../../util/runContext';
-import { ModuleTempSchema } from './schema';
+import { ModuleTempDirSchema, ModuleTempSchema } from './schema';
 import type { ModuleTempInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import * as tmp from 'tmp';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
-import { fsPromiseTmpFile } from '../../util/fs';
-
-const debug = newDebug(__filename);
+import { fsPromiseTmpDir, fsPromiseTmpFile } from '../../util/fs';
 
 tmp.setGracefulCleanup();
 
@@ -35,4 +32,22 @@ export class ModuleTemp extends AbstractModuleBase<ModuleTempInterface, ModuleTe
   }
 }
 
+export class ModuleTempDir extends AbstractModuleBase<ModuleTempInterface, ModuleTempResult> {
+  async run(context: RunContext): Promise<ModuleRunResult<ModuleTempResult>> {
+    const { prefix, keep } = this.config;
+
+    const filePath = await fsPromiseTmpDir({
+      prefix,
+      keep,
+    });
+    context.logger.debug(`Created temporary directory: ${filePath}`);
+
+    return {
+      vars: { path: filePath },
+      changed: true,
+    };
+  }
+}
+
 moduleRegistryEntryFactory.register(ModuleTempSchema, ModuleTemp);
+moduleRegistryEntryFactory.register(ModuleTempDirSchema, ModuleTempDir);

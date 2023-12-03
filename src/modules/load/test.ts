@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import type { ModuleLoadResult } from './index';
 import { ModuleLoad } from './index';
@@ -8,16 +7,15 @@ import path from 'node:path';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
 
 describe('load module', () => {
+  testExamples(__dirname);
+
   test('load', async () => {
     const runContext = getTestRunContext();
 
-    const config: ModuleLoadInterface = {
-      file: { path: path.resolve(__dirname, 'test', 'random.yaml') },
-    };
+    const config: ModuleLoadInterface = { file: { path: path.resolve(__dirname, 'test', 'random.yaml') } };
 
     const module = new ModuleLoad(config);
 

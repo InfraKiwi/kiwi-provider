@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import type { RunnerContext, RunnerRunRecipesResult } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
@@ -11,11 +10,9 @@ import type { ContextLogger } from '../../util/context';
 import { fsPromiseReadFile, fsPromiseTmpFile } from '../../util/fs';
 import path from 'node:path';
 import type { Axios } from 'axios';
-import { downloadNodeDist, NodeJSArch, NodeJSPlatform } from '../../util/downloadNodeDist';
+import { downloadNodeDist, NodeJSExecutableArch, NodeJSExecutablePlatform } from '../../util/downloadNodeDist';
 import type { RunStatistics } from '../../util/runContext';
 import { createCJSRunnerBundle } from '../../util/createCJSRunnerBundle';
-
-const debug = newDebug(__filename);
 
 const waitCommands: { [k in DockerInspectPlatform]: string[] } = {
   linux: ['/bin/sh', '-c', 'while :; do sleep 2073600; done'],
@@ -42,7 +39,10 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async runRecipes(context: RunnerContext, archiveDir: string, ids: string[]): Promise<RunnerRunRecipesResult> {
-    context.logger.verbose(`Running recipes`, { archiveDir, ids });
+    context.logger.verbose(`Running recipes`, {
+      archiveDir,
+      ids,
+    });
     const logFile = await this.#dockerGetTmpFile(context, '.log');
     const statsFileName = await this.#dockerGetTmpFile(context, '.json');
 
@@ -63,9 +63,27 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     args.push(...ids);
 
-    const result = await this.#runnerExec(context, args);
+    let result: RunShellResult;
+    try {
+      result = await this.#runnerExec(context, args);
+    } finally {
+      const logFileLocal = await fsPromiseTmpFile({
+        keep: false,
+        discardDescriptor: true,
+        postfix: '.log',
+      });
+      await this.#dockerDownload(context, logFile, logFileLocal);
+      const logs = this.parseRunRecipesFromArchiveLogs(context, await fsPromiseReadFile(logFileLocal, 'utf-8'));
+      for (const entry of logs) {
+        context.logger.log(entry);
+      }
+    }
 
-    const statsFileLocal = await fsPromiseTmpFile({ keep: false, discardDescriptor: true, postfix: '.json' });
+    const statsFileLocal = await fsPromiseTmpFile({
+      keep: false,
+      discardDescriptor: true,
+      postfix: '.json',
+    });
     let statistics: Record<string, RunStatistics>;
     try {
       await this.#dockerDownload(context, statsFileName, statsFileLocal);
@@ -75,13 +93,6 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       statistics = {};
     }
 
-    const logFileLocal = await fsPromiseTmpFile({ keep: false, discardDescriptor: true, postfix: '.log' });
-    await this.#dockerDownload(context, logFile, logFileLocal);
-    const logs = this.parseRunRecipesFromArchiveLogs(context, await fsPromiseReadFile(logFileLocal, 'utf-8'));
-    for (const entry of logs) {
-      context.logger.log(entry);
-    }
-
     return {
       statistics,
       output: this.formatRunShellOutput(result),
@@ -89,7 +100,10 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async uploadFileToTmpFile(context: ContextLogger, src: string, extension?: string): Promise<string> {
-    context.logger.verbose(`Uploading to tmp file`, { src, extension });
+    context.logger.verbose(`Uploading to tmp file`, {
+      src,
+      extension,
+    });
     const tmpFile = await this.#dockerGetTmpFile(context, extension);
     await this.#dockerUpload(context, src, tmpFile);
     return tmpFile;
@@ -136,27 +150,27 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     return this.config.platform ?? RunnerDockerSupportedPlatforms['linux/amd64'];
   }
 
-  get #nodePlatform(): NodeJSPlatform {
+  get #nodePlatform(): NodeJSExecutablePlatform {
     const platform = this.#basePlatform;
     switch (platform) {
       case 'linux':
-        return NodeJSPlatform.linux;
+        return NodeJSExecutablePlatform.linux;
       case 'windows':
-        return NodeJSPlatform.win;
+        return NodeJSExecutablePlatform.win;
     }
-    throw new Error(`Unsupported node platform ${platform}`);
+    throw new Error(`Unsupported node platform ${platform as string}`);
   }
 
-  get #nodeArch(): NodeJSArch {
+  get #nodeArch(): NodeJSExecutableArch {
     const platform = this.#platform;
     const fullArch = platform.substring(platform.indexOf('/') + 1);
     switch (fullArch) {
       case 'amd64':
-        return NodeJSArch.x64;
+        return NodeJSExecutableArch.x64;
       case 'arm64':
-        return NodeJSArch.arm64;
+        return NodeJSExecutableArch.arm64;
       case 'arm/v7':
-        return NodeJSArch.armv7l;
+        return NodeJSExecutableArch.armv7l;
     }
     throw new Error(`Unsupported docker architecture ${fullArch}`);
   }
@@ -169,8 +183,8 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     await this.#dockerRun(context);
 
     /*
-    We need to set up the environment inside the container, meaning that we need a properly working
-    nodejs executable.
+     *We need to set up the environment inside the container, meaning that we need a properly working
+     *nodejs executable.
      */
     const nodePlatform = this.#nodePlatform;
     const nodeBin = await downloadNodeDist(context, {
@@ -179,7 +193,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     });
 
     const nodeBinDocker = await this.uploadFileToTmpFile(context, nodeBin, path.extname(nodeBin));
-    if (nodePlatform == NodeJSPlatform.linux || nodePlatform == NodeJSPlatform.darwin) {
+    if (nodePlatform == NodeJSExecutablePlatform.linux || nodePlatform == NodeJSExecutablePlatform.darwin) {
       // Make sure the node binary is executable
       await this.dockerExec(context, ['chmod', '+x', nodeBinDocker]);
     }
@@ -193,7 +207,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     // Then, prepare our run package
     {
-      const runnerBundle = await createCJSRunnerBundle(context);
+      const runnerBundle = await createCJSRunnerBundle(context, { entryPoint: this.entryPointFileName });
       const tmpFileDocker = await this.uploadFileToTmpFile(context, runnerBundle, '.cjs');
 
       // Test
@@ -225,7 +239,10 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   // -------- DOCKER SPECIFIC COMMANDS --------
 
   #dockerLogVerbose(context: ContextLogger, msg: string, args?: object) {
-    context.logger.verbose(msg, { cid: this.#assertContainerId(), ...args });
+    context.logger.verbose(msg, {
+      cid: this.#assertContainerId(),
+      ...args,
+    });
   }
 
   // Run a container, use the wait command, and return the container id
@@ -237,7 +254,11 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     const platform = this.#platform;
     const image = this.config.image;
-    context.logger.verbose(`Spinning up container`, { platform, image, waitCommand });
+    context.logger.verbose(`Spinning up container`, {
+      platform,
+      image,
+      waitCommand,
+    });
     const result = await this.#execDockerBinCommand(context, [
       'run',
       '--platform',
@@ -256,12 +277,18 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async #dockerUpload(context: ContextLogger, src: string, dst: string) {
-    this.#dockerLogVerbose(context, 'Uploading file to container', { src, dst });
+    this.#dockerLogVerbose(context, 'Uploading file to container', {
+      src,
+      dst,
+    });
     await this.#execDockerBinCommand(context, ['cp', src, `${this.#assertContainerId()}:${dst}`]);
   }
 
   async #dockerDownload(context: ContextLogger, src: string, dst: string) {
-    this.#dockerLogVerbose(context, 'Downloading file from container', { src, dst });
+    this.#dockerLogVerbose(context, 'Downloading file from container', {
+      src,
+      dst,
+    });
     await this.#execDockerBinCommand(context, ['cp', `${this.#assertContainerId()}:${src}`, dst]);
   }
 
@@ -271,8 +298,10 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async #dockerGetTmpFile(context: ContextLogger, extension?: string) {
-    // Upload to a temporary file
-    // https://shellgeek.com/use-powershell-to-create-temporary-file/
+    /*
+     * Upload to a temporary file
+     * https://shellgeek.com/use-powershell-to-create-temporary-file/
+     */
     const tmpFileCmd: string[] =
       this.#basePlatform == 'windows' ? ['powershell', '/C', '(New-TemporaryFile).FullName'] : ['mktemp'];
     const tmpFile = (await this.dockerExec(context, tmpFileCmd)).stdout.trim();
@@ -305,7 +334,10 @@ $fullPath`,
   }
 
   async #dockerExtractTarGZArchive(context: ContextLogger, archiveFile: string, dst: string) {
-    this.#dockerLogVerbose(context, 'Extracting archive in container', { archiveFile, dst });
+    this.#dockerLogVerbose(context, 'Extracting archive in container', {
+      archiveFile,
+      dst,
+    });
     const extractCmd: string[] = ['tar', '-xzf', archiveFile, '-C', dst];
     await this.dockerExec(context, extractCmd);
   }

@@ -1,6 +1,7 @@
 import util from 'node:util';
 import type { ExecFileOptions, ExecOptions } from 'node:child_process';
 import * as childProcess from 'node:child_process';
+import { spawn } from 'node:child_process';
 import type { ContextLogger } from './context';
 import type { ObjectEncodingOptions } from 'node:fs';
 import { getErrorPrintfClass } from './error';
@@ -36,9 +37,7 @@ export async function execShell(
   const { ignoreBadExitCode, ...otherOptions } = options;
   const promise = promiseExec(cmd, otherOptions);
   try {
-    const result = await runShellCommandInternal(context, promise, {
-      ignoreBadExitCode,
-    });
+    const result = await runShellCommandInternal(context, promise, { ignoreBadExitCode });
     context.logger.verbose(`Exec shell result`, {
       cmd,
       ...result,
@@ -61,15 +60,13 @@ export async function execCmd(
   const promise = promiseExecFile(cmd, args, otherOptions);
   try {
     options.logVerbose &&
-      context.logger.verbose(`Exec cmd`, {
+    context.logger.verbose(`Exec cmd`, {
         cmd,
         args,
       });
-    const result = await runShellCommandInternal(context, promise, {
-      ignoreBadExitCode,
-    });
+    const result = await runShellCommandInternal(context, promise, { ignoreBadExitCode });
     options.logVerbose &&
-      context.logger.verbose(`Exec cmd (result)`, {
+    context.logger.verbose(`Exec cmd (result)`, {
         cmd,
         args,
         ...result,
@@ -113,4 +110,12 @@ async function runShellCommandInternal(
     stderr,
     exitCode,
   };
+}
+
+export function spawnDetached(path: string, args: string[]) {
+  const cp = spawn(path, args, {
+    detached: true,
+    stdio: 'ignore',
+  });
+  cp.unref();
 }

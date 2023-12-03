@@ -1,6 +1,5 @@
-import { newDebug } from '../util/debug';
 import type { RunContext } from '../util/runContext';
-import { RecipeMinimalSchema, RecipeSchema, RecipeTestMockSchema } from './recipe.schema';
+import { contextVarAssetsDir, RecipeMinimalSchema, RecipeSchema, RecipeTestMockSchema } from './recipe.schema';
 import type {
   RecipeDependencyInterface,
   RecipeDependencyWithAlternativesInterface,
@@ -11,12 +10,13 @@ import type {
 } from './recipe.schema.gen';
 import { extractAllTemplates } from '../util/tpl';
 import type { VarsInterface } from './varsContainer.schema.gen';
+import type { TaskRunTasksInContextResult } from './task';
 import { Task } from './task';
 import path from 'node:path';
 import { fsPromiseExists, fsPromiseStat } from '../util/fs';
 
 import type { InventoryHost } from './inventoryHost';
-import { DataSourceFile } from '../dataSources/file';
+import { DataSourceFile, DataSourceFileErrorFileNotFound } from '../dataSources/file';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import type { AbstractRecipeSourceInstance } from '../recipeSources/abstractRecipeSource';
@@ -30,8 +30,8 @@ import { TestMockBaseSchema } from './testingCommon.schema';
 import type { AbstractModuleBaseInstance } from '../modules/abstractModuleBase';
 import { TestMock } from './testingCommon';
 import type { ConditionSetInterface } from './testingCommon.schema.gen';
-
-const debug = newDebug(__filename);
+import { VarsContainer } from './varsContainer';
+import { VarsContainerSchema } from './varsContainer.schema';
 
 export interface RecipeCtorContext extends ContextLogger, ContextRecipeSourceList, ContextWorkDir {}
 
@@ -69,15 +69,15 @@ export class RecipeTestMock extends TestMock {
     this.#module = module;
   }
 
-  matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): boolean {
+  async matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): Promise<boolean> {
     if (module.registryEntry.entryName != this.#module.entryName) {
       return false;
     }
-    return super.matchesModuleConfig(context, module);
+    return await super.matchesModuleConfig(context, module);
   }
 }
 
-export class Recipe {
+export class Recipe extends VarsContainer {
   readonly config: RecipeInterface;
   readonly meta?: RecipeMetadata;
 
@@ -87,10 +87,12 @@ export class Recipe {
   readonly #recipeSourcesCombinedWithMinimal?: RecipeSourceList;
 
   constructor(context: RecipeCtorContext, config: RecipeInterface, meta?: RecipeMetadata) {
-    this.config = Joi.attempt(config, RecipeSchema, 'validate recipe config');
+    config = Joi.attempt(config, RecipeSchema, 'validate recipe config');
+    super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
+    this.config = config;
+
     this.meta = meta;
 
-    this.config.vars = extractAllTemplates(this.config.vars);
     this.config.hostVars = extractAllTemplates(this.config.hostVars);
     this.config.groupVars = extractAllTemplates(this.config.groupVars);
     this.#tasks = this.config.tasks.map((taskInterface) => new Task(extractAllTemplates(taskInterface)));
@@ -166,13 +168,21 @@ export class Recipe {
     }
 
     const ds = new DataSourceFile({ path: p });
-    const fileName = await ds.findValidFilePath(context);
-    const data = await ds.load(context);
+    let fileName: string;
+    try {
+      fileName = await ds.findValidFilePath(context);
+    } catch (ex) {
+      if (ex instanceof DataSourceFileErrorFileNotFound) {
+        throw new Error(`Recipe not found at ${p}`, { cause: ex });
+      }
+      throw ex;
+    }
+    const data = await ds.loadVars(context);
     if (data == null) {
       throw new Error(`Empty recipe found at ${fileName}`);
     }
     const id = context.workDir == null ? undefined : fileName.replace(context.workDir + path.sep, '');
-    const recipe = new Recipe(context, data as RecipeInterface, {
+    const recipe = new Recipe(context, data as unknown as RecipeInterface, {
       fileName,
       id,
     });
@@ -203,9 +213,7 @@ export class Recipe {
       return {};
     }
     if (typeof arg == 'string') {
-      return {
-        version: arg,
-      };
+      return { version: arg };
     }
     return arg;
   }
@@ -245,9 +253,9 @@ export class Recipe {
 
   #getCombinedRecipeSources(context: RecipeCtorContext): RecipeSourceList | undefined {
     /*
-    1. Local dir
-    2. Local sources
-    3. Ctx sources
+     *1. Local dir
+     *2. Local sources
+     *3. Ctx sources
      */
 
     const minimalRecipeSources = this.#getMinimalRecipeSources(context);
@@ -255,7 +263,7 @@ export class Recipe {
       ? RecipeSourceList.mergePrepend(context, this.#recipeSources, minimalRecipeSources)
       : minimalRecipeSources;
 
-    if (this.config.ignoreContextSources || context.recipeSources == null) {
+    if (this.config.ignoreContextSources == true || context.recipeSources == null) {
       return minimalPlusLocal;
     }
 
@@ -312,28 +320,27 @@ export class Recipe {
     }
   }
 
-  async run(
-    context: RunContext,
-    // If provided, use these pre-aggregated vars instead of performing
-    // the aggregation at runtime. Use case: compile
-    aggregatedVars?: VarsInterface,
-  ): Promise<RecipeRunResult> {
+  async run(context: RunContext): Promise<RecipeRunResult> {
     context = context
       .clone({
-        // Here we use the combined sources without minimal because the minimal
-        // ones are defined at runtime automatically and belong only to each own recipe
+        /*
+         * Here we use the combined sources without minimal because the minimal
+         * ones are defined at runtime automatically and belong only to each own recipe
+         */
         recipeSources: this.#recipeSourcesCombinedWithMinimal,
+        workDir: this.meta?.fileName ? path.dirname(this.meta.fileName) : context.workDir,
+
+        // Every new recipe run has its own shutdown hooks
+        shutdownHooks: [],
       })
-      .withLoggerFields({
-        statistics: context.statistics,
-      })
+      .withLoggerFields({ statistics: context.statistics })
       .prependTestMocks(this.#testMocks);
 
     // Store the original vars
     const oldVars = context.vars;
 
     // Process variables from recipe
-    aggregatedVars ??= await this.aggregateHostVars(context, context.host, context.vars);
+    const aggregatedVars = await this.aggregateHostVars(context, context.host, context.vars);
 
     // Swap vars with local ones
     context.vars = aggregatedVars;
@@ -341,7 +348,15 @@ export class Recipe {
 
     context.logger.info('Running recipe');
 
-    const { changed, accumulatedVars, exit } = await Task.runTasksInContext(context, this.#tasks);
+    let taskRunResult: TaskRunTasksInContextResult;
+
+    try {
+      taskRunResult = await Task.runTasksInContext(context, this.#tasks);
+    } finally {
+      await context.executeShutdownHooks();
+    }
+
+    const { changed, vars, exit } = taskRunResult;
 
     // Restore the original vars
     context.vars = oldVars;
@@ -350,7 +365,7 @@ export class Recipe {
 
     return {
       changed,
-      vars: accumulatedVars,
+      vars: vars,
     };
   }
 
@@ -364,29 +379,29 @@ export class Recipe {
   }
 
   /*
-  I MEAN
-
-  command line values (for example, -u my_user, these are not variables)
-  role defaults (defined in role/defaults/main.yml)
-  [XXX] inventory file vars
-  [XXX] inventory group_vars/all
-  [XXX] playbook group_vars/all
-  [XXX] inventory group_vars/*
-  [XXX] playbook group_vars/*
-  [XXX] inventory host_vars/*
-  [XXX] playbook host_vars/*
-  [TODO] host facts / cached set_facts
-  [TODO] play vars
-  [TODO] play vars_prompt
-  [TODO] play vars_files
-  [TODO] role vars (defined in role/vars/main.yml)
-  [TODO] block vars (only for tasks in block)
-  [TODO] task vars (only for the task)
-  [TODO] include_vars
-  [TODO] set_facts / registered vars
-  [TODO] role (and include_role) params
-  [TODO] include params
-  [TODO] extra vars (for example, -e "user=my_user")(always win precedence)
+   *I MEAN
+   *
+   *command line values (for example, -u my_user, these are not variables)
+   *role defaults (defined in role/defaults/main.yml)
+   *[XXX] inventory file vars
+   *[XXX] inventory group_vars/all
+   *[XXX] playbook group_vars/all
+   *[XXX] inventory group_vars/*
+   *[XXX] playbook group_vars/*
+   *[XXX] inventory host_vars/*
+   *[XXX] playbook host_vars/*
+   *[TODO] host facts / cached set_facts
+   *[TODO] play vars
+   *[TODO] play vars_prompt
+   *[TODO] play vars_files
+   *[TODO] role vars (defined in role/vars/main.yml)
+   *[TODO] block vars (only for tasks in block)
+   *[TODO] task vars (only for the task)
+   *[TODO] include_vars
+   *[TODO] set_facts / registered vars
+   *[TODO] role (and include_role) params
+   *[TODO] include params
+   *[TODO] extra vars (for example, -e "user=my_user")(always win precedence)
    */
 
   async aggregateHostVars(
@@ -394,9 +409,11 @@ export class Recipe {
     host: InventoryHost,
     contextVars?: VarsInterface,
   ): Promise<VarsInterface> {
+    await this.loadVars(context);
+
     const vars: VarsInterface = {
       ...contextVars,
-      __assetsDir: await this.getAssetsDir(),
+      [contextVarAssetsDir]: await this.getAssetsDir(),
     };
 
     // playbook group_vars/*
@@ -408,20 +425,24 @@ export class Recipe {
     // playbook host_vars/*
     Object.assign(vars, this.config.hostVars?.[host.id]);
 
-    // [TODO] host facts / cached set_facts
-    // play vars
-    Object.assign(vars, this.config.vars);
+    /*
+     * [TODO] host facts / cached set_facts
+     * play vars
+     */
+    Object.assign(vars, this.vars);
 
-    // [TODO] play vars_prompt
-    // [TODO] play vars_files
-    // [TODO] role vars (defined in role/vars/main.yml)
-    // [TODO] block vars (only for tasks in block)
-    // [TODO] task vars (only for the task)
-    // [TODO] include_vars
-    // [TODO] set_facts / registered vars
-    // [TODO] role (and include_role) params
-    // [TODO] include params
-    // [TODO] extra vars (for example, -e "user=my_user")(always win precedence)
+    /*
+     * [TODO] play vars_prompt
+     * [TODO] play vars_files
+     * [TODO] role vars (defined in role/vars/main.yml)
+     * [TODO] block vars (only for tasks in block)
+     * [TODO] task vars (only for the task)
+     * [TODO] include_vars
+     * [TODO] set_facts / registered vars
+     * [TODO] role (and include_role) params
+     * [TODO] include params
+     * [TODO] extra vars (for example, -e "user=my_user")(always win precedence)
+     */
 
     return vars;
   }

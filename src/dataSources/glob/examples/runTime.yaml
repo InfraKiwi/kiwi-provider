@@ -1,0 +1,13 @@
+tasks:
+  # Loads the vars at run-time
+  - load:
+      glob: pattern=./vars/*.yaml
+      flatten: true
+    out: globVars
+
+  # Outputs "Hello world! It's my life!"
+  - debug: Hello ${{ globVars.hello }}! It's ${{ globVars.its }}!
+
+  ### Testing
+  - test: globVars.hello == "world"
+  - test: globVars.its == "my life"

@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { HostSourceHTTPSchema } from './schema';
 import { hostSourceRegistryEntryFactory } from '../registry';
 
@@ -8,8 +7,6 @@ import { AbstractHostSource } from '../abstractHostSource';
 import { MultiDataSourceHTTPList } from '../../dataSources/httpList';
 import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 import type { HostSourceHTTPInterface, HostSourceHTTPInterfaceConfigKey } from './schema.gen';
-
-const debug = newDebug(__filename);
 
 export class HostSourceHTTP extends AbstractHostSource<HostSourceHTTPInterface, HostSourceHTTPInterfaceConfigKey> {
   #ds = new MultiDataSourceHTTPList<VarsInterface>(this.config);

@@ -1,15 +1,12 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleSwitchSchema } from './schema';
 import type { ModuleSwitchCaseFullInterface, ModuleSwitchInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
 import { IfTemplate } from '../../util/tpl';
 import { Task } from '../../components/task';
 import type { VarsInterface } from '../../components/varsContainer.schema.gen';
-
-const debug = newDebug(__filename);
 
 export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, VarsInterface> {
   async #evaluateCaseIf(context: RunContext, c: ModuleSwitchCaseFullInterface, value: unknown): Promise<boolean> {
@@ -42,7 +39,7 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
         }
 
         found = true;
-        tasksToExecute.push(...(c.tasks ?? [c.task!]).map((t) => new Task(t)));
+        tasksToExecute.push(...(Array.isArray(c.task) ? c.task : [c.task]).map((t) => new Task(t)));
         if (c.fallthrough) {
           continue;
         }
@@ -66,12 +63,12 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
       );
     }
 
-    const { changed, accumulatedVars, exit } = await Task.runTasksInContext(context, tasksToExecute);
+    const { changed, vars, exit } = await Task.runTasksInContext(context, tasksToExecute);
 
     context.vars = oldVars;
 
     return {
-      vars: accumulatedVars,
+      vars: vars,
       exit,
       changed: changed,
     };

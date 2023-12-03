@@ -1,0 +1,31 @@
+tasks:
+  - httpListener:
+      routes:
+        '/hello':
+          get: !!eval |
+            return (req, res) => {
+              res.send('World')
+            }
+        '/helloJSON':
+          get:
+            json:
+              text: World
+        '/helloRaw':
+          get:
+            raw: World
+    out: listener
+
+  - http:
+      url: http://${{ listener.address }}/hello
+    out: resp
+  - test: resp.data == "World"
+
+  - http:
+      url: http://${{ listener.address }}/helloJSON
+    out: resp
+  - test: resp.data.text == "World"
+
+  - http:
+      url: http://${{ listener.address }}/helloRaw
+    out: resp
+  - test: resp.data == "World"

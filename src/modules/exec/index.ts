@@ -1,7 +1,6 @@
-import { newDebug } from '../../util/debug';
 import { ModuleExecSchema } from './schema';
 import type { RunContext } from '../../util/runContext';
-import type { ModuleExecInterface } from './schema.gen';
+import type { ModuleExecInterface, ModuleExecResultInterface } from './schema.gen';
 import { moduleRegistryEntryFactory } from '../registry';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
@@ -9,29 +8,20 @@ import type { ExecCmdOptions } from '../../util/exec';
 import { execCmd } from '../../util/exec';
 import { getErrorPrintfClass } from '../../util/error';
 
-const debug = newDebug(__filename);
-
-export interface ModuleExecResult {
-  stdout: string;
-  stderr: string;
-  exitCode: number;
-}
-
 const ModuleExecErrorBadExitCode = getErrorPrintfClass('ModuleExecErrorBadExitCode', `Bad exit code: %d`);
 
-export class ModuleExec extends AbstractModuleBase<ModuleExecInterface, ModuleExecResult> {
-  protected get disableShortie(): boolean {
-    return true;
-  }
-
+export class ModuleExec extends AbstractModuleBase<ModuleExecInterface, ModuleExecResultInterface> {
   get label(): string | undefined {
     return JSON.stringify(this.config);
   }
 
-  async run(context: RunContext): Promise<ModuleRunResult<ModuleExecResult>> {
+  async run(context: RunContext): Promise<ModuleRunResult<ModuleExecResultInterface>> {
     let cmd: string;
     let args: string[] | undefined;
     let workDir: string | undefined;
+    let uid: number | undefined;
+    let gid: number | undefined;
+    let env: Record<string, string> | undefined;
 
     if (typeof this.config == 'string') {
       cmd = this.config;
@@ -44,11 +34,18 @@ export class ModuleExec extends AbstractModuleBase<ModuleExecInterface, ModuleEx
       cmd = this.config.cmd;
       args = this.config.args;
       workDir = this.config.workDir;
+      workDir = this.config.workDir;
+      uid = this.config.uid;
+      gid = this.config.gid;
+      env = this.config.env;
     }
 
     const options: ExecCmdOptions = {
       cwd: workDir ?? context.workDir,
       ignoreBadExitCode: true,
+      uid,
+      gid,
+      env,
     };
 
     const result = await execCmd(context, cmd, args, options);

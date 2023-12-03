@@ -1,0 +1,11 @@
+tasks:
+  # Loads the vars at run-time
+  - load:
+      file: path=./vars/someVars.yaml
+    out: someVars
+
+  # Outputs "Hello world"
+  - debug: Hello ${{ someVars.hello }}
+
+  ### Testing
+  - test: someVars.hello == "world"

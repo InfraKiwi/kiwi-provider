@@ -1,15 +1,12 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleStatSchema } from './schema';
 import type { ModuleStatInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import type fs from 'node:fs';
 import { getErrorPrintfClass } from '../../util/error';
 import { fsPromiseExists, fsPromiseLStat, fsPromiseStat } from '../../util/fs';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
 
 export interface ModuleStatResultStat {
   isFile: boolean;

@@ -1,18 +1,22 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import { ModuleEval } from './index';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
+import { testExamples } from '../../util/testUtils';
+import path from 'node:path';
 
-const debug = newDebug(__filename);
+const testDir = path.join(__dirname, 'test');
 
 interface CodeTest {
-  code: string;
+  code?: string;
+  file?: string;
   fail?: boolean | string;
   expectVars?: object;
 }
 
 describe('eval module', () => {
+  testExamples(__dirname);
+
   const codeTests: CodeTest[] = [
     {
       code: `
@@ -55,6 +59,10 @@ describe('eval module', () => {
       `,
       fail: 'meh',
     },
+    {
+      file: path.join(testDir, 'assets', 'import.js'),
+      expectVars: { addResult: 108 },
+    },
   ];
 
   test.each(codeTests)('$#', async (args: CodeTest) => {
@@ -62,6 +70,7 @@ describe('eval module', () => {
 
     const module = new ModuleEval({
       code: args.code,
+      file: args.file,
     });
 
     const result = await module.run(runContext);

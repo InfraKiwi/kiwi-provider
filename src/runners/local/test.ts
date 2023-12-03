@@ -2,14 +2,13 @@ import { afterAll, describe, test } from '@jest/globals';
 import type { RunnerLocal } from './index';
 import type { ContextLogger } from '../../util/context';
 import { newLogger } from '../../util/logger';
-import { testTimeoutLong } from '../../util/testUtils';
 import type { TestSuiteInterface } from '../../components/testSuite.schema.gen';
 import { TestSuite } from '../../components/testSuite';
+import { testTimeoutLong } from '../../util/constants';
+import { testExamples } from '../../util/testUtils';
 
 const logger = newLogger();
-const context: ContextLogger = {
-  logger,
-};
+const context: ContextLogger = { logger };
 
 const allRunners = new Set<RunnerLocal>();
 afterAll(async () => {
@@ -19,21 +18,17 @@ afterAll(async () => {
 }, testTimeoutLong);
 
 describe('local runner', () => {
+  testExamples(__dirname);
+
   test(
     'it runs a simple test suite',
     async () => {
       const testSuiteConfig: TestSuiteInterface = {
-        runner: {
-          local: {},
-        },
+        runner: { local: {} },
         tests: [
           {
             label: 'my_test',
-            tasks: [
-              {
-                debug: 'Hello',
-              },
-            ],
+            tasks: [{ debug: 'Hello' }],
           },
         ],
       };

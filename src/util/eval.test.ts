@@ -1,8 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
 import { evalCodeWithBuiltins, evalCodeSimple } from './eval';
-import { newDebug } from './debug';
-
-const debug = newDebug(__filename);
 
 interface CodeTest {
   simple?: boolean;

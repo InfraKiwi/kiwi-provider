@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { afterAll, describe, expect, test } from '@jest/globals';
 import type { ModuleStoreResult } from './index';
 import { ModuleStore, ModuleStoreUnknownFileExtension } from './index';
@@ -12,8 +11,8 @@ import * as os from 'node:os';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
+import { testExamples } from '../../util/testUtils';
 
-const debug = newDebug(__filename);
 const promiseRM = promisify(fs.rm);
 
 interface ModuleStoreTest {
@@ -24,7 +23,10 @@ interface ModuleStoreTest {
 
 const tmpDir: string = fs.mkdtempSync(path.resolve(os.tmpdir(), 'ModuleStoreTest'));
 afterAll(async () => {
-  await promiseRM(tmpDir, { recursive: true, force: true });
+  await promiseRM(tmpDir, {
+    recursive: true,
+    force: true,
+  });
 });
 
 let tmpCounter = 0;
@@ -34,6 +36,8 @@ function getTempFile(ext: string): string {
 }
 
 describe('store module', () => {
+  testExamples(__dirname);
+
   const existingFileName = getTempFile('yaml');
 
   const tests: ModuleStoreTest[] = [
@@ -42,7 +46,10 @@ describe('store module', () => {
         path: getTempFile('yaml'),
         content: { hello: 'world' },
       },
-      expect: { vars: { content: dump({ hello: 'world' }) }, changed: true },
+      expect: {
+        vars: { content: dump({ hello: 'world' }) },
+        changed: true,
+      },
     },
     // --- Overwriting
     {
@@ -50,21 +57,30 @@ describe('store module', () => {
         path: existingFileName,
         content: 123,
       },
-      expect: { vars: { content: '123\n' }, changed: true },
+      expect: {
+        vars: { content: '123\n' },
+        changed: true,
+      },
     },
     {
       args: {
         path: existingFileName,
         content: 123,
       },
-      expect: { vars: { content: '123\n' }, changed: false },
+      expect: {
+        vars: { content: '123\n' },
+        changed: false,
+      },
     },
     {
       args: {
         path: existingFileName,
         content: 1234,
       },
-      expect: { vars: { content: '1234\n' }, changed: true },
+      expect: {
+        vars: { content: '1234\n' },
+        changed: true,
+      },
     },
     {
       args: {
@@ -79,7 +95,10 @@ describe('store module', () => {
         content: 'hey',
         raw: true,
       },
-      expect: { vars: { content: 'hey' }, changed: true },
+      expect: {
+        vars: { content: 'hey' },
+        changed: true,
+      },
     },
   ];
 
@@ -96,7 +115,10 @@ describe('store module', () => {
 
     await expect(module.run(runContext)).resolves.toEqual({
       changed: t.expect?.changed,
-      vars: { path: module.filePath, ...t.expect?.vars },
+      vars: {
+        path: module.filePath,
+        ...t.expect?.vars,
+      },
     });
   });
 });

@@ -1,72 +1,79 @@
 import Joi from 'joi';
-import { joiMetaClassName, joiValidateValidIfTemplate } from '../util/joi';
+import { joiMetaClassName, joiMetaUnknownType, joiValidateValidIfTemplate } from '../util/joi';
 import { VarsSchema } from './varsContainer.schema';
 import { ModuleFailFullSchema } from '../modules/fail/schema';
 import { ModuleExitFullSchema } from '../modules/exit/schema';
-import { TestMockBaseSchema, ConditionSetSchema } from './testingCommon.schema';
+import { ConditionSetSchema, TestMockBaseSchema } from './testingCommon.schema';
 
-export const FailedIfFullInterface = ModuleFailFullSchema.append({
+export const FailedIfFullSchema = ModuleFailFullSchema.append({
   if: Joi.string().custom(joiValidateValidIfTemplate).required(),
 }).meta(joiMetaClassName('FailedIfFullInterface'));
 
-export const ExitIfFullInterface = ModuleExitFullSchema.append({
+export const ExitIfFullSchema = ModuleExitFullSchema.append({
   if: Joi.string().custom(joiValidateValidIfTemplate).required(),
 }).meta(joiMetaClassName('ExitIfFullInterface'));
 
-export const TaskTestMockSchema = TestMockBaseSchema.append({
-  if: ConditionSetSchema,
-}).meta(joiMetaClassName('TaskTestMockInterface'));
+export const TaskTestMockSchema = TestMockBaseSchema.append({ if: ConditionSetSchema }).meta(
+  joiMetaClassName('TaskTestMockInterface'),
+);
 
 export const TaskSchema = Joi.object({
-  /*
-  A friendly identifier for the task
-  */
-  label: Joi.string(),
+  label: Joi.string().description(`
+  A friendly identifier for the task, which will be printed in logs.
+`),
 
-  /*
+  if: Joi.string().custom(joiValidateValidIfTemplate).description(`
   When provided, the task will be executed only if this condition succeeds.
-  Expects a template that would work inside an `if` condition.
-  */
-  if: Joi.string().custom(joiValidateValidIfTemplate),
+  Expects a template that would work inside an \`if\` condition.
+`),
 
-  /*
-  When provided, the task will fail if this condition succeeds.
-  Expects a template that would work inside an `if` condition.
-   */
-  failedIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), FailedIfFullInterface]),
+  vars: VarsSchema.description(`
+  Any vars you want to provide to the task.
+  `),
 
-  /*
-  When provided, the recipe will stop successfully if this condition succeeds.
-  Expects a template that would work inside an `if` condition.
-   */
-  exitIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), ExitIfFullInterface]),
-
-  /*
+  out: Joi.string().description(`
   If provided, registers any output variables into the variable name
-  provided as value of the `out` argument
-  */
-  out: Joi.string(),
+  provided as value of the \`out\` argument.
+  `),
 
-  /*
+  failedIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), FailedIfFullSchema]).description(`
+  When provided, the task will fail if this condition succeeds.
+  Expects a template that would work inside an \`if\` condition.
+`),
+
+  exitIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), ExitIfFullSchema]).description(`
+  When provided, the recipe will stop successfully if this condition succeeds.
+  Expects a template that would work inside an \`if\` condition.  
+`),
+
+  global: Joi.boolean().description(`
+  If true, registers any output variables into the global context.
+  `),
+
+  sensitive: Joi.boolean().description(`  
   If true, all registered variables will be treated as secrets
-  E.g. useful for logging purposes
-  */
-  sensitive: Joi.boolean(),
+  E.g. useful for logging purposes.
+  `),
 
-  /*
-  Any vars you want to provide to the task
-  */
-  vars: VarsSchema,
-
-  /*
+  keepPreviousTaskResult: Joi.boolean().description(`
   Really only meant for debugging purposes, preserves the result of the
   previous task and does not overwrite it. E.g. useful while using the debug
-  module
-  */
-  keepPreviousTaskResult: Joi.boolean(),
+  module.
+  `),
 
-  // Enabled only in testing mode
-  testMocks: Joi.array().items(TaskTestMockSchema),
+  // TODO
+  testMocks: Joi.array().items(TaskTestMockSchema).description(`
+  Enabled only in testing mode.
+  `),
 })
   .unknown(true)
-  .meta({ className: 'TaskInterface' });
+  .meta({
+    className: 'TaskInterface',
+    ...joiMetaUnknownType(Joi.any().description(`The module to use in the task.`)),
+  })
+  .description(
+    `
+  Defines a task to be executed.
+  `,
+  );
+// .example('You can check the available task modules here: ' + getRegistryEntriesTypeRefString('modules', __dirname));

@@ -1,14 +1,11 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleEvalSchema } from './schema';
 import type { ModuleEvalInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import { evalCodeWithBuiltins } from '../../util/eval';
 import { fsPromiseReadFile } from '../../util/fs';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ModuleEvalResult = any;
@@ -32,6 +29,7 @@ export class ModuleEval extends AbstractModuleBase<ModuleEvalInterface, ModuleEv
     const evalContext = {
       context,
       result,
+      __filename: this.config.file ? this.config.file : undefined,
     };
 
     try {

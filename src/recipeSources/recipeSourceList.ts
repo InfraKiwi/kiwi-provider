@@ -58,9 +58,7 @@ export class RecipeSourceList {
 
     const newEntries = this.#config.map((el) => {
       // Copy because we may overwrite some elements, like the workdir
-      const elClone: RecipeSourceWrapperInterface = {
-        ...el,
-      };
+      const elClone: RecipeSourceWrapperInterface = { ...el };
       // Always preset the workdir
       elClone.workDir ??= context.workDir;
 

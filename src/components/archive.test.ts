@@ -24,9 +24,7 @@ export async function getTestArchive(): Promise<Archive> {
     ...context,
     recipeSources: new RecipeSourceList(context, [
       {
-        dir: {
-          path: testDir,
-        },
+        dir: { path: testDir },
         trusted: true,
       },
     ]),

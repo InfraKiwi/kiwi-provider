@@ -56,8 +56,6 @@ export abstract class VarsContainer {
   }
 
   toJSON() {
-    return {
-      vars: this.vars,
-    };
+    return { vars: this.vars };
   }
 }

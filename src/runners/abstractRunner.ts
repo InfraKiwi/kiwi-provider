@@ -4,6 +4,7 @@ import type { RunStatistics } from '../util/runContext';
 import process from 'node:process';
 import type { LogEntry } from 'winston';
 import type { RunShellResult } from '../util/exec';
+import path from 'node:path';
 
 export interface RunnerContext extends ContextLogger {
   testingMode?: boolean;
@@ -15,7 +16,7 @@ export interface RunnerRunRecipesResult {
 }
 
 /*
-By adding any of these runners, the whole system becomes also a push one. Heh.
+ *By adding any of these runners, the whole system becomes also a push one. Heh.
  */
 export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<ConfigType> {
   // Used to execute commands before the test run
@@ -24,22 +25,18 @@ export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<C
   // Used to execute commands after the test run
   async tearDown(context: ContextLogger): Promise<void> {}
 
-  //
-  // // Upload a generic file to a temporary one and return the tmp file path
-  // abstract uploadFileToTmpFile(context: ContextLogger, src: string, extension?: string): Promise<string>;
-
-  // Function used to upload a generic archive, must support .tar.gz and .zip archives
-  // Returns the archive path.
+  /*
+   * Function used to upload a generic archive, must support .tar.gz archives.
+   * Returns the archive path.
+   */
   abstract uploadAndExtractTarGZArchive(context: ContextLogger, src: string): Promise<string>;
-
-  // // // Runs a command with the provided arguments
-  // // abstract cmdExec(context:ContextLogger, command:string, args: string[]): Promise<RunShellResult>
-  // //
-  // // // Runs node with the provided arguments
-  // // abstract nodeExec(context:ContextLogger, args: string[]): Promise<RunShellResult>
 
   // Executes a recipe of the uploaded archive
   abstract runRecipes(context: RunnerContext, archiveDir: string, id: string[]): Promise<RunnerRunRecipesResult>;
+
+  protected get entryPointFileName() {
+    return path.join(__dirname, '..', '..', 'cmd', 'cli.ts');
+  }
 
   protected assertNodeDistVersion(detectedVersion: string) {
     if (detectedVersion != process.version) {
@@ -56,7 +53,10 @@ export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<C
         .filter((s) => s != '')
         .map((line) => JSON.parse(line));
     } catch (ex) {
-      context.logger.error(`Failed to parse runRecipesFromArchive logs`, { error: ex, logs });
+      context.logger.error(`Failed to parse runRecipesFromArchive logs`, {
+        error: ex,
+        logs,
+      });
     }
     return [];
   }

@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import { ModuleHTTP } from './index';
 
@@ -9,8 +8,7 @@ import { promisify } from 'node:util';
 import type { AddressInfo } from 'node:net';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
 
 function getTestHTTPServer(callback: (err: unknown, server: http.Server) => void) {
   const app = express();
@@ -53,23 +51,34 @@ interface ModuleHTTPTest {
 }
 
 describe('http module', () => {
+  testExamples(__dirname);
+
   const tests: ModuleHTTPTest[] = [
     {
       config: { url: '/hello' },
       expectData: 'world',
     },
     {
-      config: { url: '/err', validStatus: [400] },
+      config: {
+        url: '/err',
+        validStatus: [400],
+      },
       expectData: 'Meh!',
       expectStatus: 400,
     },
     {
-      config: { url: '/err', validStatus: '4\\d{2}' },
+      config: {
+        url: '/err',
+        validStatus: '4\\d{2}',
+      },
       expectData: 'Meh!',
       expectStatus: 400,
     },
     {
-      config: { url: '/query', params: { hello: 'world' } },
+      config: {
+        url: '/query',
+        params: { hello: 'world' },
+      },
       expectData: { hello: 'world' },
     },
   ];
@@ -78,9 +87,7 @@ describe('http module', () => {
     const address = testHTTPServer.address() as AddressInfo;
     // noinspection HttpUrlsUsage
     const baseURL = `http://${address.address}:${address.port}`;
-    const baseConfig: ModuleHTTPInterface = {
-      baseURL,
-    };
+    const baseConfig: ModuleHTTPInterface = { baseURL };
 
     const runContext = getTestRunContext();
 

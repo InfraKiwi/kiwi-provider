@@ -1,0 +1,7 @@
+tasks:
+  # Execute an external JS file
+  - eval:
+      file: ${{ __assetsDir }}/file.js
+    out: evalVars
+
+  - test: evalVars.hello == "World"

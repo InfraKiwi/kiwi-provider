@@ -1,0 +1,8 @@
+site_name: logsStorage
+docs_dir: ../../src/logsStorage
+
+nav:
+  - README.md
+  ### REPLACE NAV BEGIN
+  - 'dir': ./dir/README.md
+  ### REPLACE NAV END

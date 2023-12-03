@@ -3,10 +3,11 @@ import { TaskSchema } from './task.schema';
 import { joiMetaClassName, joiObjectWithPattern, joiValidateSemVer, joiValidateValidJoiSchema } from '../util/joi';
 
 import { RecipeSourceListSchema } from '../recipeSources/recipeSourceList.schema';
-import { VarsSchema } from './varsContainer.schema';
-import { TestMockBaseSchema, ConditionSetSchema } from './testingCommon.schema';
+import { VarsContainerSchemaObject, VarsSchema } from './varsContainer.schema';
+import { ConditionSetSchema, TestMockBaseSchema } from './testingCommon.schema';
 
 export const regexRecipeId = /^(?:(\w+):)?(.+)$/;
+export const contextVarAssetsDir = '__assetsDir';
 
 export const RecipeTargetsSchema = Joi.array().items(Joi.string()).meta(joiMetaClassName('RecipeTargetsInterface'));
 
@@ -40,8 +41,11 @@ export const RecipeInputsSchema = joiObjectWithPattern(
 
 export const RecipeTestMockSchema = TestMockBaseSchema.pattern(
   Joi.string(),
-  // NOTE: this explicitly uses the .pattern instead of joiObjectAddPattern to not
-  // trigger the TS incompatibility on indexed keys with different value types
+
+  /*
+   * NOTE: this explicitly uses the .pattern instead of joiObjectAddPattern to not
+   * trigger the TS incompatibility on indexed keys with different value types
+   */
   ConditionSetSchema,
 ).meta(joiMetaClassName('RecipeTestMockInterface'));
 
@@ -52,20 +56,18 @@ export const RecipeMinimalSchema = Joi.object({
   // The tasks to execute in this recipe
   tasks: Joi.array().items(TaskSchema).min(1).required(),
 
-  // Optional vars passed to the recipe
-  vars: VarsSchema,
-
   // Input validation
   inputs: RecipeInputsSchema,
 
   // Enabled only in testing mode
   testMocks: Joi.array().items(RecipeTestMockSchema),
-})
-  .append(hostVarsBlock)
-  .meta({ className: 'RecipeMinimalInterface' });
+
+  ...VarsContainerSchemaObject,
+  ...hostVarsBlock,
+}).meta({ className: 'RecipeMinimalInterface' });
 
 /*
-The full schema contains all elements that are not allowed in a dependency
+ *The full schema contains all elements that are not allowed in a dependency
  */
 export const RecipeSchema = RecipeMinimalSchema.append({
   // The list of targets this recipe will be run on
@@ -76,8 +78,10 @@ export const RecipeSchema = RecipeMinimalSchema.append({
 
   recipeSources: RecipeSourceListSchema,
 
-  // If true, use only the recipe sources provided in the recipe config instead of using the ones also provided
-  // by the recipe and the upper context
+  /*
+   * If true, use only the recipe sources provided in the recipe config instead of using the ones also provided
+   * by the recipe and the upper context
+   */
   ignoreContextSources: Joi.boolean(),
 })
   .required()

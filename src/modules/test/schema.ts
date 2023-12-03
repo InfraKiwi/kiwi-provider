@@ -1,9 +1,6 @@
-import { newDebug } from '../../util/debug';
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
 import { joiMetaClassName, joiObjectWithPattern, joiValidateValidIfTemplate } from '../../util/joi';
-
-const debug = newDebug(__filename);
 
 const ModuleTestSchemaCondition = Joi.string().custom(joiValidateValidIfTemplate);
 

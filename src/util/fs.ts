@@ -28,7 +28,10 @@ export const fsPromiseWriteFile = promisify(fs.writeFile);
 export const fsPromiseTmpFile = promisify<FileOptionsDiscardFd, string>(tmp.file);
 export const fsPromiseTmpDir = promisify<DirOptions, string>(tmp.dir);
 
-export async function getAllFiles(dirPath: string, prefix?: string): Promise<string[]> {
+export const fsPromiseIsDir = async (dirPath: string) =>
+  (await fsPromiseExists(dirPath)) && (await fsPromiseStat(dirPath)).isDirectory();
+
+export async function getAllFiles(dirPath: string, maxDepth?: number, prefix?: string): Promise<string[]> {
   const files = await fsPromiseReadDir(dirPath);
 
   const arrayOfFiles: string[] = [];
@@ -38,7 +41,34 @@ export async function getAllFiles(dirPath: string, prefix?: string): Promise<str
     const pathWithPrefix = prefix ? path.join(prefix, file) : file;
 
     if ((await fsPromiseStat(fullPath)).isDirectory()) {
-      arrayOfFiles.push(...(await getAllFiles(fullPath, pathWithPrefix)));
+      if (maxDepth === 0) {
+        continue;
+      }
+      arrayOfFiles.push(
+        ...(await getAllFiles(fullPath, maxDepth != undefined ? maxDepth - 1 : undefined, pathWithPrefix)),
+      );
+    } else {
+      arrayOfFiles.push(pathWithPrefix);
+    }
+  }
+
+  return arrayOfFiles;
+}
+
+export function getAllFilesSync(dirPath: string, maxDepth?: number, prefix?: string): string[] {
+  const files = fs.readdirSync(dirPath);
+
+  const arrayOfFiles: string[] = [];
+
+  for (const file of files) {
+    const fullPath = path.join(dirPath, file);
+    const pathWithPrefix = prefix ? path.join(prefix, file) : file;
+
+    if (fs.statSync(fullPath).isDirectory()) {
+      if (maxDepth === 0) {
+        continue;
+      }
+      arrayOfFiles.push(...getAllFilesSync(fullPath, maxDepth != undefined ? maxDepth - 1 : undefined, pathWithPrefix));
     } else {
       arrayOfFiles.push(pathWithPrefix);
     }

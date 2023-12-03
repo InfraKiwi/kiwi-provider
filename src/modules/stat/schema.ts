@@ -1,9 +1,6 @@
-import { newDebug } from '../../util/debug';
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
 import { joiMetaClassName } from '../../util/joi';
-
-const debug = newDebug(__filename);
 
 export const ModuleStatFullSchema = Joi.object({
   path: Joi.string().required(),

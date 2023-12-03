@@ -11,8 +11,15 @@ interface TplTestEntry {
 
 describe('processes templates correctly', () => {
   const templates: TplTestEntry[] = [
-    { str: 'Hello ${{ getVars() }}', isTpl: true },
-    { str: 'Hello ${{ "${{ world }}" | tpl }}', isTpl: true, exp: 'Hello hey' },
+    {
+      str: 'Hello ${{ getVars() }}',
+      isTpl: true,
+    },
+    {
+      str: 'Hello ${{ "${{ world }}" | tpl }}',
+      isTpl: true,
+      exp: 'Hello hey',
+    },
     {
       str: 'Text: ${{ [__dirname, "test", "file.txt"] | join("/") | fileRead }}',
       isTpl: true,
@@ -26,10 +33,24 @@ describe('processes templates correctly', () => {
       context: { __dirname },
     },
 
-    { str: 'Hello', isTpl: false },
-    { str: 'Hello {{ world }}', isTpl: false },
-    { str: 'Hello ${{ world }}', isTpl: true, exp: 'Hello hey' },
-    { str: 'Hello ${{ world | upper }}', isTpl: true, exp: 'Hello HEY' },
+    {
+      str: 'Hello',
+      isTpl: false,
+    },
+    {
+      str: 'Hello {{ world }}',
+      isTpl: false,
+    },
+    {
+      str: 'Hello ${{ world }}',
+      isTpl: true,
+      exp: 'Hello hey',
+    },
+    {
+      str: 'Hello ${{ world | upper }}',
+      isTpl: true,
+      exp: 'Hello HEY',
+    },
   ];
 
   test.each(templates)('%s', async (el) => {

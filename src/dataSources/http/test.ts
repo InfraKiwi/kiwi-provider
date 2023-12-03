@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import type * as http from 'node:http';
 import express from 'express';
@@ -9,8 +8,8 @@ import { DataSourceHTTP } from './index';
 import { newLogger } from '../../util/logger';
 
 import type { DataSourceContext } from '../abstractDataSource';
+import { testExamples } from '../../util/testUtils';
 
-const debug = newDebug(__filename);
 const logger = newLogger();
 const context: DataSourceContext = {
   logger,
@@ -75,27 +74,41 @@ interface DataSourceHTTPTest {
 }
 
 describe('http dataSource', () => {
+  testExamples(__dirname);
+
   const tests: DataSourceHTTPTest[] = [
     {
       config: { url: '/hello' },
       expectData: 'world',
     },
     {
-      config: { url: '/err', validStatus: [400] },
+      config: {
+        url: '/err',
+        validStatus: [400],
+      },
       expectData: 'Meh!',
       expectStatus: 400,
     },
     {
-      config: { url: '/err', validStatus: '4\\d{2}' },
+      config: {
+        url: '/err',
+        validStatus: '4\\d{2}',
+      },
       expectData: 'Meh!',
       expectStatus: 400,
     },
     {
-      config: { url: '/query', params: { hello: 'world' } },
+      config: {
+        url: '/query',
+        params: { hello: 'world' },
+      },
       expectData: { hello: 'world' },
     },
     {
-      config: { url: '/object', filters: { jsonPath: '$.this.is.nested' } },
+      config: {
+        url: '/object',
+        filters: { jsonPath: '$.this.is.nested' },
+      },
       expectData: 123,
     },
   ];
@@ -107,9 +120,17 @@ describe('http dataSource', () => {
     };
 
     const dataSource = new DataSourceHTTP(config);
-    const result = await dataSource.load(context);
-    if (args.expectData) {
-      expect(result.data).toEqual(args.expectData);
+    {
+      const result = await dataSource.load(context);
+      if (args.expectData) {
+        expect(result.data).toEqual(args.expectData);
+      }
+    }
+    {
+      const result = await dataSource.loadVars(context);
+      if (args.expectData) {
+        expect(result).toEqual(args.expectData);
+      }
     }
   });
 });

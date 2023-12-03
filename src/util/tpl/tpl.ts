@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { newDebug } from '../debug';
 import * as nunjucks from 'nunjucks';
 import { AbstractTemplate } from './abstractTemplate';
-
-const debug = newDebug(__filename);
 
 export interface NunjucksContext {
   lookup(name: string): any;
@@ -59,9 +56,7 @@ export function nunjucksAddAsyncFilter(key: string, promiseFn: (...args: any[]) 
 function initNunjucksEnvFor10infraConfig() {
   const nunjucksEnv = nunjucks.configure([], {
     autoescape: false,
-    tags: {
-      variableStart: '${{',
-    },
+    tags: { variableStart: '${{' },
   });
 
   nunjucksApplyCustomFunctions(nunjucksEnv);
@@ -93,10 +88,10 @@ export class Template extends AbstractTemplate {
     const result = await new Promise<string>((res, rej) => {
       this.#tpl.render(context, (err: Error | null, val: string | null) => {
         if (err != null) {
-          rej(new Error(`Template rendering error: ${err}\nTemplate: ${this}`, { cause: err }));
+          rej(new Error(`Template rendering error: ${err}\nTemplate: ${this.toString()}`, { cause: err }));
           return;
         }
-        res(val as string);
+        res(val!);
       });
     });
 
@@ -155,8 +150,7 @@ export function extractAllTemplates(el: any): any {
 
   if (Array.isArray(el)) {
     const newArray = [];
-    for (let i = 0; i < el.length; i++) {
-      const objElement = el[i];
+    for (const objElement of el) {
       newArray.push(extractAllTemplates(objElement));
     }
     return newArray;
@@ -181,8 +175,7 @@ export async function resolveTemplates(el: any, tplArgs: any): Promise<any> {
 
   if (Array.isArray(el)) {
     const newArray = [];
-    for (let i = 0; i < el.length; i++) {
-      const objElement = el[i];
+    for (const objElement of el) {
       if (objectContainsTemplates(objElement)) {
         newArray.push(await resolveTemplates(objElement, tplArgs));
       } else {

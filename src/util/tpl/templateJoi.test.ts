@@ -3,7 +3,7 @@ import { TemplateJoi } from './templateJoi';
 
 interface TplTestEntry {
   str: string;
-  val?: Error | unknown;
+  val?: unknown;
   fail?: boolean;
 }
 

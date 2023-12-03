@@ -1,46 +1,56 @@
 import vm from 'node:vm';
-import path from 'node:path';
 import { fsPromiseReadFile } from './fs';
 import { createRequire } from 'node:module';
-
-const requireOnDemand = createRequire(__filename);
+import path from 'node:path';
+import type { VarsInterface } from '../components/varsContainer.schema.gen';
+import { getOSInfo } from './os';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const requireFn = (id: string): any => {
-  try {
+function getRequireFn(context?: Record<string, any>): (id: string) => any {
+  const requireOnDemand = createRequire(context?.['__filename'] ?? __filename);
+  return (id: string) => {
     return requireOnDemand(id);
-  } catch (ex) {
-    const requireResolutionPaths = [
-      path.resolve(process.cwd(), 'node_modules'),
-      path.resolve(process.execPath, 'node_modules'),
-    ];
 
-    for (const p of requireResolutionPaths) {
-      try {
-        return requireOnDemand(path.resolve(p, id));
-      } catch (ex) {
-        // NOOP
-      }
-    }
-  }
-
-  throw new Error(`required module ${id} not found`);
-};
+    /*
+     * try {
+     *   return requireOnDemand(id);
+     * } catch (ex) {
+     *   const requireResolutionPaths = [
+     *     ...(context?.['__dirname'] ? [context?.['__dirname']] : []),
+     *     path.resolve(process.cwd(), 'node_modules'),
+     *     path.resolve(process.execPath, 'node_modules'),
+     *   ];
+     *
+     *   for (const p of requireResolutionPaths) {
+     *     try {
+     *       return requireOnDemand(path.resolve(p, id));
+     *     } catch (ex) {
+     *       // NOOP
+     *     }
+     *   }
+     * }
+     *
+     * throw new Error(`required module ${id} not found`);
+     */
+  };
+}
 
 const evalBuiltins = {
   setTimeout,
   console,
+  os: getOSInfo,
 };
 
-export async function evalCodeWithBuiltins<T>(code: string, context?: object): Promise<T> {
+export async function evalCodeWithBuiltins<T>(code: string, context?: VarsInterface): Promise<T> {
   return evalCodeSimple(code, {
     ...evalBuiltins,
-    require: requireFn,
+    require: getRequireFn(context),
+    ...(context?.['__filename'] ? { __dirname: path.dirname(context?.['__filename']) } : {}),
     ...context,
   });
 }
 
-export async function evalCodeSimple<T>(code: string, context?: object): Promise<T> {
+export async function evalCodeSimple<T>(code: string, context?: VarsInterface): Promise<T> {
   let outerPromise: Promise<unknown> | null = null;
 
   const vmContext = vm.createContext({
@@ -55,7 +65,10 @@ export async function evalCodeSimple<T>(code: string, context?: object): Promise
       ____setOuterPromise(____topLevelFunctionAsync())`;
 
   const script = new vm.Script(asyncCode);
-  script.runInContext(vmContext, { breakOnSigint: true, displayErrors: true });
+  script.runInContext(vmContext, {
+    breakOnSigint: true,
+    displayErrors: true,
+  });
 
   if (outerPromise == null) {
     throw new Error('unexpected state, null outer promise');
@@ -79,15 +92,20 @@ export function evalCodeSyncSimple<T>(code: string, context?: object): T {
       ____setResult(____topLevelFunction())`;
 
   const script = new vm.Script(asyncCode);
-  script.runInContext(vmContext, { breakOnSigint: true, displayErrors: true });
+  script.runInContext(vmContext, {
+    breakOnSigint: true,
+    displayErrors: true,
+  });
 
   return result!;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function evalFile(fileName: string, context?: any): Promise<any> {
+export async function evalFile(fileName: string, context?: VarsInterface): Promise<unknown> {
   const code = await fsPromiseReadFile(fileName, { encoding: 'utf-8' });
-  return evalCodeWithBuiltins(code, context);
+  return evalCodeWithBuiltins(code, {
+    __filename: fileName,
+    ...context,
+  });
 }
 
 // TODO figure out circular deps

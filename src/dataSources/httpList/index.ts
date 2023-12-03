@@ -1,6 +1,5 @@
-import { newDebug } from '../../util/debug';
 import { multiDataSourceRegistryEntryFactory } from '../registry';
-import { MultiDataSourceHTTPListSchemaDefaultIdTag, MultiDataSourceHTTPListSchema } from './schema';
+import { MultiDataSourceHTTPListSchema, MultiDataSourceHTTPListSchemaDefaultIdTag } from './schema';
 import type { MultiDataSourceHTTPListInterface } from './schema.gen';
 import { DataSourceHTTP } from '../http';
 import Joi from 'joi';
@@ -9,64 +8,60 @@ import type { DataSourceHTTPInterface } from '../http/schema.gen';
 import type { DataSourceContext } from '../abstractDataSource';
 import { AbstractMultiDataSource } from '../abstractDataSource';
 
-const debug = newDebug(__filename);
-
 const responseSchemaArrayOfStrings = Joi.array().items(Joi.string());
+const responseSchemaArrayOfNumbers = Joi.array().items(Joi.number());
 
 export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
   MultiDataSourceHTTPListInterface,
   DataType
 > {
-  #entriesCache?: Record<string, DataType>;
+  #entriesCache: Record<string, DataType | null> = {};
 
   async listEntries(context: DataSourceContext): Promise<string[]> {
-    const { idField, ...rest } = this.config.list;
+    const { idField, http } = this.config.list;
 
     const dataSourceList = new DataSourceHTTP({
       ...this.config.default,
-      ...rest,
+      ...http,
     });
 
-    const result = await dataSourceList.load(context);
+    const data = await dataSourceList.loadVars(context);
 
     /*
-    We accept different responses from the list call:
-
-    - If the response is an array:
-      - If all items are strings, we treat those strings as IDs
-      - If the idPath is set we use that path as reference to extract IDs from each array entry, and
-        use the rest of the object as source for each entry object
-    - If the response is an object, we treat the keys as IDs and each value as the entry object
-
+     *We accept different responses from the list call:
+     *
+     *- If the response is an array:
+     *  - If all items are strings, we treat those strings as IDs
+     *  - If the idPath is set we use that path as reference to extract IDs from each array entry, and
+     *    use the rest of the object as source for each entry object
+     *- If the response is an object, we treat the keys as IDs and each value as the entry object
+     *
      */
-
-    const data = result.data;
     if (Array.isArray(data)) {
       if (responseSchemaArrayOfStrings.validate(data).error == null) {
         return data;
       }
+      if (responseSchemaArrayOfNumbers.validate(data).error == null) {
+        return (data as number[]).map((el) => el.toString());
+      }
 
       if (idField) {
-        this.#entriesCache = {};
         for (const entry of data) {
           const { [idField]: id, ...rest } = entry;
-          if (typeof id != 'string') {
-            throw new Error(
-              `The HTTP data source list call returned an array of objects, and the field extracted using the \`idField\` path was not a string: ${id}`,
-            );
-          }
-          this.#entriesCache[id] = rest;
+          this.#entriesCache[id] = this.config.load == null ? rest : null;
         }
         return Object.keys(this.#entriesCache);
       }
 
       throw new Error(
-        "The HTTP data source list call returned an array of object, but no `idField` path was configured to extract each object's id",
+        "The HTTP data source list call returned an array of objects, but no `idField` path was configured to extract each object's id",
       );
     }
 
     if (data && typeof data == 'object') {
-      this.#entriesCache = data as Record<string, DataType>;
+      for (const dataKey in data) {
+        this.#entriesCache[dataKey] = this.config.load == null ? (data as Record<string, DataType>)[dataKey] : null;
+      }
       return Object.keys(this.#entriesCache);
     }
 
@@ -74,16 +69,17 @@ export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
   }
 
   async loadEntry(context: DataSourceContext, entry: string): Promise<DataType> {
-    if (this.#entriesCache && entry in this.#entriesCache) {
-      return this.#entriesCache[entry];
+    const cacheEntry = this.#entriesCache[entry];
+    if (cacheEntry != null) {
+      return cacheEntry;
     }
 
-    const { idTag, ...rest } = this.config.load || {};
+    const { idTag, http } = this.config.load ?? {};
 
     // Process all fields that may contain a template
     const config: DataSourceHTTPInterface = traverse({
       ...this.config.default,
-      ...rest,
+      ...http,
     }).map(function (val) {
       if (this.notLeaf || typeof val != 'string') {
         return;
@@ -93,8 +89,9 @@ export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
 
     const dataSourceLoad = new DataSourceHTTP(config);
 
-    const result = await dataSourceLoad.load(context);
-    return result.data as DataType;
+    const data = (await dataSourceLoad.loadVars(context)) as DataType;
+    this.#entriesCache[entry] = data;
+    return data;
   }
 }
 

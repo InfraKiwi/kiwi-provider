@@ -1,14 +1,14 @@
-import { newDebug } from '../../util/debug';
 import { describe, test } from '@jest/globals';
 import { ModuleLookPath } from './index';
 import { fsPromiseTmpFile } from '../../util/fs';
-import { platformIsWin } from '../../util/os';
 import path from 'node:path';
 import { getTestRunContext } from '../../components/inventory.testutils';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
+import { platformIsWin } from '../../util/constants';
 
 describe('lookPath module', () => {
+  testExamples(__dirname);
+
   test('finds a binary', async () => {
     const tmpBin = await fsPromiseTmpFile({
       discardDescriptor: true,

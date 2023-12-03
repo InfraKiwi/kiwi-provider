@@ -1,4 +1,3 @@
-import { newDebug } from '../util/debug';
 import type { InventoryEntryInterface, InventoryEntryRelationsInterface } from './inventoryEntry.schema.gen';
 import Joi from 'joi';
 import { InventoryEntryRelationsSchema, InventoryEntrySchema } from './inventoryEntry.schema';
@@ -7,8 +6,6 @@ import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
-
-const debug = newDebug(__filename);
 
 export abstract class InventoryEntry extends VarsContainer {
   readonly id: string;

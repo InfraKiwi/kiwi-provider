@@ -40,7 +40,7 @@ export const newDebug: INewDebug = function (key: string) {
     key = key.replace(prefixFreeDirName, '');
   }
 
-  const debugFunction = <IDebugFunction>(Debug(DEBUG_KEY + key) as unknown);
+  const debugFunction = Debug(DEBUG_KEY + key) as unknown as IDebugFunction;
   debugFunction.uncaught = logUncaught.bind(debugFunction);
 
   return debugFunction;

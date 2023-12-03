@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { hostSourceRegistryEntryFactory } from '../registry';
 import path from 'node:path';
 import type { HostSourceFileInterface, HostSourceFileInterfaceConfigKey } from './schema.gen';
@@ -9,8 +8,6 @@ import { InventoryHost } from '../../components/inventoryHost';
 import type { HostSourceContext } from '../abstractHostSource';
 import { AbstractHostSource } from '../abstractHostSource';
 import { DataSourceFile } from '../../dataSources/file';
-
-const debug = newDebug(__filename);
 
 export class HostSourceFile extends AbstractHostSource<HostSourceFileInterface, HostSourceFileInterfaceConfigKey> {
   #ds = new DataSourceFile<VarsInterface>(this.config);
@@ -31,9 +28,7 @@ export class HostSourceFile extends AbstractHostSource<HostSourceFileInterface, 
     const host = new InventoryHost(hostname, {}, this);
     const metadata = this.config;
     host.hostSourceMetadata = metadata;
-    return {
-      [hostname]: host,
-    };
+    return { [hostname]: host };
   }
 
   async loadHostVars(context: HostSourceContext, host: InventoryHost): Promise<VarsInterface> {
@@ -41,7 +36,7 @@ export class HostSourceFile extends AbstractHostSource<HostSourceFileInterface, 
     if (host.id != hostname) {
       this.throwHostnameNotFound(host.id);
     }
-    return await this.#ds.load(context);
+    return await this.#ds.loadVars(context);
   }
 }
 

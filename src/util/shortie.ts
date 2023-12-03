@@ -1,5 +1,5 @@
+import { load } from 'js-yaml';
 import { newDebug } from './debug';
-import { loadYAML } from './yaml';
 
 const debug = newDebug(__filename);
 
@@ -21,6 +21,7 @@ export class Shortie {
    * bounds tokens. By default, includes space, tab, comma
    */
   readonly charsWhitespaces = ' \t,';
+
   /**
    * Characters that will be considered string quotes. The token accumulates
    * until the same quote is encountered again (thus, different quote types
@@ -28,23 +29,28 @@ export class Shortie {
    * and double quotes.
    */
   readonly charsQuotes = `'"`;
+
   /**
    * Characters that will be considered as escape. Just `\` by default.
    */
   readonly charsEscapes = '\\';
+
   /**
    * The subset of quote types that allow escaped characters. Just `"` by default.
    */
   readonly charsEscapedQuotes = '"';
+
   /**
    * Characters triggering equality
    */
   readonly charsEquality = '=';
+
   /**
    * Characters triggering nested objects
    */
   readonly charsNestedObjectBegin = '{';
   readonly charsNestedObjectEnd = '}';
+
   /**
    * Characters triggering nested arrays
    */
@@ -58,11 +64,13 @@ export class Shortie {
     return this.string.charAt(this.#i++);
   }
 
-  // parse(): object {
-  //   const obj: Record<string, unknown> = {};
-  //
-  //
-  // }
+  /*
+   * parse(): object {
+   *   const obj: Record<string, unknown> = {};
+   *
+   *
+   * }
+   */
 
   processEscapes(string: string, quote: string) {
     if (!this.charsEscapedQuotes.includes(quote)) {
@@ -70,12 +78,16 @@ export class Shortie {
       return string;
     }
 
-    // We need to form a regex that matches any of the escape characters,
-    // without interpreting any of the characters as a regex special character.
+    /*
+     * We need to form a regex that matches any of the escape characters,
+     * without interpreting any of the characters as a regex special character.
+     */
     const anyEscape = '[' + this.charsEscapes.replace(/(.)/g, '\\$1') + ']';
 
-    // In regular quoted strings, we can only escape an escape character, and
-    // the quote character itself.
+    /*
+     * In regular quoted strings, we can only escape an escape character, and
+     * the quote character itself.
+     */
     if (this.charsEscapedQuotes.includes(quote)) {
       const re = new RegExp(anyEscape + '(' + anyEscape + '|\\' + quote + ')', 'g');
       return string.replace(re, '$1');
@@ -91,9 +103,9 @@ export class Shortie {
     let lastCharWasQuoted = false;
     let inQuote: string | false = false;
     // We always begin from an object key, and if false it means we're in its value
-    let inObjectKey: boolean = !this.#inArray;
-    let inNestedObject: boolean = false;
-    let inNestedArray: boolean = false;
+    let inObjectKey = !this.#inArray;
+    let inNestedObject = false;
+    let inNestedArray = false;
     let escaped: string | false = false;
     let token: string | undefined;
     let charIsEndOfNested = false;
@@ -118,7 +130,7 @@ export class Shortie {
       if (lastCharWasQuoted) {
         return token;
       }
-      return loadYAML(token);
+      return load(token);
     };
 
     while (true) {
@@ -169,7 +181,11 @@ export class Shortie {
           throw new Error('Got EOF while in an unclosed nested array');
         }
         const value = getValue(lastCharWasQuotedCache);
-        this.#debug && debug('Closing case', { currentObjectKey, value });
+        this.#debug &&
+          debug('Closing case', {
+            currentObjectKey,
+            value,
+          });
         yield [currentObjectKey, value];
         return;
       }
@@ -181,7 +197,11 @@ export class Shortie {
         inNestedObject = false;
         charIsEndOfNested = true;
         const objectValue = token == null ? {} : shortieToObject(token);
-        this.#debug && debug('End of nested object', { currentObjectKey, objectValue });
+        this.#debug &&
+          debug('End of nested object', {
+            currentObjectKey,
+            objectValue,
+          });
         yield [currentObjectKey, objectValue];
         reset();
         continue;
@@ -194,7 +214,11 @@ export class Shortie {
         inNestedArray = false;
         charIsEndOfNested = true;
         const objectValue = token == null ? {} : shortieToArray(token, true);
-        this.#debug && debug('End of nested array', { currentObjectKey, objectValue });
+        this.#debug &&
+          debug('End of nested array', {
+            currentObjectKey,
+            objectValue,
+          });
         yield [currentObjectKey, objectValue];
         reset();
         continue;
@@ -202,15 +226,17 @@ export class Shortie {
 
       if (inNestedObject || inNestedArray) {
         // We're accumulating
-        token = (token || '') + char;
+        token = (token ?? '') + char;
         continue;
       }
 
       // We were in an escape sequence, complete it
       if (escaped) {
         if (inQuote) {
-          // If we are in a quote, just accumulate the whole escape sequence,
-          // as we will interpret escape sequences later.
+          /*
+           * If we are in a quote, just accumulate the whole escape sequence,
+           * as we will interpret escape sequences later.
+           */
           token = (token ?? '') + escaped + char;
         } else {
           // Just use the literal character
@@ -224,8 +250,10 @@ export class Shortie {
 
       if (this.charsEscapes.includes(char)) {
         if (!inQuote || this.charsEscapedQuotes.includes(inQuote)) {
-          // We encountered an escape character, which is going to affect how
-          // we treat the next character.
+          /*
+           * We encountered an escape character, which is going to affect how
+           * we treat the next character.
+           */
           this.#debug && debug('Begin of escape', { char });
           escaped = char;
           continue;
@@ -246,14 +274,14 @@ export class Shortie {
         }
 
         // String isn't finished yet, accumulate the character
-        token = (token || '') + char;
+        token = (token ?? '') + char;
         continue;
       }
 
       // This is the start of a new string, don't accumulate the quotation mark
       if (this.charsQuotes.includes(char)) {
         inQuote = char;
-        token = token || ''; // fixes blank string
+        token = token ?? ''; // fixes blank string
         this.#debug && debug('Begin of string', { token });
         continue;
       }
@@ -300,7 +328,12 @@ export class Shortie {
       // This is whitespace, so yield the token if we have one
       if (this.charsWhitespaces.includes(char)) {
         const value = getValue(lastCharWasQuotedCache);
-        this.#debug && debug('Whitespace', { currentObjectKey, value, prevCharWasEndOfNested });
+        this.#debug &&
+          debug('Whitespace', {
+            currentObjectKey,
+            value,
+            prevCharWasEndOfNested,
+          });
         if (!prevCharWasEndOfNested) {
           yield [currentObjectKey, value];
         }
@@ -309,24 +342,45 @@ export class Shortie {
       }
 
       // Otherwise, accumulate the character
-      token = (token || '') + char;
+      token = (token ?? '') + char;
     }
   }
 }
 
-export function shortieToArray(string: string, debug?: boolean): Array<unknown> {
+const shortieTag = '__isShortie';
+
+interface ShortieObject {
+  [shortieTag]?: true;
+}
+
+function setShortieTag(obj: object) {
+  Object.defineProperty(obj, shortieTag, {
+    enumerable: false,
+    writable: false,
+    value: true,
+  });
+}
+
+export function isShortie(obj: object): boolean {
+  return obj && Object.prototype.hasOwnProperty.call(obj, shortieTag) && (obj as ShortieObject)[shortieTag] == true;
+}
+
+export function shortieToArray(string: string, debug?: boolean): unknown[] {
   const entries = Array.from(new Shortie(string, true, debug));
-  const arr: Array<unknown> = [];
+  const arr: unknown[] = [];
   for (const [key, value] of entries) {
     if (key) {
       throw new Error('Unexpected parsing error, got valid key for array entry');
     }
     arr.push(value);
   }
+  setShortieTag(arr);
   return arr;
 }
 
 export function shortieToObject(string: string, debug?: boolean): object {
   const entries = Array.from(new Shortie(string, false, debug));
-  return Object.fromEntries(entries);
+  const obj = Object.fromEntries(entries);
+  setShortieTag(obj);
+  return obj;
 }

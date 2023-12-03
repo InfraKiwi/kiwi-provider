@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import type { ModuleTestResult } from './index';
 import { ModuleTest, ModuleTestSilent } from './index';
@@ -7,8 +6,7 @@ import type { ModuleTestInterface } from './schema.gen';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
 
 interface ModuleStoreTest {
   args: ModuleTestInterface;
@@ -18,6 +16,8 @@ interface ModuleStoreTest {
 }
 
 describe('test module', () => {
+  testExamples(__dirname);
+
   const runContext = getTestRunContext({
     vars: {
       num: 123,
@@ -28,19 +28,29 @@ describe('test module', () => {
   const tests: ModuleStoreTest[] = [
     {
       args: `num == 123`,
-      expect: { vars: { tests: { test: true } }, changed: false },
+      expect: {
+        vars: { tests: { test: true } },
+        changed: false,
+      },
     },
     {
       args: [`num == 123`, `hello == 'world'`],
-      expect: { vars: { tests: { test0: true, test1: true } }, changed: false },
+      expect: {
+        vars: {
+          tests: {
+            test0: true,
+            test1: true,
+          },
+        },
+        changed: false,
+      },
     },
     {
-      args: {
-        tests: {
-          numTest: `num == 123`,
-        },
+      args: { tests: { numTest: `num == 123` } },
+      expect: {
+        vars: { tests: { numTest: true } },
+        changed: false,
       },
-      expect: { vars: { tests: { numTest: true } }, changed: false },
     },
     {
       args: `num == 124`,
@@ -48,36 +58,43 @@ describe('test module', () => {
     },
     {
       args: `num == 124`,
-      expect: { vars: { tests: { test: false } }, changed: false },
+      expect: {
+        vars: { tests: { test: false } },
+        changed: false,
+      },
       useModuleSilent: true,
     },
     {
       args: {
-        tests: {
-          numTest: `num == 124`,
-        },
+        tests: { numTest: `num == 124` },
         silent: true,
       },
-      expect: { vars: { tests: { numTest: false } }, changed: false },
+      expect: {
+        vars: { tests: { numTest: false } },
+        changed: false,
+      },
     },
     {
-      args: {
-        numTest: `num == 123`,
+      args: { numTest: `num == 123` },
+      expect: {
+        vars: { tests: { numTest: true } },
+        changed: false,
       },
-      expect: { vars: { tests: { numTest: true } }, changed: false },
     },
     {
-      args: {
-        numTest: `num == 123`,
+      args: { numTest: `num == 123` },
+      expect: {
+        vars: { tests: { numTest: true } },
+        changed: false,
       },
-      expect: { vars: { tests: { numTest: true } }, changed: false },
       useModuleSilent: true,
     },
     {
-      args: {
-        numTest: `num == 124`,
+      args: { numTest: `num == 124` },
+      expect: {
+        vars: { tests: { numTest: false } },
+        changed: false,
       },
-      expect: { vars: { tests: { numTest: false } }, changed: false },
       useModuleSilent: true,
     },
   ];

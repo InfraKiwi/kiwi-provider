@@ -1,0 +1,13 @@
+tasks:
+  # Print a message depending on which platform we're on
+  - switch:
+      value: ${{ os().platform }}
+      cases:
+        win32:
+          debug: We are on Windows!
+        darwin:
+          debug: We are on MacOS!
+        linux:
+          debug: We are on Linux!
+      default:
+        fail: Platform not supported!

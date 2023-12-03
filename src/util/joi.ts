@@ -1,30 +1,28 @@
 import Joi from 'joi';
-import { fsPromiseExists } from './fs';
 import { IfTemplate } from './tpl';
 import semver from 'semver/preload';
 import { setDifference } from './set';
-import { getErrorPrintfClass } from './error';
-import path from 'node:path';
+import { shortieToObject } from './shortie';
+import { existsSync } from 'node:fs';
+
+export const joiMetaExternalImportKey = 'externalImport';
+export const joiMetaRegistrySchemaObjectKey = 'registrySchemaObject';
 
 function joiCustomErrorMessage<T>(helpers: Joi.CustomHelpers<T>, message: string) {
-  return helpers.message({
-    custom: message,
-  });
+  return helpers.message({ custom: message });
 }
 
 export function joiMetaUnknownType(schema: Joi.Schema) {
-  return {
-    unknownType: schema,
-  };
+  return { unknownType: schema };
 }
 
 export function joiMetaClassName(name: string) {
-  return {
-    className: name,
-  };
+  return { className: name };
 }
 
-export const joiMetaExternalImportKey = 'externalImport';
+export function joiMetaRegistrySchemaObject(schemaObject: object) {
+  return { [joiMetaRegistrySchemaObjectKey]: schemaObject };
+}
 
 export interface JoiMetaExternalImport {
   importPath: string;
@@ -32,28 +30,30 @@ export interface JoiMetaExternalImport {
 }
 
 export function joiMetaExternalImport(i: JoiMetaExternalImport) {
-  return {
-    [joiMetaExternalImportKey]: i,
-  };
+  return { [joiMetaExternalImportKey]: i };
 }
 
-export const JoiAttemptAsyncValidationErrorWithMessage = getErrorPrintfClass(
-  'JoiAttemptAsyncValidationErrorWithMessage',
-  'Validation error: %s',
-);
-export const JoiAttemptAsyncValidationError = getErrorPrintfClass('JoiAttemptAsyncValidationError', 'Validation error');
+/*
+ * export const JoiAttemptAsyncValidationErrorWithMessage = getErrorPrintfClass(
+ *   'JoiAttemptAsyncValidationErrorWithMessage',
+ *   'Validation error: %s',
+ * );
+ * export const JoiAttemptAsyncValidationError = getErrorPrintfClass('JoiAttemptAsyncValidationError', 'Validation error');
+ */
 
-export async function joiAttemptAsync<T>(value: T, schema: Joi.Schema<T>, message?: string): Promise<T> {
-  try {
-    const validated = await schema.validateAsync(value);
-    return validated;
-  } catch (ex) {
-    if (message) {
-      throw new JoiAttemptAsyncValidationErrorWithMessage(message, ex);
-    }
-    throw new JoiAttemptAsyncValidationError(ex);
-  }
-}
+/*
+ * export async function joiAttemptAsync<T>(value: T, schema: Joi.Schema<T>, message?: string): Promise<T> {
+ *   try {
+ *     const validated = await schema.validateAsync(value);
+ *     return validated;
+ *   } catch (ex) {
+ *     if (message) {
+ *       throw new JoiAttemptAsyncValidationErrorWithMessage(message, ex);
+ *     }
+ *     throw new JoiAttemptAsyncValidationError(ex);
+ *   }
+ * }
+ */
 
 export function joiObjectAddPattern(
   schema: Joi.ObjectSchema,
@@ -68,6 +68,16 @@ export function joiObjectAddPattern(
   );
 }
 
+export function joiObjectAddRegistrySchemaObject(
+  obj: Joi.ObjectSchema,
+  registrySchema: object,
+  unknownDescription: string,
+): Joi.ObjectSchema {
+  return joiObjectAddPattern(obj.append(registrySchema), Joi.any().description(unknownDescription)).meta(
+    joiMetaRegistrySchemaObject(registrySchema),
+  );
+}
+
 export function joiObjectWithPattern(
   value: Joi.Schema,
   keyPattern: RegExp | Joi.Schema = Joi.string(),
@@ -77,13 +87,30 @@ export function joiObjectWithPattern(
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export function joiObjectFromInstanceOf(constructorName: string, importPath: string): Joi.ObjectSchema {
-  if (!path.isAbsolute(importPath)) {
-    throw new Error(`InstanceOf import path must be absolute, got: ${importPath}`);
-  }
+  /*
+   * if (!path.isAbsolute(importPath)) {
+   *   throw new Error(`InstanceOf import path must be absolute, got: ${importPath}`);
+   * }
+   */
   return Joi.object()
     .custom(getJoiValidateInstanceOfConstructorName(constructorName))
-    .meta(joiMetaExternalImport({ importPath, name: constructorName }))
+    .meta(
+      joiMetaExternalImport({
+        importPath,
+        name: constructorName,
+      }),
+    )
     .meta(joiMetaClassName(constructorName));
+}
+
+export function joiSchemaAcceptsString(schema: Joi.Schema): boolean {
+  const desc = schema.describe();
+  return (
+    desc.type == 'any' ||
+    desc.type == 'string' ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (desc.type == 'alternatives' && desc.matches?.find((m: any) => m.schema?.type == 'string') != null)
+  );
 }
 
 export function joiValidateValidRegex(val: string, helpers: Joi.CustomHelpers<string>): Joi.ErrorReport | string {
@@ -123,15 +150,67 @@ export function joiValidateValidIfTemplate(val: string, helpers: Joi.CustomHelpe
   return val;
 }
 
-export async function joiValidateAsyncFileExists(
+export function joiValidateShortieObject(val: string, helpers: Joi.CustomHelpers<string>): Joi.ErrorReport | object {
+  try {
+    return shortieToObject(val);
+  } catch (err) {
+    return joiCustomErrorMessage(helpers, 'The string must be a valid nunjucks condition');
+  }
+}
+
+/*
+ * export async function joiValidateAsyncFSExists(
+ *   val: string | undefined,
+ *   helpers: Joi.CustomHelpers<string>,
+ * ): Promise<Joi.ErrorReport | string | undefined> {
+ *   if (val == undefined) {
+ *     return undefined;
+ *   }
+ *   if (!(await fsPromiseExists(val))) {
+ *     return joiCustomErrorMessage(helpers, 'The file or dir must exist');
+ *   }
+ *   return val;
+ * }
+ */
+
+export function joiValidateSyncFSExists(
   val: string | undefined,
   helpers: Joi.CustomHelpers<string>,
-): Promise<Joi.ErrorReport | string | undefined> {
+): Joi.ErrorReport | string | undefined {
+  // Make sure this function is always ever only called from a cli script main entrypoint
+  {
+    const targetObject = { stack: '' };
+    Error.captureStackTrace(targetObject);
+
+    /*
+     *at Object.attempt (D:\devel\10infra-config\node_modules\joi\lib\index.js:107:26)
+     *at main (D:\devel\10infra-config\cmd\pkg.ts:48:79)
+     */
+    const lines = targetObject.stack.split('\n');
+    let firstFound = false;
+    for (const line of lines) {
+      if (line.startsWith('    at Object.attempt')) {
+        firstFound = true;
+        continue;
+      }
+      if (firstFound) {
+        if (line.startsWith('    at main')) {
+          break;
+        }
+      }
+      firstFound = false;
+    }
+    if (!firstFound) {
+      throw new Error(`joiValidateSyncFSExists invoked not from main/Joi.attempt function`);
+    }
+  }
+
   if (val == undefined) {
     return undefined;
   }
-  if (!(await fsPromiseExists(val))) {
-    return joiCustomErrorMessage(helpers, 'The file must exist');
+
+  if (!existsSync(val)) {
+    return joiCustomErrorMessage(helpers, 'The file or dir must exist');
   }
   return val;
 }
@@ -159,7 +238,7 @@ export function joiKeepOnlyKeysInJoiSchema<T>(
       return acc;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    acc[key] = (val as any)[key];
+    acc[key] = val[key];
     return acc;
   }, {});
 }
@@ -175,16 +254,19 @@ export function joiKeepOnlyKeysNotInJoiObjectDiff(
   const keysExtended = new Set(joiObjectSchemaKeys(joiObjectExtended));
   const diff = setDifference(keysExtended, keys);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return Object.keys(val).reduce((acc: any, key) => {
-    // Do not add keys that exist in the difference
-    if (diff.has(key)) {
-      return acc;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    acc[key] = (val as any)[key];
-    return acc;
-  }, {});
+  return (
+    Object.keys(val)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .reduce((acc: any, key) => {
+        // Do not add keys that exist in the difference
+        if (diff.has(key)) {
+          return acc;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        acc[key] = val[key];
+        return acc;
+      }, {})
+  );
 }
 
 // https://github.com/microsoft/TypeScript/issues/30611

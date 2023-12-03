@@ -1,30 +1,13 @@
-import { newDebug } from '../../util/debug';
 import { dataSourceRegistryEntryFactory } from '../registry';
 import path from 'node:path';
 import pLimit from 'p-limit';
 import type { DataSourceFileInterface } from './schema.gen';
-import { DataSourceFileRawSchema, DataSourceFileSchema } from './schema';
+import { DataSourceFileRawSchema, DataSourceFileSchema, fileLoadersMap } from './schema';
 import { getErrorPrintfClass } from '../../util/error';
 import { fsPromiseExists, fsPromiseReadFile } from '../../util/fs';
-import { loadYAML } from '../../util/yaml';
 import type { DataSourceContext } from '../abstractDataSource';
 import { AbstractDataSource } from '../abstractDataSource';
 import type { ContextWorkDir } from '../../util/context';
-
-const debug = newDebug(__filename);
-
-type DataSourceFileLoaderFunction = (filePath: string) => Promise<unknown>;
-
-const loaderYAML: DataSourceFileLoaderFunction = async (data: string): Promise<unknown> => {
-  return loadYAML(data);
-};
-
-const fileLoadersMap: Record<string, DataSourceFileLoaderFunction> = {
-  '.yaml': loaderYAML,
-  '.yml': loaderYAML,
-  '.json': loaderYAML,
-};
-export const getAvailableFileLoadersExtensions = () => Object.keys(fileLoadersMap);
 
 export const DataSourceFileErrorFileNotFound = getErrorPrintfClass(
   'DataSourceFileErrorFileNotFound',

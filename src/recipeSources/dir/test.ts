@@ -9,6 +9,7 @@ import path from 'node:path';
 import { newLogger } from '../../util/logger';
 import { Recipe } from '../../components/recipe';
 import type { ContextLogger, ContextRecipeSourceList, ContextWorkDir } from '../../util/context';
+import { testExamples } from '../../util/testUtils';
 
 const logger = newLogger();
 const context: ContextLogger & ContextRecipeSourceList & ContextWorkDir = {
@@ -21,17 +22,14 @@ interface RecipeSourceDirTest {
   dir: string;
   workDir?: string;
   id: string;
-  fail?:
-    | string
-    | RegExp
-    | typeof RecipeSourceDirErrorNotADir
-    | typeof RecipeSourceDirRecipeNotFound
-    | typeof RecipeSourceDirErrorDirNotFound;
+  fail?: string | RegExp | typeof RecipeSourceDirErrorNotADir;
 }
 
 const dir = path.resolve(__dirname, 'test');
 
 describe('recipe source dir', () => {
+  testExamples(__dirname);
+
   const tests: RecipeSourceDirTest[] = [
     {
       dir,
@@ -113,7 +111,10 @@ describe('recipe source dir', () => {
   ];
 
   test.each(tests)('$#', async (args: RecipeSourceDirTest) => {
-    const source = new RecipeSourceDir({ dir: { path: args.dir }, workDir: args.workDir });
+    const source = new RecipeSourceDir({
+      dir: { path: args.dir },
+      workDir: args.workDir,
+    });
 
     if (args.fail) {
       await expect(source.load(context, args.id)).rejects.toThrowError(args.fail);

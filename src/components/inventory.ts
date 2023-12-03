@@ -1,10 +1,4 @@
-import { newDebug } from '../util/debug';
-import type {
-  InventoryGroupInterface,
-  InventoryGroupSpecialInterface,
-  InventoryGroupStringEntriesInterface,
-  InventoryInterface,
-} from './inventory.schema.gen';
+import type { InventoryGroupInterface, InventoryInterface } from './inventory.schema.gen';
 import {
   groupNameAll,
   groupNameGrouped,
@@ -22,7 +16,6 @@ import { tryOrThrowAsync } from '../util/try';
 import { InventoryHost } from './inventoryHost';
 import type { AbstractHostSourceInstance, HostSourceContext } from '../hostSources/abstractHostSource';
 import { hostSourceRegistry } from '../hostSources/registry';
-import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import Joi from 'joi';
 import type { HostSourceRawInterface } from '../hostSources/raw/schema.gen';
 import { InventoryGroup } from './inventoryGroup';
@@ -30,9 +23,11 @@ import { VarsContainer } from './varsContainer';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
-import { loadYAMLFromFile } from '../util/yaml';
+import path from 'node:path';
 
-const debug = newDebug(__filename);
+import { loadYAMLFromFile } from '../util/yaml';
+import type { ContextLogger } from '../util/context';
+import type { DataSourceContext } from '../dataSources/abstractDataSource';
 
 export interface VisitedCache {
   groups: Record<string, boolean>;
@@ -43,35 +38,34 @@ interface InventoryCache {
 }
 
 function newVisitedCache(): VisitedCache {
-  return {
-    groups: {},
-  };
+  return { groups: {} };
+}
+
+export interface InventoryMetadata {
+  fileName?: string;
 }
 
 export class Inventory extends VarsContainer {
   readonly #config: InventoryInterface;
+  readonly #meta?: InventoryMetadata;
   #hosts: Record<string, InventoryHost> = {};
   #hostnames: string[] = [];
   #groups: Record<string, InventoryGroup> = {};
-  #inventoryCache: InventoryCache = {
-    hostsByGroup: {},
-  };
+  #inventoryCache: InventoryCache = { hostsByGroup: {} };
 
-  #throwOnHostNotMatched: boolean = false;
+  #throwOnHostNotMatched = false;
 
-  constructor(config: InventoryInterface) {
+  constructor(config: InventoryInterface, meta?: InventoryMetadata) {
     config = Joi.attempt(config, InventorySchema, 'validate inventory config');
     super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
 
     this.#config = config;
+    this.#meta = meta;
 
     // Load groups
     if (config.groups) {
       for (const groupName in config.groups) {
-        const groupConfig = config.groups[groupName] as
-          | InventoryGroupInterface
-          | InventoryGroupSpecialInterface
-          | InventoryGroupStringEntriesInterface;
+        const groupConfig = config.groups[groupName];
         let group: InventoryGroupInterface;
         if (typeof groupConfig == 'string') {
           group = { pattern: [groupConfig] };
@@ -86,9 +80,9 @@ export class Inventory extends VarsContainer {
     }
   }
 
-  static async fromFile(context: DataSourceContext, inventoryPath: string): Promise<Inventory> {
+  static async fromFile(context: HostSourceContext, inventoryPath: string): Promise<Inventory> {
     const data = await loadYAMLFromFile(inventoryPath);
-    const inventory = new Inventory(data as InventoryInterface);
+    const inventory = new Inventory(data as InventoryInterface, { fileName: inventoryPath });
     await inventory.loadGroupsAndStubs(context);
     return inventory;
   }
@@ -118,9 +112,9 @@ export class Inventory extends VarsContainer {
     return host;
   }
 
-  setHost(host: InventoryHost) {
+  setHost(context: ContextLogger, host: InventoryHost) {
     this.#hosts[host.id] = host;
-    this.#processHostsRecords();
+    this.#processHostsRecords(context);
   }
 
   getAllGroupNamesWithoutSpecialGroups(): string[] {
@@ -128,14 +122,18 @@ export class Inventory extends VarsContainer {
     return Array.from(setDifference(new Set(allKeys), specialGroupNamesSet));
   }
 
-  getHostsByGroup(groupName: string, visitedCache?: VisitedCache): Record<string, InventoryHost> {
+  getHostsByGroup(
+    context: ContextLogger,
+    groupName: string,
+    visitedCache?: VisitedCache,
+  ): Record<string, InventoryHost> {
     if (groupName in this.#inventoryCache.hostsByGroup) {
       return this.#inventoryCache.hostsByGroup[groupName];
     }
 
     visitedCache ??= newVisitedCache();
     if (!(groupName in this.#groups)) {
-      debug(`WARN: Group ${groupName} not found`);
+      context.logger.warning(`Inventory group ${groupName} not found`);
       return {};
     }
 
@@ -147,9 +145,9 @@ export class Inventory extends VarsContainer {
     const groupEntries = this.#groups[groupName].pattern || {};
     for (const groupEntry of Array.isArray(groupEntries) ? groupEntries : [groupEntries]) {
       if (groupEntry in this.#groups) {
-        Object.assign(hosts, this.getHostsByGroup(groupEntry, visitedCache));
+        Object.assign(hosts, this.getHostsByGroup(context, groupEntry, visitedCache));
       } else {
-        Object.assign(hosts, this.getHostsByPattern(groupEntry, undefined, visitedCache));
+        Object.assign(hosts, this.getHostsByPattern(context, groupEntry, undefined, visitedCache));
       }
     }
 
@@ -170,17 +168,17 @@ export class Inventory extends VarsContainer {
 
     allPatterns.sort((a, b) => {
       let weightA = 0;
-      if (a[0] == '&') {
+      if (a.startsWith('&')) {
         weightA = 1;
       }
-      if (a[0] == '!') {
+      if (a.startsWith('!')) {
         weightA = 2;
       }
       let weightB = 0;
-      if (b[0] == '&') {
+      if (b.startsWith('&')) {
         weightB = 1;
       }
-      if (b[0] == '!') {
+      if (b.startsWith('!')) {
         weightB = 2;
       }
 
@@ -195,6 +193,7 @@ export class Inventory extends VarsContainer {
   }
 
   getHostsByPattern(
+    context: ContextLogger,
     patternStr: string | string[],
     // If provided, this is used as a start group of hostnames that will be filtered down with the query
     allHostnames?: Set<string>,
@@ -207,7 +206,7 @@ export class Inventory extends VarsContainer {
       const patterns = this.sortPatterns(patternStr);
       let hosts: Record<string, InventoryHost> = {};
       for (const el of patterns) {
-        hosts = this.getHostsByPattern(el, new Set(Object.keys(hosts)), visitedCache);
+        hosts = this.getHostsByPattern(context, el, new Set(Object.keys(hosts)), visitedCache);
       }
       return hosts;
     }
@@ -221,7 +220,7 @@ export class Inventory extends VarsContainer {
     }
 
     let returnHostnames: Set<string>;
-    const matches = this.#getHostsByMatchingHostPatternWithoutForceInclusion(pattern, visitedCache);
+    const matches = this.#getHostsByMatchingHostPatternWithoutForceInclusion(context, pattern, visitedCache);
     const matchedHostnames = new Set(Object.keys(matches));
     if (pattern.forceInclusion === false) {
       // Force exclusion
@@ -239,6 +238,7 @@ export class Inventory extends VarsContainer {
   }
 
   #getHostsByMatchingHostPatternWithoutForceInclusion(
+    context: ContextLogger,
     pattern: HostPattern,
     visitedCache?: VisitedCache,
   ): Record<string, InventoryHost> {
@@ -249,7 +249,7 @@ export class Inventory extends VarsContainer {
       Object.assign(filtered, this.#hosts);
       return filtered;
     } else if (pattern.rawWithoutModifiers == groupNameUngrouped) {
-      Object.assign(filtered, this.getHostsByPattern([groupNameAll, `!${groupNameGrouped}`]));
+      Object.assign(filtered, this.getHostsByPattern(context, [groupNameAll, `!${groupNameGrouped}`]));
       return filtered;
     } else if (pattern.rawWithoutModifiers == groupNameGrouped) {
       const groupNames = this.getAllGroupNamesWithoutSpecialGroups();
@@ -259,7 +259,7 @@ export class Inventory extends VarsContainer {
           continue;
         }
         visitedCache.groups[groupName] = true;
-        const hosts = this.getHostsByGroup(groupName, visitedCache);
+        const hosts = this.getHostsByGroup(context, groupName, visitedCache);
         Object.assign(filtered, hosts);
       }
       return filtered;
@@ -275,13 +275,13 @@ export class Inventory extends VarsContainer {
           continue;
         }
         visitedCache.groups[groupName] = true;
-        const hosts = this.getHostsByGroup(groupName, visitedCache);
+        const hosts = this.getHostsByGroup(context, groupName, visitedCache);
         Object.assign(filtered, hosts);
       }
     }
 
     // Check hosts if no groups matched or it is a regex/glob pattern
-    if (pattern.raw[0] == '~' || pattern.containsSpecialChars || Object.keys(filtered).length == 0) {
+    if (pattern.raw.startsWith('~') || pattern.containsSpecialChars || Object.keys(filtered).length == 0) {
       const matchingHosts = Object.keys(this.#hosts).filter(pattern.matchString.bind(pattern));
       for (const hostName of matchingHosts) {
         filtered[hostName] = this.#hosts[hostName];
@@ -313,7 +313,7 @@ export class Inventory extends VarsContainer {
     const hosts: Record<string, InventoryHost> = {};
 
     await Promise.all(
-      (this.#config.hostSources || []).map(async (inventoryHostSourceConfig) => {
+      (this.#config.hostSources ?? []).map(async (inventoryHostSourceConfig) => {
         const hostSource =
           hostSourceRegistry.getRegistryEntryInstanceFromWrappedIndexedConfig<AbstractHostSourceInstance>(
             inventoryHostSourceConfig,
@@ -331,9 +331,8 @@ export class Inventory extends VarsContainer {
 
     for (const hostname in hosts) {
       if (hostname in this.#hosts) {
-        debug(
-          `Host definition for ${hostname} already loaded via ${this.#hosts[hostname].hostSource?.registryEntry
-            .entryName}, overwriting...`,
+        context.logger.debug(
+          `Host definition for ${hostname} already loaded via ${this.#hosts[hostname].hostSource?.registryEntry.entryName}, overwriting...`,
         );
       }
       const host = hosts[hostname];
@@ -343,16 +342,16 @@ export class Inventory extends VarsContainer {
       this.#hosts[hostname] = host;
     }
 
-    this.#processHostsRecords();
+    this.#processHostsRecords(context);
   }
 
-  #processHostsRecords() {
+  #processHostsRecords(context: ContextLogger) {
     const hostnames = Object.keys(this.#hosts);
     hostnames.sort(naturalSortCompareFn);
     this.#hostnames = hostnames;
 
     for (const hostname of hostnames) {
-      this.#hosts[hostname].loadGroupNamesFromInventory(this);
+      this.#hosts[hostname].loadGroupNamesFromInventory(context, this);
     }
   }
 
@@ -363,9 +362,14 @@ export class Inventory extends VarsContainer {
     return new InventoryHost(hostname, {});
   }
 
-  getGroupNamesForHost(host: InventoryHost, visitedCache?: VisitedCache, includeSpecialGroups?: boolean): string[] {
+  getGroupNamesForHost(
+    context: ContextLogger,
+    host: InventoryHost,
+    visitedCache?: VisitedCache,
+    includeSpecialGroups?: boolean,
+  ): string[] {
     visitedCache ??= newVisitedCache();
-    const groups: Set<string> = new Set();
+    const groups = new Set<string>();
     const allGroupNames = this.getAllGroupNamesWithoutSpecialGroups();
     for (const groupName of allGroupNames) {
       if (groupName in visitedCache.groups) {
@@ -376,7 +380,7 @@ export class Inventory extends VarsContainer {
         continue;
       }
       for (const pattern of groupConfig.pattern) {
-        const hosts = this.getHostsByPattern(pattern, undefined, visitedCache);
+        const hosts = this.getHostsByPattern(context, pattern, undefined, visitedCache);
         if (host.id in hosts) {
           groups.add(groupName);
         }
@@ -399,10 +403,10 @@ export class Inventory extends VarsContainer {
     return groupNames;
   }
 
-  aggregateGroupVarsForHost(host: InventoryHost): VarsInterface {
+  aggregateGroupVarsForHost(context: ContextLogger, host: InventoryHost): VarsInterface {
     const vars: VarsInterface = {};
     if (!host.groupNamesCacheLoaded) {
-      host.loadGroupNamesFromInventory(this);
+      host.loadGroupNamesFromInventory(context, this);
     }
     for (const groupName of host.groupNames) {
       const groupVars = this.#groups[groupName]?.vars ?? {};
@@ -443,7 +447,7 @@ export class Inventory extends VarsContainer {
 
     for (const relation of newRelations) {
       // A relation is no more than a pattern
-      const hosts = this.getHostsByPattern(relation, undefined, visitedCache);
+      const hosts = this.getHostsByPattern(context, relation, undefined, visitedCache);
       for (const hostname in hosts) {
         const host = hosts[hostname];
         if (allHosts.has(host)) {
@@ -462,9 +466,9 @@ export class Inventory extends VarsContainer {
   }
 
   /*
-   Generates a subset of the current inventory that only contains the specified hosts and any groups
-   they belong to.
-   NOTE: this is not a full object copy, there are plenty of references kept inside.
+   *Generates a subset of the current inventory that only contains the specified hosts and any groups
+   *they belong to.
+   *NOTE: this is not a full object copy, there are plenty of references kept inside.
    */
   async createRawSubInventoryConfig(context: DataSourceContext, hostnames: string[]): Promise<InventoryInterface> {
     for (const hostname of hostnames) {
@@ -474,11 +478,11 @@ export class Inventory extends VarsContainer {
     }
 
     /*
-    Using the hostnames provided as argument, populate the relations via:
-    - All relations that each host defines
-    - All relations that each group the host belongs to define
-    
-    Then, populate recursively VIA PATTERN MATCHING until all relations are satisfied.
+     *Using the hostnames provided as argument, populate the relations via:
+     *- All relations that each host defines
+     *- All relations that each group the host belongs to define
+     *
+     *Then, populate recursively VIA PATTERN MATCHING until all relations are satisfied.
      */
 
     const allRelations = new Set<string>();
@@ -514,11 +518,7 @@ export class Inventory extends VarsContainer {
     const config: InventoryInterface = {
       ...this.#config,
       groups,
-      hostSources: [
-        {
-          raw: hostSource,
-        },
-      ],
+      hostSources: [{ raw: hostSource }],
     };
 
     // Make sure this is a valid config
@@ -527,38 +527,43 @@ export class Inventory extends VarsContainer {
   }
 
   /*
-  I MEAN
-
-  command line values (for example, -u my_user, these are not variables)
-  role defaults (defined in role/defaults/main.yml)
-  [XXX] inventory file vars
-  [XXX] inventory group_vars/all
-  [XXX] playbook group_vars/all
-  [XXX] inventory group_vars/*
-  [XXX] playbook group_vars/*
-  [XXX] inventory host_vars/*
-  [XXX] playbook host_vars/*
-  [TODO] host facts / cached set_facts
-  [TODO] play vars
-  [TODO] play vars_prompt
-  [TODO] play vars_files
-  [TODO] role vars (defined in role/vars/main.yml)
-  [TODO] block vars (only for tasks in block)
-  [TODO] task vars (only for the task)
-  [TODO] include_vars
-  [TODO] set_facts / registered vars
-  [TODO] role (and include_role) params
-  [TODO] include params
-  [TODO] extra vars (for example, -e "user=my_user")(always win precedence)
+   *I MEAN
+   *
+   *command line values (for example, -u my_user, these are not variables)
+   *role defaults (defined in role/defaults/main.yml)
+   *[XXX] inventory file vars
+   *[XXX] inventory group_vars/all
+   *[XXX] playbook group_vars/all
+   *[XXX] inventory group_vars/*
+   *[XXX] playbook group_vars/*
+   *[XXX] inventory host_vars/*
+   *[XXX] playbook host_vars/*
+   *[TODO] host facts / cached set_facts
+   *[TODO] play vars
+   *[TODO] play vars_prompt
+   *[TODO] play vars_files
+   *[TODO] role vars (defined in role/vars/main.yml)
+   *[TODO] block vars (only for tasks in block)
+   *[TODO] task vars (only for the task)
+   *[TODO] include_vars
+   *[TODO] set_facts / registered vars
+   *[TODO] role (and include_role) params
+   *[TODO] include params
+   *[TODO] extra vars (for example, -e "user=my_user")(always win precedence)
    */
-  async aggregateBaseVarsForHost(host: InventoryHost): Promise<VarsInterface> {
+  async aggregateBaseVarsForHost(context: DataSourceContext, host: InventoryHost): Promise<VarsInterface> {
+    await this.loadVars({
+      ...context,
+      workDir: this.#meta?.fileName ? path.dirname(this.#meta.fileName) : context.workDir,
+    });
+
     const vars: VarsInterface = {};
 
     // inventory file or script group vars
     Object.assign(vars, this.vars);
 
     // inventory group_vars/*
-    Object.assign(vars, this.aggregateGroupVarsForHost(host));
+    Object.assign(vars, this.aggregateGroupVarsForHost(context, host));
 
     return vars;
   }

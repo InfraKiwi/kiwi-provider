@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import type { AssetsDistributionContext } from '../abstractAssetsDistribution';
 import { AbstractAssetsDistribution } from '../abstractAssetsDistribution';
 import { assetsDistributionRegistryEntryFactory } from '../registry';
@@ -6,8 +5,6 @@ import { AssetsDistributionDirSchema } from './schema';
 import type { AssetsDistributionDirInterface } from './schema.gen';
 import type e from 'express';
 import path from 'node:path';
-
-const debug = newDebug(__filename);
 
 export class AssetsDistributionDir extends AbstractAssetsDistribution<AssetsDistributionDirInterface> {
   mountRoutes(context: AssetsDistributionContext, app: e.IRouter) {

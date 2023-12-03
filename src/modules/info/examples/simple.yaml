@@ -1,0 +1,8 @@
+tasks:
+  - info:
+      # https://systeminformation.io/memory.html
+      mem: true
+    out: infoVar
+
+  # Prints "I have 127.92GB of RAM!"
+  - debug: I have ${{ infoVar.mem.total | bytesToHuman }} of RAM!

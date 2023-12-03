@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, test } from '@jest/globals';
 import type { ModuleStatResult } from './index';
 import { ModuleStat, ModuleStatErrorFileNotFound } from './index';
@@ -9,8 +8,7 @@ import fs from 'node:fs';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
 
 interface ModuleStoreTest {
   args: ModuleStatInterface;
@@ -23,6 +21,8 @@ const tmpLink = tmp.tmpNameSync();
 fs.symlinkSync(tmpFile, tmpLink);
 
 describe('stat module', () => {
+  testExamples(__dirname);
+
   const tests: ModuleStoreTest[] = [
     {
       args: { path: tmpLink },
@@ -33,7 +33,10 @@ describe('stat module', () => {
       expect: (r) => r.vars?.exists == true && r.vars.stat?.isSymbolicLink == true,
     },
     {
-      args: { path: tmpLink, follow: true },
+      args: {
+        path: tmpLink,
+        follow: true,
+      },
       expect: (r) => r.vars?.exists == true && r.vars.stat?.isSymbolicLink == false,
     },
     {
@@ -41,7 +44,10 @@ describe('stat module', () => {
       expect: (r) => r.vars?.exists == false,
     },
     {
-      args: { path: 'randomrandomrandome123', throw: true },
+      args: {
+        path: 'randomrandomrandome123',
+        throw: true,
+      },
       expectThrowNotFound: true,
     },
   ];

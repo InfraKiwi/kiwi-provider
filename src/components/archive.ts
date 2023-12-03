@@ -4,7 +4,6 @@ import path from 'node:path';
 import { mkdirp } from 'mkdirp';
 import { fsPromiseTmpDir, fsPromiseWriteFile, getAllFiles } from '../util/fs';
 import { newLogger } from '../util/logger';
-import { dumpYAML, loadYAMLFromFile } from '../util/yaml';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import type { ContextLogger, ContextRecipeSourceList, ContextWorkDir } from '../util/context';
 import type {
@@ -34,6 +33,7 @@ import { filterHostVarsBlockForHost } from '../util/vars';
 import * as tar from 'tar';
 import type { InventoryHost } from './inventoryHost';
 import type { InventoryInterface } from './inventory.schema.gen';
+import { dumpYAML, loadYAMLFromFile } from '../util/yaml';
 
 interface BuildRecipeDependenciesTreeContext extends ContextLogger, ContextRecipeSourceList, ContextWorkDir {
   visitedAssetsDirs: Record<string, string>;
@@ -51,9 +51,7 @@ class RecipeSourceArchive extends AbstractRecipeSource<
   RecipeSourceArchiveInterfaceConfigKey
 > {
   // We directly override the unique id
-  protected get configId(): string {
-    return `NOOP`;
-  }
+  protected readonly configId = `NOOP`;
 
   get uniqueId(): string {
     return this.config.uniqueId;
@@ -181,8 +179,7 @@ export class Archive {
       }
       const depRecipeConfig = archive.recipeSources[sourceId][recipeId];
       const depRecipe = await stats.measureBlock(`dependency recipe init: ${recipeId}`, () =>
-        this.instantiateRecipe(context, recipeId, depRecipeConfig, dryRun),
-      );
+        this.instantiateRecipe(context, recipeId, depRecipeConfig, dryRun),);
       dependenciesBySource[sourceId][recipeId] = depRecipe;
       dependenciesBySourceArchiveConfigs[sourceId][recipeId] = {
         ...depRecipeConfig,
@@ -237,7 +234,7 @@ export class Archive {
         if (r.targets == null) {
           return false;
         }
-        const hosts = inventory.getHostsByPattern(r.targets, undefined, visitedCache);
+        const hosts = inventory.getHostsByPattern(context, r.targets, undefined, visitedCache);
         return r.targets.length > 0 && hostname in hosts;
       });
 
@@ -247,12 +244,12 @@ export class Archive {
 
     // Load all other hosts we need to load
     const otherHostsPatterns = Array.from(
-      new Set(rootRecipesForHost.map((recipeId) => archive.rootRecipes[recipeId].otherHosts || []).flat()),
+      new Set(rootRecipesForHost.map((recipeId) => archive.rootRecipes[recipeId].otherHosts ?? []).flat()),
     );
 
     const otherHosts: Record<string, InventoryHost> = {};
     for (const pattern of otherHostsPatterns) {
-      const hosts = inventory.getHostsByPattern(pattern, undefined, visitedCache);
+      const hosts = inventory.getHostsByPattern(context, pattern, undefined, visitedCache);
       for (const hostname in hosts) {
         const host = hosts[hostname];
         await host.loadVars(context);
@@ -270,8 +267,7 @@ export class Archive {
       const archiveEntry = archive.rootRecipes[rootRecipeId]!;
 
       const recipe = await stats.measureBlock(`root recipe init: ${rootRecipeId}`, () =>
-        this.instantiateRecipe(context, rootRecipeId, archiveEntry, true),
-      );
+        this.instantiateRecipe(context, rootRecipeId, archiveEntry, true),);
       rootRecipes[rootRecipeId] = recipe;
       rootRecipesArchiveConfigs[rootRecipeId] = {
         ...archiveEntry,
@@ -354,24 +350,19 @@ export class Archive {
     return archive;
   }
 
-  // static async #extractAndResolveBaseVarsForHost(
-  //   inventory: Inventory,
-  //   host: Host,
-  //   stats: Stats,
-  // ): Promise<VarsInterface> {
-  //   const runContext = new RunContext(host, {
-  //     forcedVars: aggregateForcedContextVars({
-  //       inventory,
-  //       host,
-  //     }),
-  //   });
-  //   const inventoryVarsTpl = extractAllTemplates(await inventory.aggregateBaseVarsForHost(host));
-  //   const vars = await stats.measureBlock(
-  //     `inventory and group vars resolution for ${host.id}`,
-  //     async () => await resolveTemplates(inventoryVarsTpl, runContext.varsForTemplate),
-  //   );
-  //   return vars;
-  // }
+  async saveToTarArchive(fileName: string) {
+    const allFiles = await getAllFiles(this.assetsDir);
+
+    // Write archive for configProvider
+    await tar.c(
+      {
+        gzip: true,
+        cwd: this.assetsDir,
+        file: fileName,
+      },
+      allFiles,
+    );
+  }
 }
 
 export async function generateRecipeForArchiveEntry(
@@ -389,7 +380,7 @@ export async function generateRecipeForArchiveEntry(
 
   const recipeId = recipe.standaloneId;
   if (recipeId == null) {
-    throw new Error(`Dependency recipe found with unknown id: ${recipe}`);
+    throw new Error(`Dependency recipe found with unknown id: ${recipeId}`);
   }
   const recipeOriginalAssetsDir = await recipe.getAssetsDir();
   const assetsArchive = recipeOriginalAssetsDir
@@ -401,9 +392,7 @@ export async function generateRecipeForArchiveEntry(
     const deps = dependenciesBySourceId[sourceId];
     for (const dep of deps) {
       recipeForArchive.config.dependencies ??= {};
-      recipeForArchive.config.dependencies[dep] = {
-        sourceId,
-      };
+      recipeForArchive.config.dependencies[dep] = { sourceId };
     }
   }
 

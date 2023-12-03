@@ -2,8 +2,8 @@ import { IfTemplate } from '../util/tpl';
 
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import Joi from 'joi';
-import type { TestMockBaseInterface, ConditionSetInterface } from './testingCommon.schema.gen';
-import { TestMockBaseSchema, ConditionSetSchema } from './testingCommon.schema';
+import type { ConditionSetInterface, TestMockBaseInterface } from './testingCommon.schema.gen';
+import { ConditionSetSchema, TestMockBaseSchema } from './testingCommon.schema';
 import type { AbstractModuleBaseInstance } from '../modules/abstractModuleBase';
 import type { ModuleRunResultInterface } from '../modules/abstractModuleBase.schema.gen';
 
@@ -30,16 +30,22 @@ export abstract class TestMock {
     this.ifTemplates = ifTemplates;
   }
 
-  abstract matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): boolean;
+  abstract matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): Promise<boolean>;
 
-  protected matchesModuleConfig(context: DataSourceContext, module: AbstractModuleBaseInstance): boolean {
+  protected async matchesModuleConfig(
+    context: DataSourceContext,
+    module: AbstractModuleBaseInstance,
+  ): Promise<boolean> {
     const config = module.config;
     for (const ifTemplate of this.ifTemplates) {
-      if (!ifTemplate.isTrue(config)) {
+      if (!(await ifTemplate.isTrue(config))) {
         // context.logger?.debug('Mock condition not met', {test: ifTemplate, context: ifTemplateContext})
         return false;
       }
-      context.logger?.info('Mock condition met', { test: ifTemplate, context: config });
+      context.logger?.info('Mock condition met', {
+        test: ifTemplate,
+        context: config,
+      });
     }
     return true;
   }

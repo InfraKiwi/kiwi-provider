@@ -24,7 +24,7 @@ tasks:
   - load:
       fileRaw:
         path: ${{ __dirname }}/files/nginx.conf
-      extract: true
+      template: true
     out: nginxConfig
 
   - debug: ${{ nginxConfig.content }}

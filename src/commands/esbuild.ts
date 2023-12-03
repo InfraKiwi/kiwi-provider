@@ -1,8 +1,9 @@
-import type { OnLoadArgs, PluginBuild } from 'esbuild';
+import type { OnLoadArgs, Plugin, PluginBuild } from 'esbuild';
 import { build } from 'esbuild';
 import path from 'node:path';
 import { fsPromiseReadFile } from '../util/fs';
 import { isPartOfESBuildBundleValue, version10InfraConfig } from '../util/build';
+import { getPackageVersion } from '../util/package';
 
 const nodeModules = new RegExp(/^(?:.*[\\/])?node_modules$/);
 
@@ -36,45 +37,49 @@ function getESBuildLoader(args: OnLoadArgs) {
 
 const rootPath = path.join(__dirname, '..', '..');
 
-const injectorPlugin = {
-  name: 'dirname',
+export interface InjectorPluginArgs {
+  version?: string;
+}
 
-  setup(build: PluginBuild) {
-    build.onLoad({ filter: /.*/ }, async (args) => {
-      if (args.path.match(nodeModules)) {
-        return undefined;
-      }
-      const ext = path.extname(args.path).substring(1);
-      if (ext != 'ts') {
-        return undefined;
-      }
+function getInjectorPlugin(pluginArgs: InjectorPluginArgs): Plugin {
+  return {
+    name: 'InjectorPlugin',
+    setup(build: PluginBuild) {
+      build.onLoad({ filter: /.*/ }, async (args) => {
+        if (args.path.match(nodeModules)) {
+          return undefined;
+        }
+        const ext = path.extname(args.path).substring(1);
+        if (ext != 'ts') {
+          return undefined;
+        }
+        let contents = await fsPromiseReadFile(args.path, 'utf8');
 
-      let contents = await fsPromiseReadFile(args.path, 'utf8');
+        // __dirname/__filename
+        if (contents.includes('__dirname') || contents.includes('__filename')) {
+          const relPath = '/' + path.relative(rootPath, args.path).replaceAll(path.sep, '/');
+          const dirname = path.dirname(relPath);
+          const filename = relPath;
+          contents = contents.replaceAll('__dirname', `"${dirname}"`).replaceAll('__filename', `"${filename}"`);
+        }
 
-      // __dirname/__filename
-      if (contents.includes('__dirname') || contents.includes('__filename')) {
-        const relPath = '/' + path.relative(rootPath, args.path).replaceAll(path.sep, '/');
-        const dirname = path.dirname(relPath);
-        const filename = relPath;
-        contents = contents.replaceAll('__dirname', `"${dirname}"`).replaceAll('__filename', `"${filename}"`);
-      }
+        // version
+        if (contents.includes(version10InfraConfig)) {
+          const version = pluginArgs.version ?? new Date().toISOString();
+          contents = contents.replaceAll(version10InfraConfig, version);
+        }
+        if (contents.includes(isPartOfESBuildBundleValue)) {
+          contents = contents.replaceAll(isPartOfESBuildBundleValue, 'true');
+        }
 
-      // version
-      if (contents.includes(version10InfraConfig)) {
-        const version = new Date().toISOString();
-        contents = contents.replaceAll(version10InfraConfig, version);
-      }
-      if (contents.includes(isPartOfESBuildBundleValue)) {
-        contents = contents.replaceAll(isPartOfESBuildBundleValue, 'true');
-      }
-
-      return {
-        contents,
-        loader: getESBuildLoader(args),
-      };
-    });
-  },
-};
+        return {
+          contents,
+          loader: getESBuildLoader(args),
+        };
+      });
+    },
+  };
+}
 
 export async function runESBuild(entryPoint: string, outFile: string) {
   await build({
@@ -89,6 +94,6 @@ export async function runESBuild(entryPoint: string, outFile: string) {
     format: 'cjs',
     // Manually exclude https://github.com/evanw/esbuild/issues/3434 because yeah
     external: ['dtrace-provider'],
-    plugins: [injectorPlugin],
+    plugins: [getInjectorPlugin({ version: await getPackageVersion() })],
   });
 }

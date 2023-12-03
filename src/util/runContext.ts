@@ -1,5 +1,4 @@
 import type { KeysMatching, ReadonlyKeys } from './helperTypes';
-import { newDebug } from './debug';
 import type { Logger } from 'winston';
 import { defaultLogger } from './logger';
 import type { VarsInterface } from '../components/varsContainer.schema.gen';
@@ -8,8 +7,7 @@ import type { InventoryHost } from '../components/inventoryHost';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import type { ContextLogger, ContextRecipeSourceList, ContextWorkDir } from './context';
 import type { TestMock } from '../components/testingCommon';
-
-const debug = newDebug(__filename);
+import type { RunContextPublicVarsInterface } from './runContext.schema.gen';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type MethodKeysOfRunContext = KeysMatching<RunContext, Function>;
@@ -35,40 +33,49 @@ export function newRunStatistics(): RunStatistics {
   };
 }
 
-export class RunContext implements ContextLogger, ContextRecipeSourceList, ContextWorkDir {
-  // --- VarsInterface
+export type RunContextShutdownHookFn = () => void | Promise<void>;
+
+export interface RunContextShutdownHook {
+  label: string;
+  fn: RunContextShutdownHookFn;
+}
+
+export class RunContext
+  implements ContextLogger, ContextRecipeSourceList, ContextWorkDir, RunContextPublicVarsInterface {
   logger: Logger = defaultLogger;
-
-  // The current host
   host: InventoryHost;
-
-  // The current working directory
-  // cwd: string = process.cwd();
-
-  // If true, this run is readonly and no changes should happen on the host machine
-  // TODO dryRun: boolean = false;
-
-  // Contains vars that will forcefully exist for each template and cannot be overwritten
-  forcedVars: Record<string, unknown> = {};
-
-  recipeSources: RecipeSourceList | undefined;
-
-  // Contains all vars shared by all modules
-  vars: Record<string, unknown> = {};
-
-  // When tasks are executed, this will always contain the previous task's result
+  vars: VarsInterface = {};
   previousTaskResult?: VarsInterface;
-
   workDir: string | undefined;
 
-  // General execution statistics
+  /**
+   * Contains vars that will forcefully exist for each template and cannot
+   * be overwritten
+   */
+  forcedVars: VarsInterface = {};
+
+  /**
+   * The list of recipe sources configured in the current context
+   */
+  recipeSources: RecipeSourceList | undefined;
+
+  /**
+   * General execution statistics
+   */
   statistics: RunStatistics = newRunStatistics();
 
-  // Testing vars
-  isTesting: boolean = false;
+  /**
+   * Any shutdown hooks that need to be run when the context is closed
+   */
+  shutdownHooks: RunContextShutdownHook[] = [];
+
+  /**
+   * Testing vars
+   */
+  isTesting = false;
   testMocks: TestMock[] = [];
 
-  // --- Methods
+  // --- Methods ---
 
   constructor(host: InventoryHost, partial?: Partial<MyPartialRunContextOmit>) {
     this.host = host;
@@ -107,17 +114,11 @@ export class RunContext implements ContextLogger, ContextRecipeSourceList, Conte
     if (Object.keys(options).length == 0) {
       return this;
     }
-    return this.clone({
-      logger: this.logger.child(options),
-    });
+    return this.clone({ logger: this.logger.child(options) });
   }
 
   withLabel(label: string): RunContext {
-    return this.clone({
-      logger: this.logger.child({
-        label,
-      }),
-    });
+    return this.clone({ logger: this.logger.child({ label }) });
   }
 
   withVars(vars: VarsInterface): RunContext {
@@ -148,9 +149,7 @@ export class RunContext implements ContextLogger, ContextRecipeSourceList, Conte
     if (testMocks.length == 0) {
       return this;
     }
-    return this.clone({
-      testMocks: [...testMocks, ...this.testMocks],
-    });
+    return this.clone({ testMocks: [...testMocks, ...this.testMocks] });
   }
 
   prependRecipeSourceList(recipeSources?: RecipeSourceList): RunContext {
@@ -162,5 +161,19 @@ export class RunContext implements ContextLogger, ContextRecipeSourceList, Conte
         ? RecipeSourceList.mergePrepend(this, recipeSources, this.recipeSources)
         : recipeSources,
     });
+  }
+
+  registerShutdownHook(fn: RunContextShutdownHook) {
+    this.shutdownHooks.push(fn);
+  }
+
+  async executeShutdownHooks() {
+    for (const hook of this.shutdownHooks) {
+      try {
+        await hook.fn();
+      } catch (ex) {
+        this.logger.error(`Failed to execute shutdown hook: ${hook.label}`, { ex });
+      }
+    }
   }
 }

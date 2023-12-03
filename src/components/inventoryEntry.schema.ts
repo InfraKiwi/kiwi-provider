@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import { joiMetaClassName } from '../util/joi';
-import { VarsContainerSchema } from './varsContainer.schema';
+import { VarsContainerSchemaObject } from './varsContainer.schema';
 
 export const InventoryEntryVarsRelationsKeyDefault = '__relations';
 
@@ -8,10 +8,19 @@ export const InventoryEntryRelationsSchema = Joi.array()
   .items(Joi.string())
   .meta(joiMetaClassName('InventoryEntryRelationsInterface'));
 
-export const InventoryEntrySchema = VarsContainerSchema.append({
-  // Defines which other hosts/groups shall be included in the compiled inventory
-  relations: InventoryEntryRelationsSchema,
+export const InventoryEntrySchemaObject = {
+  relations: InventoryEntryRelationsSchema.description(
+    `Defines which other hosts/groups shall be included in the compiled inventory`,
+  ),
 
-  // Defines key which, if defined in the entry vars, will populate the relations field with
-  varsKeyRelations: Joi.string().default(InventoryEntryVarsRelationsKeyDefault).optional(),
-}).meta({ className: 'InventoryEntryInterface' });
+  varsKeyRelations: Joi.string().default(InventoryEntryVarsRelationsKeyDefault).optional().description(`
+    Defines a key that, if found in the entry vars, will also be used to populate
+    the \`relations\` array. 
+  `),
+
+  ...VarsContainerSchemaObject,
+};
+
+export const InventoryEntrySchema = Joi.object(InventoryEntrySchemaObject).meta({
+  className: 'InventoryEntryInterface',
+});

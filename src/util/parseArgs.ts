@@ -1,11 +1,14 @@
 import Joi from 'joi';
 import { joiParseArgsLogOptions, parseArgsLogOptions } from './logger';
-import { joiAttemptAsync, joiValidateAsyncFileExists } from './joi';
+import { joiValidateSyncFSExists } from './joi';
+
 import { loadYAMLFromFile } from './yaml';
+
+export const parseArgsConfigOptionsConfigPathKey = 'configPath';
 
 export const parseArgsConfigOptions: ParseArgsOptionsConfig = {
   // Config file path
-  configPath: {
+  [parseArgsConfigOptionsConfigPathKey]: {
     type: 'string',
     short: 'c',
   },
@@ -13,7 +16,7 @@ export const parseArgsConfigOptions: ParseArgsOptionsConfig = {
 
 export async function loadConfig<T>(configPath: string | undefined, schema: Joi.Schema): Promise<T> {
   const configObject = (configPath ? await loadYAMLFromFile(configPath) : {}) ?? {};
-  return await joiAttemptAsync(configObject, schema);
+  return Joi.attempt(configObject, schema);
 }
 
 export const parseArgsAppBaseOptions: ParseArgsOptionsConfig = {
@@ -24,5 +27,5 @@ export const parseArgsAppBaseOptions: ParseArgsOptionsConfig = {
 export const parseArgsAppBaseJoiObject = Joi.object()
   .append(joiParseArgsLogOptions)
   .append({
-    configPath: Joi.string().external(joiValidateAsyncFileExists),
+    [parseArgsConfigOptionsConfigPathKey]: Joi.string().custom(joiValidateSyncFSExists),
   });

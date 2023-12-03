@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals';
 import Joi from 'joi';
-import { joiKeepOnlyKeysNotInJoiObjectDiff } from './joi';
+import { joiKeepOnlyKeysNotInJoiObjectDiff, joiSchemaAcceptsString } from './joi';
 
 describe('joi utils', () => {
   test('keys diff', () => {
@@ -25,6 +25,49 @@ describe('joi utils', () => {
       schemaExt,
     );
 
-    expect(diff).toEqual({ a: 1, b: 2 });
+    expect(diff).toEqual({
+      a: 1,
+      b: 2,
+    });
+  });
+
+  describe('joiSchemaAcceptsString', () => {
+    const tests: {
+      schema: Joi.Schema;
+      expect: boolean;
+    }[] = [
+      {
+        schema: Joi.string(),
+        expect: true,
+      },
+      {
+        schema: Joi.any(),
+        expect: true,
+      },
+      {
+        schema: Joi.alternatives([Joi.object(), Joi.string()]),
+        expect: true,
+      },
+      {
+        schema: Joi.alternatives([Joi.object()]),
+        expect: false,
+      },
+      {
+        schema: Joi.object(),
+        expect: false,
+      },
+      {
+        schema: Joi.object({}),
+        expect: false,
+      },
+      {
+        schema: Joi.alternatives(),
+        expect: false,
+      },
+    ];
+
+    test.each(tests)('%#', (t) => {
+      expect(joiSchemaAcceptsString(t.schema)).toEqual(t.expect);
+    });
   });
 });

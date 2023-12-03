@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import { ModuleSwitch } from './index';
 
@@ -7,15 +6,16 @@ import type { ModuleSwitchCaseFullInterface, ModuleSwitchInterface } from './sch
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import type { VarsInterface } from '../../components/varsContainer.schema.gen';
+import { testExamples } from '../../util/testUtils';
 
-const debug = newDebug(__filename);
-
-interface ModuleStoreTest {
+interface ModuleSwitchTest {
   args: ModuleSwitchInterface;
   expect?: ModuleRunResult<VarsInterface>;
 }
 
 describe('switch module', () => {
+  testExamples(__dirname);
+
   const debug = '${{ __switchValue }}';
   const casesSimple = {
     hello: {
@@ -44,32 +44,47 @@ describe('switch module', () => {
   const casesComplex: ModuleSwitchCaseFullInterface[] = [
     {
       if: '__switchValue == "one"',
-      task: { debug, out: 'debug' },
+      task: {
+        debug,
+        out: 'debug',
+      },
     },
     {
       if: '__switchValue == "two"',
-      task: { debug, out: 'debug' },
+      task: {
+        debug,
+        out: 'debug',
+      },
       fallthrough: true,
     },
     {
-      task: { debug, out: 'debugFallthrough' },
+      task: {
+        debug,
+        out: 'debugFallthrough',
+      },
     },
   ];
 
-  const tests: ModuleStoreTest[] = [
+  const tests: ModuleSwitchTest[] = [
     {
       args: {
         value: 'hello',
         cases: casesSimple,
       },
-      expect: { vars: { debug: 'hello' }, changed: false },
+      expect: {
+        vars: { debug: 'hello' },
+        changed: false,
+      },
     },
     {
       args: {
         cases: casesSimple,
         default: defaultSimple,
       },
-      expect: { vars: { debug: '' }, changed: false },
+      expect: {
+        vars: { debug: undefined },
+        changed: false,
+      },
     },
     {
       args: {
@@ -77,7 +92,10 @@ describe('switch module', () => {
         cases: casesSimple,
         default: defaultSimple,
       },
-      expect: { vars: { debug: '123' }, changed: false },
+      expect: {
+        vars: { debug: '123' },
+        changed: false,
+      },
     },
     {
       args: {
@@ -85,21 +103,36 @@ describe('switch module', () => {
         cases: casesSimple,
         default: defaultSimple,
       },
-      expect: { vars: { debug: 'two', debug2: 'two' }, changed: false },
+      expect: {
+        vars: {
+          debug: 'two',
+          debug2: 'two',
+        },
+        changed: false,
+      },
     },
     {
       args: {
         value: 'one',
         cases: casesComplex,
       },
-      expect: { vars: { debug: 'one' }, changed: false },
+      expect: {
+        vars: { debug: 'one' },
+        changed: false,
+      },
     },
     {
       args: {
         value: 'two',
         cases: casesComplex,
       },
-      expect: { vars: { debug: 'two', debugFallthrough: 'two' }, changed: false },
+      expect: {
+        vars: {
+          debug: 'two',
+          debugFallthrough: 'two',
+        },
+        changed: false,
+      },
     },
   ];
 

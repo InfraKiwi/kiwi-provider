@@ -7,6 +7,7 @@ import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
 import { InventoryHostSchema, specialGroupNames } from './inventory.schema';
 import type { InventoryHostInterface } from './inventory.schema.gen';
+import type { ContextLogger } from '../util/context';
 
 export class InventoryHost extends InventoryEntry {
   readonly #hostSource?: AbstractHostSourceInstance;
@@ -24,7 +25,7 @@ export class InventoryHost extends InventoryEntry {
     return this.#hostSource;
   }
 
-  get hostSourceMetadata(): unknown | undefined {
+  get hostSourceMetadata(): unknown {
     return this.#hostSourceMetadata;
   }
 
@@ -36,11 +37,11 @@ export class InventoryHost extends InventoryEntry {
     await this.#hostSource?.populateHostData(context, this);
   }
 
-  loadGroupNamesFromInventory(inventory: Inventory) {
+  loadGroupNamesFromInventory(context: ContextLogger, inventory: Inventory) {
     if (this.#groupNamesCache) {
       return;
     }
-    this.#groupNamesCache = inventory.getGroupNamesForHost(this, undefined, true);
+    this.#groupNamesCache = inventory.getGroupNamesForHost(context, this, undefined, true);
   }
 
   get groupNamesCacheLoaded(): boolean {
@@ -55,6 +56,6 @@ export class InventoryHost extends InventoryEntry {
   }
 
   get groupNamesWithoutSpecialGroups(): string[] {
-    return this.groupNames.filter((g) => !specialGroupNames.includes(g));
+    return this.groupNames.filter((g) => !(specialGroupNames as unknown as string[]).includes(g));
   }
 }

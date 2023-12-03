@@ -1,7 +1,8 @@
 import { hostSourceRegistryEntryFactory } from '../registry';
-import { DataSourceFileBaseSchema } from '../../dataSources/file/schema';
+import { DataSourceFileBaseSchemaObject } from '../../dataSources/file/schema';
+import Joi from 'joi';
 
 export const HostSourceFileSchema = hostSourceRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
-  DataSourceFileBaseSchema,
+  Joi.object(DataSourceFileBaseSchemaObject),
 );

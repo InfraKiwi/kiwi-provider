@@ -10,7 +10,12 @@ interface TplTestEntry {
 }
 
 describe('processes eval templates correctly', () => {
-  const templates: TplTestEntry[] = [{ str: `setResult(123)`, exp: 123 }];
+  const templates: TplTestEntry[] = [
+    {
+      str: `setResult(123)`,
+      exp: 123,
+    },
+  ];
 
   test.each(templates)('%s', async (el) => {
     const extract = new TemplateEval(el.str);

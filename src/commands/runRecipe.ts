@@ -18,13 +18,13 @@ export async function runRecipe(
   context: DataSourceContext & Partial<MyPartialRunContextOmit>,
   { hostname, inventory, recipe, runContextPartial }: RunRecipeArgs,
 ): Promise<void> {
-  const hosts = inventory.getHostsByPattern(hostname);
+  const hosts = inventory.getHostsByPattern(context, hostname);
   const hostnames = Object.keys(hosts);
   if (hostnames.length == 0) {
     if (recipe.targets.length == 0 || recipe.targets.includes(groupNameAll)) {
       // This recipe will be run in any case because the recipe does not specify any targets
       const host = new InventoryHost(hostname, {});
-      inventory.setHost(host);
+      inventory.setHost(context, host);
       hosts[hostname] = host;
       hostnames.push(hostname);
     } else {
@@ -38,7 +38,7 @@ export async function runRecipe(
   const host = hosts[hostnames[0]];
   await host.loadVars(context);
 
-  const otherHosts = inventory.getHostsByPattern(recipe.config.otherHosts ?? []);
+  const otherHosts = inventory.getHostsByPattern(context, recipe.config.otherHosts ?? []);
   for (const otherHostsKey in otherHosts) {
     await otherHosts[otherHostsKey].loadVars(context);
   }
@@ -47,9 +47,7 @@ export async function runRecipe(
     ...context,
     ...runContextPartial,
   })
-    .withLoggerFields({
-      hostname: host.id,
-    })
+    .withLoggerFields({ hostname: host.id })
     .withForcedVars(
       aggregateForcedContextVars({
         inventory,
@@ -58,7 +56,7 @@ export async function runRecipe(
     );
 
   // Process variables from inventory
-  const hostVars = await inventory.aggregateBaseVarsForHost(host);
+  const hostVars = await inventory.aggregateBaseVarsForHost(context, host);
   Object.assign(runContext.vars, hostVars);
   await recipe.run(runContext);
 }

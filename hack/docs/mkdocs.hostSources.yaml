@@ -1,0 +1,11 @@
+site_name: hostSources
+docs_dir: ../../src/hostSources
+
+nav:
+  - README.md
+  ### REPLACE NAV BEGIN
+  - 'file': ./file/README.md
+  - 'glob': ./glob/README.md
+  - 'http': ./http/README.md
+  - 'raw': ./raw/README.md
+  ### REPLACE NAV END

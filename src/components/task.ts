@@ -1,7 +1,6 @@
 // module: ModuleBase<unknown, unknown>
 import { moduleRegistry } from '../modules/registry';
 import type { RunContext } from '../util/runContext';
-import { newDebug } from '../util/debug';
 import { extractAllTemplates, IfTemplate, objectContainsTemplates, resolveTemplates } from '../util/tpl';
 import { TaskSchema, TaskTestMockSchema } from './task.schema';
 import type { TaskInterface, TaskTestMockInterface } from './task.schema.gen';
@@ -24,20 +23,20 @@ import { TestMock } from './testingCommon';
 import Joi from 'joi';
 import { TestMockBaseSchema } from './testingCommon.schema';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
-
-const debug = newDebug(__filename);
+import { findAsync } from '../util/findAsync';
 
 export interface TaskRunResult<ResultType extends ModuleRunResultBaseType> {
   moduleRunResult?: ModuleRunResult<ResultType>;
   skipped: boolean;
   exit?: boolean;
   out?: string;
+  global?: boolean;
 }
 
 export interface TaskRunTasksInContextResult {
   changed: boolean;
   exit?: boolean;
-  accumulatedVars: VarsInterface;
+  vars: VarsInterface;
 }
 
 export const TaskErrorFailedWithIfCondition = getErrorPrintfClass(
@@ -56,7 +55,7 @@ export class TaskTestMock extends TestMock {
     super(joiKeepOnlyKeysInJoiSchema(config, TestMockBaseSchema), config.if);
   }
 
-  matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): boolean {
+  matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): Promise<boolean> {
     return super.matchesModuleConfig(context, module);
   }
 }
@@ -92,9 +91,7 @@ export class Task {
 
   getConfigForArchive(): TaskInterface {
     // Strip out unnecessary items
-    const cleanedConfig: TaskInterface = {
-      ...joiKeepOnlyKeysNotInJoiObjectDiff(this.config, TaskSchema, TaskSchema),
-    };
+    const cleanedConfig: TaskInterface = { ...joiKeepOnlyKeysNotInJoiObjectDiff(this.config, TaskSchema, TaskSchema) };
     return cleanedConfig;
   }
 
@@ -102,6 +99,7 @@ export class Task {
     let taskConfig = this.config;
 
     context = context.withVars({
+      // Add forcefully defined vars
       ...taskConfig.vars,
     });
     context.logger.debug('Initializing task');
@@ -133,27 +131,27 @@ export class Task {
 
     if (this.ifTemplate && !(await this.ifTemplate.isTrue(context.vars))) {
       context.logger.info('Task skipped');
-      return {
-        skipped: true,
-      };
+      return { skipped: true };
     }
 
-    // Evaluate testMocks
-    // if (context.isTesting && !taskConfig.ignoreMocks) {
-    //   if (taskConfig.mock) {
-    //     // The single mock will always be matched as the first mock
-    //     const mockConfig: TestMockInterface = {
-    //       result: taskConfig.mock.result,
-    //       changed: taskConfig.mock.changed,
-    //       [module.registryEntry.entryName]: 'true',
-    //     };
-    //     const testMock = new RecipeTestMock(mockConfig);
-    //     context = context.prependTestMocks([testMock]);
-    //   } else {
-    //     const testMocks = (taskConfig.testMocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
-    //     context = context.prependTestMocks(testMocks);
-    //   }
-    // }
+    /*
+     * Evaluate testMocks
+     * if (context.isTesting && !taskConfig.ignoreMocks) {
+     *   if (taskConfig.mock) {
+     *     // The single mock will always be matched as the first mock
+     *     const mockConfig: TestMockInterface = {
+     *       result: taskConfig.mock.result,
+     *       changed: taskConfig.mock.changed,
+     *       [module.registryEntry.entryName]: 'true',
+     *     };
+     *     const testMock = new RecipeTestMock(mockConfig);
+     *     context = context.prependTestMocks([testMock]);
+     *   } else {
+     *     const testMocks = (taskConfig.testMocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
+     *     context = context.prependTestMocks(testMocks);
+     *   }
+     * }
+     */
 
     context.logger.debug(`Task running`);
 
@@ -163,7 +161,7 @@ export class Task {
     if (
       context.isTesting &&
       !taskConfig.ignoreMocks &&
-      (mock = context.testMocks.find((mock) => mock.matchesModule(context, module))) != null
+      (mock = await findAsync(context.testMocks, (mock) => mock.matchesModule(context, module))) != null
     ) {
       result = mock.getResult();
     } else {
@@ -179,7 +177,7 @@ export class Task {
     }
 
     const postRunChecksContext = {
-      context: context.vars,
+      vars: context.vars,
       result,
     };
 
@@ -187,7 +185,7 @@ export class Task {
       if (await this.failedIfTemplate.isTrue(postRunChecksContext)) {
         const failResult = await new ModuleFail(
           typeof this.config.failedIf == 'string'
-            ? 'failedIf condition invoked'
+            ? 'failedIf condition was true'
             : joiKeepOnlyKeysInJoiSchema(this.config.failedIf, ModuleFailFullSchema),
         ).run(context);
         throw new TaskErrorFailedWithIfCondition(failResult.failed);
@@ -201,7 +199,7 @@ export class Task {
       if (await this.exitIfTemplate.isTrue(postRunChecksContext)) {
         const exitResult = await new ModuleExit(
           typeof this.config.exitIf == 'string'
-            ? 'exitIf condition invoked'
+            ? 'exitIf condition was true'
             : joiKeepOnlyKeysInJoiSchema(this.config.exitIf, ModuleExitFullSchema),
         ).run(context);
         forceExit = exitResult.exit == true;
@@ -211,13 +209,17 @@ export class Task {
       }
     }
 
-    context.logger.info(`Task completed`, { result, forceExit });
+    context.logger.info(`Task completed`, {
+      result,
+      forceExit,
+    });
 
     return {
       moduleRunResult: result,
       exit: forceExit || result.exit,
       skipped: false,
       out: taskConfig.out,
+      global: taskConfig.global,
     };
   }
 
@@ -242,12 +244,21 @@ export class Task {
         context.statistics.skippedTasksCount++;
       }
 
-      if (taskResult.out) {
-        accumulatedVars[taskResult.out] = taskResult.moduleRunResult?.vars;
-        context.vars[taskResult.out] = taskResult.moduleRunResult?.vars;
+      const resultVars = taskResult.moduleRunResult?.vars;
+      if (resultVars) {
+        if (taskResult.out) {
+          accumulatedVars[taskResult.out] = resultVars;
+          context.vars[taskResult.out] = resultVars;
+        }
+
+        if (taskResult.global) {
+          Object.assign(accumulatedVars, resultVars);
+          Object.assign(context.vars, resultVars);
+        }
       }
+
       if (task.config.keepPreviousTaskResult != true) {
-        context.previousTaskResult = taskResult.moduleRunResult?.vars;
+        context.previousTaskResult = resultVars;
       }
 
       if (taskResult.moduleRunResult?.changed) {
@@ -258,14 +269,14 @@ export class Task {
         return {
           exit: true,
           changed,
-          accumulatedVars,
+          vars: accumulatedVars,
         };
       }
     }
 
     return {
       changed,
-      accumulatedVars,
+      vars: accumulatedVars,
     };
   }
 }

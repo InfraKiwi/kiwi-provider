@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import type { ModuleExampleResult } from './index';
 import { ModuleExample } from './index';
@@ -7,8 +6,7 @@ import type { ModuleExampleInterface } from './schema.gen';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
 
 interface ModuleStoreTest {
   args: ModuleExampleInterface;
@@ -16,10 +14,15 @@ interface ModuleStoreTest {
 }
 
 describe('example module', () => {
+  testExamples(__dirname);
+
   const tests: ModuleStoreTest[] = [
     {
       args: { hello: 'world' },
-      expect: { vars: { newValue: 'world123' }, changed: true },
+      expect: {
+        vars: { newValue: 'world123' },
+        changed: true,
+      },
     },
   ];
 

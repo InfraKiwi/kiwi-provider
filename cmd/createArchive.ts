@@ -1,4 +1,3 @@
-import { newDebug } from '../src/util/debug';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import Joi from 'joi';
@@ -9,13 +8,10 @@ import { RecipeSourceList } from '../src/recipeSources/recipeSourceList';
 import { createArchiveFile } from '../src/commands/createArchiveFile';
 import type { ContextLogger, ContextWorkDir } from '../src/util/context';
 import { fsPromiseMkdir, fsPromiseRm } from '../src/util/fs';
-import { joiAttemptAsync } from '../src/util/joi';
 import { setupUncaughtHandler } from '../src/util/uncaught';
 
-const debug = newDebug(__filename);
-
 /*
-This program should generate an archive of recipes that each host can download.
+ *This program should generate an archive of recipes that each host can download.
  */
 const argsConfig: ParseArgsConfig = {
   allowPositionals: true,
@@ -46,7 +42,7 @@ const argsConfig: ParseArgsConfig = {
 async function main() {
   const { positionals, values } = parseArgs(argsConfig);
 
-  const { source, outputTarFile, archiveDir, dump, ...otherArgs } = await joiAttemptAsync(
+  const { source, outputTarFile, archiveDir, dump, ...otherArgs } = Joi.attempt(
     values,
     joiParseArgsLogOptionsSchema.append({
       source: Joi.array().items(Joi.string()).default([]),
@@ -60,7 +56,10 @@ async function main() {
   setupUncaughtHandler(logger);
 
   if (archiveDir) {
-    await fsPromiseRm(archiveDir, { recursive: true, force: true });
+    await fsPromiseRm(archiveDir, {
+      recursive: true,
+      force: true,
+    });
     await fsPromiseMkdir(archiveDir);
   }
 

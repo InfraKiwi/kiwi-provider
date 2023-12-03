@@ -6,9 +6,8 @@ import type { ContextLogger } from '../../util/context';
 import type { Logger } from 'winston';
 import bodyParser from 'body-parser';
 import Joi from 'joi';
-import type { ServerDefaults } from './server.schema';
 import { getServerListenerSchemaObject } from './server.schema';
-import type { ServerListenerWrapperInterface } from './server.schema.gen';
+import type { ServerListenerInterface, ServerListenerWrapperInterface } from './server.schema.gen';
 
 export interface NewServerArgs {
   auditRequestOptions?: CommonOptions;
@@ -28,7 +27,10 @@ class LoggerWrapper {
   }
 }
 
-export function getAppConfigSchemaObject(appSchema: Joi.Schema, serverDefaults?: ServerDefaults): Joi.ObjectSchema {
+export function getAppConfigSchemaObject(
+  appSchema: Joi.Schema,
+  serverDefaults?: ServerListenerInterface,
+): Joi.ObjectSchema {
   return Joi.object({
     ...getServerListenerSchemaObject(serverDefaults),
     app: appSchema.default(),
@@ -45,11 +47,7 @@ export function newServer(context: ContextLogger, args: NewServerArgs): Express 
   const loggerWrapper = new LoggerWrapper(context.logger);
 
   app.use(bodyParser.json());
-  app.use(
-    bodyParser.urlencoded({
-      extended: true,
-    }),
-  );
+  app.use(bodyParser.urlencoded({ extended: true }));
 
   app.use(
     audit({

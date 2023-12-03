@@ -1,9 +1,8 @@
-import { newDebug } from '../../util/debug';
 import type { RunnerContext, RunnerRunRecipesResult } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
 import type { RunnerLocalInterface } from './schema.gen';
-import type { ExecCmdOptions } from '../../util/exec';
+import type { ExecCmdOptions, RunShellResult } from '../../util/exec';
 import { execCmd } from '../../util/exec';
 import type { ContextLogger } from '../../util/context';
 import { fsPromiseReadFile, fsPromiseTmpDir, fsPromiseTmpFile } from '../../util/fs';
@@ -11,13 +10,11 @@ import {
   downloadNodeDist,
   getCurrentNodeJSArch,
   getCurrentNodeJSPlatform,
-  NodeJSPlatform,
+  NodeJSExecutablePlatform,
 } from '../../util/downloadNodeDist';
 import type { RunStatistics } from '../../util/runContext';
 import { createCJSRunnerBundle } from '../../util/createCJSRunnerBundle';
 import { RunnerLocalSchema } from './schema';
-
-const debug = newDebug(__filename);
 
 export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
   #workDir?: string;
@@ -25,14 +22,14 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
   #cjsBundle?: string;
 
   async setUp(context: ContextLogger): Promise<void> {
-    super.setUp(context);
+    await super.setUp(context);
     await this.#prepareEnvironment(context);
   }
 
   async #prepareEnvironment(context: ContextLogger) {
     /*
-    We need to set up the environment inside the container, meaning that we need a properly working
-    nodejs executable.
+     *We need to set up the environment inside the container, meaning that we need a properly working
+     *nodejs executable.
      */
     const nodePlatform = getCurrentNodeJSPlatform();
     const nodeBin = await downloadNodeDist(context, {
@@ -40,7 +37,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
       arch: getCurrentNodeJSArch(),
     });
 
-    if (nodePlatform == NodeJSPlatform.linux || nodePlatform == NodeJSPlatform.darwin) {
+    if (nodePlatform == NodeJSExecutablePlatform.linux || nodePlatform == NodeJSExecutablePlatform.darwin) {
       // Make sure the node binary is executable
       await execCmd(context, 'chmod', ['+x', nodeBin]);
     }
@@ -54,7 +51,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
 
     // Then, prepare our run package
     {
-      const runnerBundle = await createCJSRunnerBundle(context);
+      const runnerBundle = await createCJSRunnerBundle(context, { entryPoint: this.entryPointFileName });
       await this.#nodeExec(context, [runnerBundle, 'version']);
       this.#cjsBundle = runnerBundle;
     }
@@ -68,9 +65,20 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
   }
 
   async runRecipes(context: RunnerContext, archiveDir: string, ids: string[]): Promise<RunnerRunRecipesResult> {
-    context.logger.verbose(`Running recipes`, { archiveDir, ids });
-    const logFile = await fsPromiseTmpFile({ keep: false, discardDescriptor: true, postfix: '.log' });
-    const statsFileName = await fsPromiseTmpFile({ keep: false, discardDescriptor: true, postfix: '.json' });
+    context.logger.verbose(`Running recipes`, {
+      archiveDir,
+      ids,
+    });
+    const logFile = await fsPromiseTmpFile({
+      keep: false,
+      discardDescriptor: true,
+      postfix: '.log',
+    });
+    const statsFileName = await fsPromiseTmpFile({
+      keep: false,
+      discardDescriptor: true,
+      postfix: '.json',
+    });
 
     const args: string[] = [
       'runRecipesFromArchive',
@@ -89,7 +97,15 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
 
     args.push(...ids);
 
-    const result = await this.#runnerExec(context, args);
+    let result: RunShellResult;
+    try {
+      result = await this.#runnerExec(context, args);
+    } finally {
+      const logs = this.parseRunRecipesFromArchiveLogs(context, await fsPromiseReadFile(logFile, 'utf-8'));
+      for (const entry of logs) {
+        context.logger.log(entry);
+      }
+    }
 
     let statistics: Record<string, RunStatistics>;
     try {
@@ -97,11 +113,6 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
     } catch (ex) {
       context.logger.error(`Failed to process statistics file`, { error: ex });
       statistics = {};
-    }
-
-    const logs = this.parseRunRecipesFromArchiveLogs(context, await fsPromiseReadFile(logFile, 'utf-8'));
-    for (const entry of logs) {
-      context.logger.log(entry);
     }
 
     return {
@@ -149,11 +160,17 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
     const nodeBin = this.#assertNodeBin();
     const cjsBundle = this.#assertCJSBundle();
     context.logger.verbose(`Executing runner command`, { args });
-    return await execCmd(context, nodeBin, [cjsBundle, ...args], { ...options, cwd: workDir });
+    return await execCmd(context, nodeBin, [cjsBundle, ...args], {
+      ...options,
+      cwd: workDir,
+    });
   }
 
   async #localExtractTarGZArchive(context: ContextLogger, archiveFile: string, dst: string) {
-    context.logger.verbose('Extracting archive', { archiveFile, dst });
+    context.logger.verbose('Extracting archive', {
+      archiveFile,
+      dst,
+    });
     await execCmd(context, 'tar', ['-xzf', archiveFile, '-C', dst]);
   }
 }

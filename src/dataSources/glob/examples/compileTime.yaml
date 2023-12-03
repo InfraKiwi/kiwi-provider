@@ -1,0 +1,13 @@
+varsSources:
+  # Loads the vars at compile-time
+  - glob: pattern=./vars/*.yaml
+    flatten: true
+
+tasks:
+  - debug: ${{ getVars() | dump }}
+  # Outputs "Hello world! It's my life!"
+  - debug: Hello ${{ hello }}! It's ${{ its }}!
+
+  ### Testing
+  - test: hello == "world"
+  - test: its == "my life"

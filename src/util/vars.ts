@@ -7,13 +7,15 @@ export function filterHostVarsBlockForHost(
   host: InventoryHost,
   hostVarsBlock: HostVarsBlockInterface,
 ): HostVarsBlockInterface {
-  // TODO
-  // TODO
-  // TODO
-  // TODO potentially support pattern matching for group vars and/or host vars
-  // TODO
-  // TODO
-  // TODO
+  /*
+   * TODO
+   * TODO
+   * TODO
+   * TODO potentially support pattern matching for group vars and/or host vars
+   * TODO
+   * TODO
+   * TODO
+   */
 
   const allGroupVars: Record<string, VarsInterface> = {};
   const allHostVars: Record<string, VarsInterface> = {};

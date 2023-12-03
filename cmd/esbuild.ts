@@ -1,7 +1,7 @@
 import '../src/util/loadAllRegistryEntries.gen';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
-import { joiAttemptAsync, joiValidateAsyncFileExists } from '../src/util/joi';
+import { joiValidateSyncFSExists } from '../src/util/joi';
 import Joi from 'joi';
 import { runESBuild } from '../src/commands/esbuild';
 import { setupUncaughtHandler } from '../src/util/uncaught';
@@ -26,10 +26,10 @@ const argsConfig: ParseArgsConfig = {
 async function main() {
   const { values } = parseArgs(argsConfig);
 
-  const { entryPoint, outFile, ...otherArgs } = await joiAttemptAsync(
+  const { entryPoint, outFile, ...otherArgs } = Joi.attempt(
     values,
     joiParseArgsLogOptionsSchema.append({
-      entryPoint: Joi.string().external(joiValidateAsyncFileExists).required(),
+      entryPoint: Joi.string().custom(joiValidateSyncFSExists).required(),
       outFile: Joi.string().required(),
     }),
     'Error evaluating command args:',

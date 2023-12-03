@@ -3,7 +3,8 @@ import type { TestSuiteInterface } from './testSuite.schema.gen';
 import { TestSuite } from './testSuite';
 import { newLogger } from '../util/logger';
 import type { HostSourceContext } from '../hostSources/abstractHostSource';
-import { testTimeoutLong } from '../util/testUtils';
+
+import { testTimeoutLong } from '../util/constants';
 
 const logger = newLogger();
 const context: HostSourceContext = {
@@ -16,17 +17,11 @@ describe('testing stack', () => {
     'it runs a simple test',
     async () => {
       const testSuiteConfig: TestSuiteInterface = {
-        runner: {
-          local: {},
-        },
+        runner: { local: {} },
         tests: [
           {
             label: 'my_test',
-            tasks: [
-              {
-                debug: 'Hello',
-              },
-            ],
+            tasks: [{ debug: 'Hello' }],
           },
         ],
       };
@@ -50,27 +45,17 @@ describe('testing stack', () => {
     'it fails correctly',
     async () => {
       const testSuiteConfig: TestSuiteInterface = {
-        runner: {
-          local: {},
-        },
+        runner: { local: {} },
         tests: [
           {
             label: 'fail_1',
-            tasks: [
-              {
-                fail: 'My custom error!',
-              },
-            ],
+            tasks: [{ fail: 'My custom error!' }],
           },
 
           {
             label: 'fail_2',
             tasks: [
-              {
-                set: {
-                  myVar: 'hello',
-                },
-              },
+              { set: { myVar: 'hello' } },
               {
                 test: {
                   right: '__previousTaskResult.myVar == "hello"',
@@ -106,9 +91,7 @@ describe('testing stack', () => {
 
   describe('executes tests in independent runners if clean option is true', () => {
     const testSuiteConfig: TestSuiteInterface = {
-      runner: {
-        local: {},
-      },
+      runner: { local: {} },
       clean: true,
       tests: [
         {
@@ -143,7 +126,10 @@ describe('testing stack', () => {
     test(
       'forcefully disable clean',
       async () => {
-        const suite = new TestSuite({ ...testSuiteConfig, clean: false });
+        const suite = new TestSuite({
+          ...testSuiteConfig,
+          clean: false,
+        });
         const result = await suite.run(context);
         TestSuite.printTestSuiteResult(result);
         expect(result.runOrder).toEqual(['test_1', 'test_2']);

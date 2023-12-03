@@ -1,36 +1,43 @@
-import { newDebug } from '../../util/debug';
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
 import { joiMetaClassName, joiObjectWithPattern, joiValidateValidIfTemplate } from '../../util/joi';
 import { TaskSchema } from '../../components/task.schema';
 
-const debug = newDebug(__filename);
-
-const SwitchThenSchema = Joi.alternatives([TaskSchema.required(), Joi.array().items(TaskSchema).min(1).required()]);
+const SwitchThenSchema = Joi.alternatives([
+  TaskSchema.description(`The task to be executed.`),
+  Joi.array().items(TaskSchema).min(1).description(`An array of tasks to be executed.`),
+]).description(`The task configuration`);
 
 export const ModuleSwitchCaseFullSchema = Joi.object({
-  // If undefined, this will always be executed
-  if: Joi.string().custom(joiValidateValidIfTemplate),
+  if: Joi.string().custom(joiValidateValidIfTemplate).description(`
+  If the \`if\` condition is undefined, this case will always be executed.
+  `),
 
-  // If true, the cases evaluation will proceed lower
-  fallthrough: Joi.boolean(),
+  fallthrough: Joi.boolean().description(`
+  If true, the evaluation will proceed also to the next case.
+  `),
 
-  task: TaskSchema,
-  tasks: Joi.array().items(TaskSchema).min(1),
-})
-  .xor('task', 'tasks')
-  .meta(joiMetaClassName('ModuleSwitchCaseFullInterface'));
+  task: SwitchThenSchema.required(),
+}).meta(joiMetaClassName('ModuleSwitchCaseFullInterface'));
 
 export const ModuleSwitchSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
   Joi.object({
-    value: Joi.any(),
+    value: Joi.any().description(`The value to evaluate.`),
     cases: Joi.alternatives([
       // key -> task
-      joiObjectWithPattern(SwitchThenSchema),
+      joiObjectWithPattern(SwitchThenSchema).description(`
+      An object, where each key represents a case match and the value the task config.
+      `),
       // condition
-      Joi.array().items(ModuleSwitchCaseFullSchema),
-    ]).required(),
-    default: SwitchThenSchema,
+      Joi.array().items(ModuleSwitchCaseFullSchema).description(`
+      An array of conditions to evaluate.
+      `),
+    ]).required().description(`
+    The definition of all cases to evaluate.
+    `),
+    default: SwitchThenSchema.description(`
+    The default case, which is executed if no other cases match successfully.
+    `),
   }),
 );

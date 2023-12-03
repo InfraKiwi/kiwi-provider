@@ -24,9 +24,7 @@ export class HostSourceGlob extends AbstractHostSource<HostSourceGlobInterface, 
     return entries.reduce((acc: Record<string, InventoryHost>, el) => {
       const hostname = HostSourceFile.extractHostnameFromFilename(el);
       const host = new InventoryHost(hostname, {}, this);
-      const metadata: HostSourceGlobMetadata = {
-        originalFilename: el,
-      };
+      const metadata: HostSourceGlobMetadata = { originalFilename: el };
       host.hostSourceMetadata = metadata;
       acc[hostname] = host;
       return acc;

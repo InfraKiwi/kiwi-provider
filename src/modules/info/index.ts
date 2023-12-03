@@ -3,8 +3,8 @@ import * as si from 'systeminformation';
 import { moduleRegistryEntryFactory } from '../registry';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
-import { ModuleInfoSchema } from './gen.schema';
-import type { ModuleInfoInterface } from './gen.schema.gen';
+import { ModuleInfoSchema } from './schema';
+import type { ModuleInfoInterface } from './schema.gen';
 
 export interface ModuleInfoResult {}
 
@@ -20,7 +20,15 @@ export class ModuleInfo extends AbstractModuleBase<ModuleInfoInterface, ModuleIn
       if (!(key in siObj)) {
         throw new Error(`Unknown systeminformation function ${key}`);
       }
-      // TODO: if multiple args need to be accepted, this will need to take argsorder into account
+      // TODO: if multiple args need to be accepted, this will need to take args order into account
+      if (typeof args == 'boolean') {
+        if (args) {
+          args = {};
+        } else {
+          // If false, we don't want to use this entry
+          return acc;
+        }
+      }
       const argsKeys = Object.keys(args);
       const mappedArgs = argsKeys.map((key) => args[key]);
       acc[key] = siObj[key]?.call(si, ...mappedArgs);
@@ -28,7 +36,7 @@ export class ModuleInfo extends AbstractModuleBase<ModuleInfoInterface, ModuleIn
     }, {});
 
     const promises = Object.keys(collector).reduce((acc: CollectorPromise[], el: string) => {
-      const originalPromise = collector[el] as CollectorPromiseEntry;
+      const originalPromise = collector[el];
       const promise = async (): CollectorPromise => {
         const result = await originalPromise;
         return [el, result];

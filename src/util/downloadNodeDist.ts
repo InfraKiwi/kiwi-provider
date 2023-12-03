@@ -11,45 +11,45 @@ import { defaultCacheDir } from './constants';
 const unsignedNodeDistBaseUrl = 'https://github.com/10infra/node-unsigned/releases/download';
 const unsignedNodeDistCacheDirDefault = path.join(defaultCacheDir, '.nodeBinCache');
 
-export enum NodeJSPlatform {
+export enum NodeJSExecutablePlatform {
   win = 'win',
   linux = 'linux',
   darwin = 'darwin',
 }
 
-export function getCurrentNodeJSPlatform(): NodeJSPlatform {
+export function getCurrentNodeJSPlatform(): NodeJSExecutablePlatform {
   switch (process.platform) {
     case 'win32':
-      return NodeJSPlatform.win;
+      return NodeJSExecutablePlatform.win;
     case 'darwin':
-      return NodeJSPlatform.darwin;
+      return NodeJSExecutablePlatform.darwin;
     case 'linux':
-      return NodeJSPlatform.linux;
+      return NodeJSExecutablePlatform.linux;
   }
   throw new Error(`Unsupported NodeJS platform ${process.platform}`);
 }
 
-export enum NodeJSArch {
+export enum NodeJSExecutableArch {
   x64 = 'x64',
   arm64 = 'arm64',
   armv7l = 'armv7l',
 }
 
-export function getCurrentNodeJSArch(): NodeJSArch {
+export function getCurrentNodeJSArch(): NodeJSExecutableArch {
   switch (process.arch) {
     case 'x64':
-      return NodeJSArch.x64;
+      return NodeJSExecutableArch.x64;
     case 'arm64':
-      return NodeJSArch.arm64;
+      return NodeJSExecutableArch.arm64;
     case 'arm':
-      return NodeJSArch.armv7l;
+      return NodeJSExecutableArch.armv7l;
   }
   throw new Error(`Unsupported NodeJS arch ${process.arch}`);
 }
 
 export interface DownloadNodeDistArgs {
-  platform: NodeJSPlatform;
-  arch: NodeJSArch;
+  platform: NodeJSExecutablePlatform;
+  arch: NodeJSExecutableArch;
   cacheDir?: string;
   client?: Axios;
   unsigned?: boolean;
@@ -69,7 +69,8 @@ export async function downloadNodeDist(
 
   const version = process.version;
   const unsignedPrefix = unsigned ? 'unsigned-' : '';
-  const fileName = `node-${unsignedPrefix}${version}-${platform}-${arch}` + (platform == 'win' ? '.exe' : '');
+  const fileName =
+    `node-${unsignedPrefix}${version}-${platform}-${arch}` + (platform == NodeJSExecutablePlatform.win ? '.exe' : '');
   const downloadedFileName = path.join(cacheDir, fileName);
 
   if (await fsPromiseExists(downloadedFileName)) {

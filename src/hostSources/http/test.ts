@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import { newLogger } from '../../util/logger';
 
@@ -6,17 +5,17 @@ import type { InventoryHost } from '../../components/inventoryHost';
 
 import type { HostSourceContext } from '../abstractHostSource';
 import type http from 'node:http';
-import {
-  dataSourceHTTPListGetTestHTTPServerPromise,
-  dataSourceHTTPListTestEntries,
-} from '../../dataSources/httpList/test';
 import type { AddressInfo } from 'node:net';
 import type { DataSourceHTTPInterface } from '../../dataSources/http/schema.gen';
 import { HostSourceHTTP } from './index';
 import type { HostSourceHTTPInterface } from './schema.gen';
 import { HostSourceHTTPInterfaceConfigKeyFirst } from './schema.gen';
+import { testExamples } from '../../util/testUtils';
+import {
+  dataSourceHTTPListGetTestHTTPServerPromise,
+  dataSourceHTTPListTestEntriesStr,
+} from '../../dataSources/httpList/test.helpers';
 
-const debug = newDebug(__filename);
 const logger = newLogger();
 const context: HostSourceContext = {
   logger,
@@ -56,25 +55,25 @@ function getBaseConfig() {
 }
 
 function checkEntries(entries: Record<string, InventoryHost>) {
-  expect(Object.keys(entries)).toEqual(Object.keys(dataSourceHTTPListTestEntries));
+  expect(Object.keys(entries)).toEqual(Object.keys(dataSourceHTTPListTestEntriesStr));
   for (const key of Object.keys(entries)) {
     const host = entries[key];
-    expect(host.vars).toEqual(dataSourceHTTPListTestEntries[key]);
+    expect(host.vars).toEqual(dataSourceHTTPListTestEntriesStr[key]);
   }
 }
 
 describe('host source http', () => {
+  testExamples(__dirname);
+
   test('list+load call', async () => {
     const source = new HostSourceHTTP({
       [HostSourceHTTPInterfaceConfigKeyFirst]: {
         default: getBaseConfig(),
-        list: {
-          url: '/list',
-        },
+        list: { http: { url: '/list' } },
         load: {
-          url: '/load',
-          params: {
-            id: '{{ id }}',
+          http: {
+            url: '/load',
+            params: { id: '{{ id }}' },
           },
         },
       },

@@ -1,9 +1,6 @@
-import { newDebug } from '../debug';
 import type { NunjucksContext } from './tpl';
 import { nunjucksAddFilter } from './tpl';
 import { bytesToHuman } from '../bytesToHuman';
-
-const debug = newDebug(__filename);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toJSON(this: NunjucksContext, value: any) {
@@ -76,3 +73,14 @@ function isDate(this: NunjucksContext, value: any) {
 }
 
 nunjucksAddFilter('isDate', isDate);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/*
+ * function lookup(this: NunjucksContext, value: string, lookupMap: any) {
+ *   if(typeof lookupMap == 'object') {
+ *
+ *   }
+ * }
+ *
+ * nunjucksAddFilter('lookup', lookup);
+ */

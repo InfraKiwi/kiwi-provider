@@ -1,4 +1,3 @@
-import { newDebug } from '../../util/debug';
 import { describe, expect, test } from '@jest/globals';
 import type { ModuleShellResult } from './index';
 import { ModuleShell } from './index';
@@ -6,11 +5,12 @@ import type { ModuleShellInterface } from './schema.gen';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
-import { platformNewLine } from '../../util/os';
-
-const debug = newDebug(__filename);
+import { testExamples } from '../../util/testUtils';
+import { platformNewLine } from '../../util/constants';
 
 describe('shell module', () => {
+  testExamples(__dirname);
+
   test('invokes shell', async () => {
     const config: ModuleShellInterface = `echo Hello`;
 

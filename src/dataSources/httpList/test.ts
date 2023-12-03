@@ -1,60 +1,23 @@
 import { afterAll, beforeAll, describe, expect, test } from '@jest/globals';
 import { newLogger } from '../../util/logger';
 import type http from 'node:http';
-import express from 'express';
-import { promisify } from 'node:util';
 import type { AddressInfo } from 'node:net';
 import type { DataSourceHTTPInterface } from '../http/schema.gen';
 import { MultiDataSourceHTTPList } from './index';
 
 import type { DataSourceContext } from '../abstractDataSource';
+import { testExamples } from '../../util/testUtils';
+import {
+  dataSourceHTTPListGetTestHTTPServerPromise,
+  dataSourceHTTPListTestEntriesNum,
+  dataSourceHTTPListTestEntriesStr,
+} from './test.helpers';
 
 const logger = newLogger();
 const context: DataSourceContext = {
   logger,
   workDir: undefined,
 };
-
-export const dataSourceHTTPListTestEntries: Record<string, object> = {
-  hello: {
-    num: 1,
-  },
-  world: {
-    num: 2,
-  },
-  cow: {
-    num: 3,
-  },
-};
-
-function dataSourceHTTPListGetTestHTTPServer(callback: (err: unknown, server: http.Server) => void) {
-  const app = express();
-  app.get('/list', (req, res) => res.send(Object.keys(dataSourceHTTPListTestEntries)));
-  app.get('/load', (req, res) => res.send(dataSourceHTTPListTestEntries[req.query['id'] as string]));
-  app.get('/listArrayWithObjects', (req, res) =>
-    res.send(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Object.keys(dataSourceHTTPListTestEntries).reduce((acc: any[], id) => {
-        acc.push({ id, ...dataSourceHTTPListTestEntries[id] });
-        return acc;
-      }, []),
-    ),
-  );
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.on('error', (err) => callback(err, undefined as any));
-  const server = app.listen(
-    {
-      host: '127.0.0.1',
-      port: 0,
-    },
-    () => {
-      callback(undefined, server);
-    },
-  );
-}
-
-export const dataSourceHTTPListGetTestHTTPServerPromise = promisify<http.Server>(dataSourceHTTPListGetTestHTTPServer);
 
 let testHTTPServer: http.Server;
 beforeAll(async () => {
@@ -81,35 +44,71 @@ function getBaseConfig() {
   return baseConfig;
 }
 
-describe('data source http', () => {
+describe('data source httpList', () => {
+  testExamples(__dirname);
+
   test('list+load call', async () => {
     const source = new MultiDataSourceHTTPList({
       default: getBaseConfig(),
-      list: {
-        url: '/list',
-      },
+      list: { http: { url: '/list' } },
       load: {
-        url: '/load',
-        params: {
-          id: '{{ id }}',
+        http: {
+          url: '/load',
+          params: { id: '{{ id }}' },
         },
       },
     });
 
     const entries = await source.loadAllEntries(context);
-    expect(entries).toEqual(dataSourceHTTPListTestEntries);
+    expect(entries).toEqual(dataSourceHTTPListTestEntriesStr);
   });
 
   test('list call returning objects', async () => {
     const source = new MultiDataSourceHTTPList({
       default: getBaseConfig(),
       list: {
-        url: '/listArrayWithObjects',
+        http: { url: '/listArrayWithObjects' },
         idField: 'id',
       },
     });
 
     const entries = await source.loadAllEntries(context);
-    expect(entries).toEqual(dataSourceHTTPListTestEntries);
+    expect(entries).toEqual(dataSourceHTTPListTestEntriesStr);
+  });
+
+  test('list call returning array of object ids', async () => {
+    const source = new MultiDataSourceHTTPList({
+      default: getBaseConfig(),
+      list: {
+        http: { url: '/listArrayWithObjectIds' },
+        idField: 'id',
+      },
+      load: {
+        http: {
+          url: '/load',
+          params: { id: '{{ id }}' },
+        },
+      },
+    });
+
+    const entries = await source.loadAllEntries(context);
+    expect(entries).toEqual(dataSourceHTTPListTestEntriesStr);
+  });
+
+  test('list call returning numeric ids', async () => {
+    const source = new MultiDataSourceHTTPList({
+      default: getBaseConfig(),
+      list: { http: { url: '/listNum' } },
+      load: {
+        http: {
+          url: '/loadNum',
+          params: { id: '{{ id }}' },
+        },
+      },
+    });
+
+    const entries = await source.loadAllEntries(context);
+    expect(Object.keys(entries).map((k) => parseInt(k))).toEqual(Array.from(dataSourceHTTPListTestEntriesNum.keys()));
+    expect(Object.values(entries)).toEqual(Array.from(dataSourceHTTPListTestEntriesNum.values()));
   });
 });

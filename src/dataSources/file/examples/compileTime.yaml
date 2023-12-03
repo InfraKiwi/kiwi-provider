@@ -1,0 +1,10 @@
+varsSources:
+  # Loads the vars at compile-time
+  - file: path=./vars/someVars.yaml
+
+tasks:
+  # Outputs "Hello world"
+  - debug: Hello ${{ hello }}
+
+  ### Testing
+  - test: hello == "world"

@@ -1,24 +1,17 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleTestSchema, ModuleTestSilentSchema } from './schema';
 import type { ModuleTestInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import traverse from 'traverse';
 import { IfTemplate } from '../../util/tpl';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
 
-const debug = newDebug(__filename);
-
 export interface ModuleTestResult {
   tests: Record<string, boolean>;
 }
 
 export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTestResult> {
-  protected get disableShortie(): boolean {
-    return true;
-  }
-
   static async testSuite(context: RunContext, condition: string): Promise<boolean> {
     return new IfTemplate(condition).isTrue(context.vars);
   }
@@ -28,9 +21,7 @@ export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTe
   }
 
   async run(context: RunContext): Promise<ModuleRunResult<ModuleTestResult>> {
-    const result: ModuleTestResult = {
-      tests: {},
-    };
+    const result: ModuleTestResult = { tests: {} };
 
     const testsObject: Record<string, string> = {};
 

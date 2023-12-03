@@ -37,9 +37,7 @@ export async function runRecipesFromArchive(
         hostname,
         inventory,
         recipe,
-        runContextPartial: {
-          statistics,
-        },
+        runContextPartial: { statistics },
       });
     } catch (ex) {
       statistics.failed = true;

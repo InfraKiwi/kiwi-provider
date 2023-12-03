@@ -1,31 +1,60 @@
-// Creates the SEA package
-// https://nodejs.org/docs/latest-v20.x/api/single-executable-applications.html
+/*
+ * Creates the SEA package
+ * https://nodejs.org/docs/latest-v20.x/api/single-executable-applications.html
+ */
 
-import path from 'node:path';
 import type { ContextLogger } from '../util/context';
 import { execCmd } from '../util/exec';
-import { fsPromiseCopyFile, fsPromiseReadFile, fsPromiseTmpDir, waitForWritable } from '../util/fs';
-import { platformIsWin } from '../util/os';
+import {
+  fsPromiseCopyFile,
+  fsPromiseReadFile,
+  fsPromiseTmpFile,
+  fsPromiseWriteFile,
+  waitForWritable,
+} from '../util/fs';
 import { inject } from 'postject';
-import { platform } from 'node:os';
 import process from 'node:process';
-import type { NodeJSArch, NodeJSPlatform } from '../util/downloadNodeDist';
-import { downloadNodeDist } from '../util/downloadNodeDist';
+import type { NodeJSExecutableArch } from '../util/downloadNodeDist';
+import { downloadNodeDist, NodeJSExecutablePlatform } from '../util/downloadNodeDist';
+import { createCJSRunnerBundle } from '../util/createCJSRunnerBundle';
+import path from 'node:path';
+import { getNodeJSBundleFileName } from './createNodeJSBundle.helpers';
 
 export interface CommandPkgArgs {
-  seaConfigFile: string;
-  seaBlobFile: string;
-  nodePlatform: NodeJSPlatform;
-  nodeArch: NodeJSArch;
+  outDir: string;
+  entryPoint: string;
+  nodePlatform: NodeJSExecutablePlatform;
+  nodeArch: NodeJSExecutableArch;
 }
 
 export async function createNodeJSBundle(
   context: ContextLogger,
-  { seaConfigFile, seaBlobFile, nodeArch, nodePlatform }: CommandPkgArgs,
-) {
+  { nodeArch, nodePlatform, outDir, entryPoint }: CommandPkgArgs,
+): Promise<string> {
   // Generate blob
+  const cjsBundle = await createCJSRunnerBundle(context, { entryPoint });
+
+  const blobFile = await fsPromiseTmpFile({
+    discardDescriptor: true,
+    postfix: '.blob',
+    keep: false,
+  });
+  const seaConfig = {
+    main: cjsBundle,
+    output: blobFile,
+    disableExperimentalSEAWarning: true,
+    useSnapshot: false,
+    useCodeCache: true,
+  };
+  const seaConfigFile = await fsPromiseTmpFile({
+    discardDescriptor: true,
+    postfix: '.json',
+    keep: false,
+  });
+  await fsPromiseWriteFile(seaConfigFile, JSON.stringify(seaConfig));
+
   await execCmd(context, process.execPath, ['--experimental-sea-config', seaConfigFile]);
-  const seaBlob = await fsPromiseReadFile(seaBlobFile);
+  const seaBlob = await fsPromiseReadFile(blobFile);
 
   const nodeBin = await downloadNodeDist(context, {
     platform: nodePlatform,
@@ -34,55 +63,64 @@ export async function createNodeJSBundle(
   });
 
   // Generate bin package
-  const tmpDir = await fsPromiseTmpDir({});
-  const tmpFile = path.join(tmpDir, 'bundle' + (platformIsWin ? '.exe' : ''));
-  context.logger.info(`Generating binary at ${tmpFile}`);
+  const entryPointName = path.basename(entryPoint, path.extname(entryPoint));
+  const bundleFileName = await getNodeJSBundleFileName(entryPointName, nodePlatform, nodeArch);
+  const bundleFile = path.join(outDir, bundleFileName);
+  context.logger.info(`Generating binary at ${bundleFile}`);
 
   // Clone node.js executable
-  await fsPromiseCopyFile(nodeBin, tmpFile);
+  await fsPromiseCopyFile(nodeBin, bundleFile);
 
   /*
-  https://github.com/StefanScherer/dockerfiles-windows/blob/main/signtool/signtool
-
-  docker run --rm -v C:/Users/stefan/Dropbox/MVP:C:/certs:ro -v C:$(pwd):C:/signing -w C:/signing \
-  -e SIGNING_PASSWORD -e SIGNTOOL -e FILE=$1 mcr.microsoft.com/windows/servercore:ltsc2019 \
-  powershell -command iex\(\$env:SIGNTOOL\)
+   *https://github.com/StefanScherer/dockerfiles-windows/blob/main/signtool/signtool
+   *
+   *docker run --rm -v C:/Users/stefan/Dropbox/MVP:C:/certs:ro -v C:$(pwd):C:/signing -w C:/signing \
+   *-e SIGNING_PASSWORD -e SIGNTOOL -e FILE=$1 mcr.microsoft.com/windows/servercore:ltsc2019 \
+   *powershell -command iex\(\$env:SIGNTOOL\)
    */
 
   // Inject data
   context.logger.info(`Injecting data`);
-  await inject(tmpFile, 'NODE_SEA_BLOB', seaBlob, {
+  await inject(bundleFile, 'NODE_SEA_BLOB', seaBlob, {
     sentinelFuse: 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
-    machoSegmentName: platform() == 'darwin' ? 'NODE_SEA' : undefined,
+    machoSegmentName: nodePlatform == NodeJSExecutablePlatform.darwin ? 'NODE_SEA' : undefined,
   });
 
-  // TODO sign binary somewhere
-  // TODO sign binary somewhere
-  // TODO sign binary somewhere
-  // TODO sign binary somewhere
-  await signBinary(context, tmpFile);
+  /*
+   * TODO sign binary somewhere
+   * TODO sign binary somewhere
+   * TODO sign binary somewhere
+   * TODO sign binary somewhere
+   */
+  await signBinary(context, bundleFile);
 
-  await waitForWritable(tmpFile);
+  await waitForWritable(bundleFile);
 
-  // Test binary
-  context.logger.info(`Testing binary`);
-  const result = await execCmd(context, tmpFile, ['version']);
-  context.logger.info(`Execution result`, { result, tmpFile });
+  /*
+   * Test binary
+   * context.logger.info(`Testing binary`);
+   * const result = await execCmd(context, tmpFile, ['version']);
+   * context.logger.info(`Execution result`, { result, tmpFile });
+   */
+
+  return bundleFile;
 }
 
 export async function signBinary(context: ContextLogger, binaryPath: string) {
-  // NOOP
-  // TODO
-  // TODO sign binary
-  // logger.info(`Signing binary`);
   /*
-  Sign the binary (macOS and Windows only):
-
-  On macOS:
-  codesign --sign - hello COPY
-  On Windows (optional):
-  A certificate needs to be present for this to work. However, the unsigned binary would still be runnable.
-
-  signtool sign /fd SHA256 hello.exe
+   * NOOP
+   * TODO
+   * TODO sign binary
+   * logger.info(`Signing binary`);
+   */
+  /*
+   *Sign the binary (macOS and Windows only):
+   *
+   *On macOS:
+   *codesign --sign - hello COPY
+   *On Windows (optional):
+   *A certificate needs to be present for this to work. However, the unsigned binary would still be runnable.
+   *
+   *signtool sign /fd SHA256 hello.exe
    */
 }

@@ -16,6 +16,8 @@ import type { FileTransportInstance } from 'winston/lib/winston/transports';
 import { envIsProduction } from './env';
 import type * as logform from 'logform';
 
+Error.stackTraceLimit = 100;
+
 const format = winston.format;
 
 export enum LogLevels {
@@ -161,23 +163,26 @@ function getStandardFormat(json?: boolean): logform.Format {
     format.timestamp(),
     format.errors({ stack: true }),
     maskSecrets(),
-    json ? format.json({ circularValue: null, replacer: jsonReplacer }) : compact,
+    json
+      ? format.json({
+          circularValue: null,
+          replacer: jsonReplacer,
+        })
+      : compact,
   );
 }
 
 export function newLogger(args?: NewLoggerArgs) {
   const { logLevel, logFile, logNoConsole, defaultMeta } = args ?? {};
 
-  const transports = (args ?? {}).transports ?? [];
+  const transports = args?.transports ?? [];
 
   if (transports.length == 0 && logNoConsole != true) {
     transports.push(new winston.transports.Console());
   }
 
   if (logFile) {
-    const logTransport = new winston.transports.File({
-      filename: logFile,
-    });
+    const logTransport = new winston.transports.File({ filename: logFile });
     logTransport.format = getStandardFormat(true);
     transports.push(logTransport);
   }
@@ -207,9 +212,7 @@ export const parseArgsLogOptions: ParseArgsOptionsConfig = {
     short: 'v',
     default: LogLevels.info,
   },
-  logFile: {
-    type: 'string',
-  },
+  logFile: { type: 'string' },
   logNoConsole: {
     type: 'boolean',
     default: false,
@@ -244,7 +247,7 @@ export class ChildLoggerWithLogFile {
         logger: this.logger,
       });
     } finally {
-      onFinally?.call(null, context);
+      await onFinally?.call(null, context);
     }
   }
 }
@@ -255,7 +258,11 @@ export interface TemporaryLogFileTransport {
 }
 
 async function getTemporaryLogFileTransport(context: ContextLogger, label: string): Promise<TemporaryLogFileTransport> {
-  const logFile = await fsPromiseTmpFile({ discardDescriptor: true, prefix: label, postfix: '.log' });
+  const logFile = await fsPromiseTmpFile({
+    discardDescriptor: true,
+    prefix: label,
+    postfix: '.log',
+  });
   context.logger.debug(`Storing temporary logs for ${label} in ${logFile}`);
   const logTransport = new winston.transports.File({
     filename: logFile,
@@ -271,13 +278,9 @@ export async function getChildLoggerWithLogFile(
   context: ContextLogger,
   label: string,
 ): Promise<ChildLoggerWithLogFile> {
-  const childLogger = newLogger({
-    defaultMeta: context.logger.defaultMeta,
-  });
+  const childLogger = newLogger({ defaultMeta: context.logger.defaultMeta });
   const transport = await getTemporaryLogFileTransport(context, label);
   transport.transport.format = winston.format.combine(childLogger.format, winston.format.uncolorize());
-  childLogger.configure({
-    transports: [...context.logger.transports, transport.transport],
-  });
+  childLogger.configure({ transports: [...context.logger.transports, transport.transport] });
   return new ChildLoggerWithLogFile(childLogger, transport.logFile);
 }

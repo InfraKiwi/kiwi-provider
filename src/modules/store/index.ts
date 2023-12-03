@@ -1,7 +1,6 @@
 import type { RunContext } from '../../util/runContext';
 import { ModuleStoreSchema } from './schema';
 import type { ModuleStoreInterface } from './schema.gen';
-import { newDebug } from '../../util/debug';
 import { moduleRegistryEntryFactory } from '../registry';
 import path from 'node:path';
 import { DEFAULT_SCHEMA, dump } from 'js-yaml';
@@ -9,8 +8,6 @@ import { getErrorPrintfClass } from '../../util/error';
 import { fsPromiseExists, fsPromiseReadFile, fsPromiseWriteFile } from '../../util/fs';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
-
-const debug = newDebug(__filename);
 
 type ModuleStoreSerializerFunction = (data: unknown) => Promise<string>;
 
