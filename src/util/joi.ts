@@ -147,7 +147,7 @@ export function joiObjectSchemaKeys(schema: Joi.ObjectSchema) {
   return Object.keys(schema.describe().keys);
 }
 
-export function keepOnlyKeysInJoiSchema<T>(
+export function joiKeepOnlyKeysInJoiSchema<T>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   val: any,
   joiObject: Joi.ObjectSchema,
@@ -164,7 +164,7 @@ export function keepOnlyKeysInJoiSchema<T>(
   }, {});
 }
 
-export function keepOnlyKeysNotInJoiObjectDiff(
+export function joiKeepOnlyKeysNotInJoiObjectDiff(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   val: any,
   joiObject: Joi.ObjectSchema,

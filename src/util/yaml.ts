@@ -6,6 +6,7 @@ import { Template } from './tpl';
 import { TemplateEval } from './tpl/templateEval';
 import { TemplateJoi } from './tpl/templateJoi';
 import Joi from 'joi';
+import { fsPromiseReadFile } from './fs';
 
 const debug = newDebug(__filename);
 
@@ -193,6 +194,11 @@ const YAMLSchema = DEFAULT_SCHEMA.extend(customYAMLFunctions);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function loadYAML(data: string): any {
   return load(data, { schema: YAMLSchema });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function loadYAMLFromFile(fileName: string): Promise<any> {
+  return loadYAML(await fsPromiseReadFile(fileName, 'utf8'));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

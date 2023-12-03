@@ -18,10 +18,6 @@ export const ModuleRecipeErrorRecipeSourcesNotDefined = getErrorPrintfClass(
 );
 
 export class ModuleRecipe extends AbstractModuleBase<ModuleRecipeInterface, VarsInterface> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   get fullConfig(): ModuleRecipeFullInterface {
     return typeof this.config == 'string'
       ? {

@@ -38,10 +38,6 @@ export interface ModuleStoreResult {
 }
 
 export class ModuleStore extends AbstractModuleBase<ModuleStoreInterface, ModuleStoreResult> {
-  get requiresMock(): boolean {
-    return true;
-  }
-
   readonly filePath = this.config.workDir ? path.resolve(this.config.workDir, this.config.path) : this.config.path;
   readonly extension = path.extname(this.filePath);
 

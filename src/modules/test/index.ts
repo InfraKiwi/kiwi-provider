@@ -15,15 +15,11 @@ export interface ModuleTestResult {
 }
 
 export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTestResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   protected get disableShortie(): boolean {
     return true;
   }
 
-  static async runTest(context: RunContext, condition: string): Promise<boolean> {
+  static async testSuite(context: RunContext, condition: string): Promise<boolean> {
     return new IfTemplate(condition).isTrue(context.vars);
   }
 
@@ -50,7 +46,6 @@ export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTe
       Object.assign(testsObject, this.config);
     }
 
-    // TODO handle promises
     const promises: Promise<void>[] = [];
 
     const failed: string[] = [];
@@ -60,7 +55,7 @@ export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTe
       }
       promises.push(
         (async () => {
-          const testResult = await ModuleTest.runTest(context, val);
+          const testResult = await ModuleTest.testSuite(context, val);
           if (!testResult) {
             failed.push(this.key!);
           }

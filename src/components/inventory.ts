@@ -28,8 +28,9 @@ import type { HostSourceRawInterface } from '../hostSources/raw/schema.gen';
 import { InventoryGroup } from './inventoryGroup';
 import { VarsContainer } from './varsContainer';
 import type { VarsInterface } from './varsContainer.schema.gen';
-import { keepOnlyKeysInJoiSchema } from '../util/joi';
+import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
+import { loadYAMLFromFile } from '../util/yaml';
 
 const debug = newDebug(__filename);
 
@@ -60,7 +61,7 @@ export class Inventory extends VarsContainer {
 
   constructor(config: InventoryInterface) {
     config = Joi.attempt(config, InventorySchema, 'validate inventory config');
-    super(keepOnlyKeysInJoiSchema(config, VarsContainerSchema));
+    super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
 
     this.#config = config;
 
@@ -83,6 +84,13 @@ export class Inventory extends VarsContainer {
         this.#groups[groupName] = new InventoryGroup(groupName, group);
       }
     }
+  }
+
+  static async fromFile(context: DataSourceContext, inventoryPath: string): Promise<Inventory> {
+    const data = await loadYAMLFromFile(inventoryPath);
+    const inventory = new Inventory(data as InventoryInterface);
+    await inventory.loadGroupsAndStubs(context);
+    return inventory;
   }
 
   get hostnames(): string[] {

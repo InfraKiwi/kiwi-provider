@@ -28,10 +28,6 @@ export class ModuleExit extends AbstractModuleBase<ModuleExitInterface, ModuleEx
     };
   }
 
-  get requiresMock(): boolean {
-    return false;
-  }
-
   protected get disableShortie(): boolean {
     return true;
   }

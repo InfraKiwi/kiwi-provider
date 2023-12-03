@@ -22,7 +22,7 @@ export interface LogsStorageInterface {
 }
 
 export interface ServerConfigConfigInterface {
-  archivePath: string;
+  archiveDir: string;
   assetsDistribution: AssetsDistributionInterface;
   hooks?: ServerConfigHooksInterface;
   inventoryPath: string;

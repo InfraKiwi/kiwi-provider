@@ -90,3 +90,6 @@ release.db.txt
 test_logs
 .yarn
 /.idea/dataSources.xml
+**/.nodeBinCache
+**/.cjsRunnerBundle
+.cache

@@ -42,10 +42,6 @@ export class ModuleLookPath extends AbstractModuleBase<ModuleLookPathInterface, 
   protected get disableShortie(): boolean {
     return true;
   }
-
-  get requiresMock(): boolean {
-    return false;
-  }
 }
 
 moduleRegistryEntryFactory.register(ModuleLookPathSchema, ModuleLookPath);

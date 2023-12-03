@@ -3,18 +3,16 @@ import { moduleRegistry } from '../modules/registry';
 import type { RunContext } from '../util/runContext';
 import { newDebug } from '../util/debug';
 import { extractAllTemplates, IfTemplate, objectContainsTemplates, resolveTemplates } from '../util/tpl';
-import { TaskForArchiveSchema, TaskSchema } from './task.schema';
-import type { TaskForArchiveInterface, TaskInterface } from './task.schema.gen';
+import { TaskSchema, TaskTestMockSchema } from './task.schema';
+import type { TaskInterface, TaskTestMockInterface } from './task.schema.gen';
 import traverse from 'traverse';
 import { maskSensitiveValue } from '../util/logger';
-import { RecipeTestMock } from './recipeTestMock';
-import type { TestMockInterface } from './testing.schema.gen';
 import type {
   AbstractModuleBaseInstance,
   ModuleRunResult,
   ModuleRunResultBaseType,
 } from '../modules/abstractModuleBase';
-import { keepOnlyKeysInJoiSchema, keepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
+import { joiKeepOnlyKeysInJoiSchema, joiKeepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
 import { tryOrThrowAsync } from '../util/try';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import { getErrorPrintfClass } from '../util/error';
@@ -22,6 +20,10 @@ import { ModuleFail } from '../modules/fail';
 import { ModuleFailFullSchema } from '../modules/fail/schema';
 import { ModuleExit } from '../modules/exit';
 import { ModuleExitFullSchema } from '../modules/exit/schema';
+import { TestMock } from './testingCommon';
+import Joi from 'joi';
+import { TestMockBaseSchema } from './testingCommon.schema';
+import type { DataSourceContext } from '../dataSources/abstractDataSource';
 
 const debug = newDebug(__filename);
 
@@ -40,7 +42,7 @@ export interface TaskRunTasksInContextResult {
 
 export const TaskErrorFailedWithIfCondition = getErrorPrintfClass(
   'TaskErrorFailedWithIfCondition',
-  `Task failed because of failIf condition: %s`,
+  `Task failed because of failedIf condition: %s`,
 );
 
 export const TaskErrorFailedWithExecutionError = getErrorPrintfClass(
@@ -48,13 +50,25 @@ export const TaskErrorFailedWithExecutionError = getErrorPrintfClass(
   `Task failed because of execution error: %s`,
 );
 
+export class TaskTestMock extends TestMock {
+  constructor(config: TaskTestMockInterface) {
+    config = Joi.attempt(config, TaskTestMockSchema);
+    super(joiKeepOnlyKeysInJoiSchema(config, TestMockBaseSchema), config.if);
+  }
+
+  matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): boolean {
+    return super.matchesModuleConfig(context, module);
+  }
+}
+
 export class Task {
   config: TaskInterface;
   templated: boolean;
 
   ifTemplate?: IfTemplate;
-  failIfTemplate?: IfTemplate;
+  failedIfTemplate?: IfTemplate;
   exitIfTemplate?: IfTemplate;
+  #testMocks: TaskTestMock[] = [];
 
   constructor(taskConfig: TaskInterface) {
     this.config = extractAllTemplates(taskConfig);
@@ -65,18 +79,21 @@ export class Task {
     if (config.if) {
       this.ifTemplate = new IfTemplate(config.if);
     }
-    if (typeof config.failIf == 'string' || config.failIf?.if) {
-      this.failIfTemplate = new IfTemplate(typeof config.failIf == 'string' ? config.failIf : config.failIf.if);
+    if (typeof config.failedIf == 'string' || config.failedIf?.if) {
+      this.failedIfTemplate = new IfTemplate(typeof config.failedIf == 'string' ? config.failedIf : config.failedIf.if);
     }
     if (typeof config.exitIf == 'string' || config.exitIf?.if) {
       this.exitIfTemplate = new IfTemplate(typeof config.exitIf == 'string' ? config.exitIf : config.exitIf.if);
     }
+    if (config.testMocks) {
+      this.#testMocks = config.testMocks.map((mockConfig) => new TaskTestMock(mockConfig));
+    }
   }
 
-  getConfigForArchive(): TaskForArchiveInterface {
+  getConfigForArchive(): TaskInterface {
     // Strip out unnecessary items
-    const cleanedConfig: TaskForArchiveInterface = {
-      ...keepOnlyKeysNotInJoiObjectDiff(this.config, TaskForArchiveSchema, TaskSchema),
+    const cleanedConfig: TaskInterface = {
+      ...joiKeepOnlyKeysNotInJoiObjectDiff(this.config, TaskSchema, TaskSchema),
     };
     return cleanedConfig;
   }
@@ -109,9 +126,11 @@ export class Task {
       label = `M:${module.registryEntry.entryName}`;
     }
 
-    context = context.withLabel(label);
-
+    // NOTE: very important to run this because it resolves all conditions/templates/mocks
     this.#evaluateConfig(taskConfig);
+
+    context = context.withLabel(label).prependTestMocks(this.#testMocks);
+
     if (this.ifTemplate && !(await this.ifTemplate.isTrue(context.vars))) {
       context.logger.info('Task skipped');
       return {
@@ -119,41 +138,35 @@ export class Task {
       };
     }
 
-    // Evaluate mocks
-    if (context.isTesting && !taskConfig.ignoreMocks) {
-      if (taskConfig.mock) {
-        // The single mock will always be matched as the first mock
-        const mockConfig: TestMockInterface = {
-          result: taskConfig.mock.result,
-          changed: taskConfig.mock.changed,
-          [module.registryEntry.entryName]: 'true',
-        };
-        const testMock = new RecipeTestMock(mockConfig);
-        context = context.prependTestMocks([testMock]);
-      } else {
-        const mocks = (taskConfig.mocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
-        context = context.prependTestMocks(mocks);
-      }
-    }
+    // Evaluate testMocks
+    // if (context.isTesting && !taskConfig.ignoreMocks) {
+    //   if (taskConfig.mock) {
+    //     // The single mock will always be matched as the first mock
+    //     const mockConfig: TestMockInterface = {
+    //       result: taskConfig.mock.result,
+    //       changed: taskConfig.mock.changed,
+    //       [module.registryEntry.entryName]: 'true',
+    //     };
+    //     const testMock = new RecipeTestMock(mockConfig);
+    //     context = context.prependTestMocks([testMock]);
+    //   } else {
+    //     const testMocks = (taskConfig.testMocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
+    //     context = context.prependTestMocks(testMocks);
+    //   }
+    // }
 
     context.logger.debug(`Task running`);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: ModuleRunResult<any>;
-    let mock: RecipeTestMock | undefined;
-    // TODO support tpl in mocks
+    let mock: TestMock | undefined;
     if (
       context.isTesting &&
       !taskConfig.ignoreMocks &&
-      (mock = context.testMocks.find((mock) => mock.matches(context, module))) != null
+      (mock = context.testMocks.find((mock) => mock.matchesModule(context, module))) != null
     ) {
       result = mock.getResult();
     } else {
-      if (context.isTesting && !taskConfig.ignoreMocks && module.requiresMock) {
-        throw new Error(
-          `The module ${module.registryEntry.entryName} REQUIRES a mock to be tested. If you want to bypass this protection, use the \`ignoreMocks: true\` option`,
-        );
-      }
       result = await module.run(context);
     }
 
@@ -170,12 +183,12 @@ export class Task {
       result,
     };
 
-    if (this.failIfTemplate) {
-      if (await this.failIfTemplate.isTrue(postRunChecksContext)) {
+    if (this.failedIfTemplate) {
+      if (await this.failedIfTemplate.isTrue(postRunChecksContext)) {
         const failResult = await new ModuleFail(
-          typeof this.config.failIf == 'string'
-            ? 'failIf condition invoked'
-            : keepOnlyKeysInJoiSchema(this.config.failIf, ModuleFailFullSchema),
+          typeof this.config.failedIf == 'string'
+            ? 'failedIf condition invoked'
+            : joiKeepOnlyKeysInJoiSchema(this.config.failedIf, ModuleFailFullSchema),
         ).run(context);
         throw new TaskErrorFailedWithIfCondition(failResult.failed);
       }
@@ -189,7 +202,7 @@ export class Task {
         const exitResult = await new ModuleExit(
           typeof this.config.exitIf == 'string'
             ? 'exitIf condition invoked'
-            : keepOnlyKeysInJoiSchema(this.config.exitIf, ModuleExitFullSchema),
+            : joiKeepOnlyKeysInJoiSchema(this.config.exitIf, ModuleExitFullSchema),
         ).run(context);
         forceExit = exitResult.exit == true;
 

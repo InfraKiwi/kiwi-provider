@@ -6,13 +6,15 @@ import traverse from 'traverse';
 import { LEVEL, MESSAGE, SPLAT } from 'triple-beam';
 import util from 'node:util';
 import type { SchemaMap } from 'joi';
+import Joi from 'joi';
 import { getArgDefaultFromOptions } from './args';
-import { getJoiEnumValues } from './joi';
+import { getJoiEnumValues, joiKeepOnlyKeysInJoiSchema } from './joi';
 import type * as Transport from 'winston-transport';
 import type { ContextLogger } from './context';
 import { fsPromiseTmpFile } from './fs';
 import type { FileTransportInstance } from 'winston/lib/winston/transports';
 import { envIsProduction } from './env';
+import type * as logform from 'logform';
 
 const format = winston.format;
 
@@ -109,7 +111,7 @@ const compact = format.printf(
     const s = statistics as RunStatistics | undefined;
     const ts = typeof timestamp == 'number' ? new Date(timestamp).toISOString() : timestamp;
     const parts: string[] = [
-      ...(s?.startTime ? ['[' + secondsToHMS((new Date().getTime() - s.startTime.getTime()) / 1000) + ']'] : []),
+      ...(s?.startTime ? ['[' + secondsToHMS(new Date().getTime() - s.startTime) + ']'] : []),
       `[${level}]`,
       ...(showHostname && hostname ? [`[${hostname}]`] : []),
       ...(s ? [`[${s.processedTasksCount}/${s.totalTasksCount}]`] : []),
@@ -131,18 +133,59 @@ const compact = format.printf(
 
 export interface NewLoggerArgs {
   logLevel?: LogLevels;
+  logFile?: string;
+  logNoConsole?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultMeta?: any;
   transports?: Transport[];
 }
 
+export function newLoggerFromParseArgs(args: NewLoggerArgs) {
+  return newLogger(joiKeepOnlyKeysInJoiSchema(args, joiParseArgsLogOptionsSchema));
+}
+
+function jsonReplacer(key: string, val: unknown) {
+  if (val instanceof Error) {
+    return {
+      message: val.message,
+      name: val.name,
+      stack: val.stack,
+      cause: val.cause?.toString(),
+    };
+  }
+  return val;
+}
+
+function getStandardFormat(json?: boolean): logform.Format {
+  return format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    maskSecrets(),
+    json ? format.json({ circularValue: null, replacer: jsonReplacer }) : compact,
+  );
+}
+
 export function newLogger(args?: NewLoggerArgs) {
-  const { logLevel, defaultMeta, transports } = args ?? {};
+  const { logLevel, logFile, logNoConsole, defaultMeta } = args ?? {};
+
+  const transports = (args ?? {}).transports ?? [];
+
+  if (transports.length == 0 && logNoConsole != true) {
+    transports.push(new winston.transports.Console());
+  }
+
+  if (logFile) {
+    const logTransport = new winston.transports.File({
+      filename: logFile,
+    });
+    logTransport.format = getStandardFormat(true);
+    transports.push(logTransport);
+  }
 
   const logger = winston.createLogger({
     level: logLevel ?? globalLogLevel ?? (envIsProduction ? LogLevels.info : LogLevels.debug),
-    format: format.combine(format.timestamp(), format.errors({ stack: true }), maskSecrets(), compact),
-    transports: transports ?? [new winston.transports.Console()],
+    format: getStandardFormat(),
+    transports,
     defaultMeta,
   });
   return logger;
@@ -164,19 +207,22 @@ export const parseArgsLogOptions: ParseArgsOptionsConfig = {
     short: 'v',
     default: LogLevels.info,
   },
+  logFile: {
+    type: 'string',
+  },
+  logNoConsole: {
+    type: 'boolean',
+    default: false,
+  },
 };
 
-export interface ParseArgsLogOptionsDefaults {
-  logLevel?: LogLevels;
-}
+export const joiParseArgsLogOptions: SchemaMap = {
+  logLevel: getJoiEnumValues(LogLevels).default(getArgDefaultFromOptions(parseArgsLogOptions, 'logLevel')),
+  logFile: Joi.string(),
+  logNoConsole: Joi.boolean(),
+};
 
-export function getJoiParseArgsLogOptions(defaults?: ParseArgsLogOptionsDefaults): SchemaMap {
-  return {
-    logLevel: getJoiEnumValues(LogLevels).default(
-      getArgDefaultFromOptions(parseArgsLogOptions, 'logLevel', defaults?.logLevel),
-    ),
-  };
-}
+export const joiParseArgsLogOptionsSchema = Joi.object(joiParseArgsLogOptions);
 
 export class ChildLoggerWithLogFile {
   readonly logFile: string;

@@ -10,6 +10,9 @@
       <excludeFolder url="file://$MODULE_DIR$/test_logs" />
       <excludeFolder url="file://$MODULE_DIR$/.yarn" />
       <excludeFolder url="file://$MODULE_DIR$/hack/simpleInventory/.yarn" />
+      <excludeFolder url="file://$MODULE_DIR$/.cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.cjsRunnerBundle" />
+      <excludeFolder url="file://$MODULE_DIR$/.nodeBinCache" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

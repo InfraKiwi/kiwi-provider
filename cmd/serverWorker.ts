@@ -1,10 +1,10 @@
-import { newLogger, setGlobalLogLevel } from '../src/util/logger';
+import { newLoggerFromParseArgs } from '../src/util/logger';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import type { AppConfigSchemaInterface } from '../src/app/common/server';
 import { getAppConfigSchemaObject, newServer } from '../src/app/common/server';
 import { ServerWorker } from '../src/app/serverWorker/serverWorker';
-import { loadConfig, parseArgsBaseJoiObject, parseArgsBaseOptions } from '../src/util/parseArgs';
+import { loadConfig, parseArgsAppBaseJoiObject, parseArgsAppBaseOptions } from '../src/util/parseArgs';
 import '../src/util/loadAllRegistryEntries.gen';
 import type { ServerWorkerConfigInterface } from '../src/app/serverWorker/serverWorker.schema.gen';
 import { ServerWorkerConfigSchema } from '../src/app/serverWorker/serverWorker.schema';
@@ -12,14 +12,11 @@ import { joiAttemptAsync } from '../src/util/joi';
 import { setupUncaughtHandler } from '../src/util/uncaught';
 import { checkVersionCommand } from '../src/util/args';
 
-const logger = newLogger();
-setupUncaughtHandler(logger);
-
 const argsConfig: ParseArgsConfig = {
   allowPositionals: false,
   strict: true,
   options: {
-    ...parseArgsBaseOptions,
+    ...parseArgsAppBaseOptions,
   },
 };
 
@@ -31,12 +28,13 @@ async function main() {
     values,
   } = parseArgs(argsConfig);
 
-  const { logLevel, configPath } = await joiAttemptAsync(
+  const { configPath, ...otherArgs } = await joiAttemptAsync(
     values,
-    parseArgsBaseJoiObject,
+    parseArgsAppBaseJoiObject,
     'Error evaluating command args:',
   );
-  setGlobalLogLevel(logLevel);
+  const logger = newLoggerFromParseArgs(otherArgs);
+  setupUncaughtHandler(logger);
 
   const schema = getAppConfigSchemaObject(ServerWorkerConfigSchema, { port: 3001 });
   const config = await loadConfig<AppConfigSchemaInterface<ServerWorkerConfigInterface>>(configPath, schema);

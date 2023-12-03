@@ -13,10 +13,6 @@ type CollectorPromiseResult = [string, object];
 type CollectorPromise = Promise<CollectorPromiseResult>;
 
 export class ModuleInfo extends AbstractModuleBase<ModuleInfoInterface, ModuleInfoResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   async run(context: RunContext): Promise<ModuleRunResult<ModuleInfoResult>> {
     const collector = Object.entries(this.config).reduce((acc: Record<string, CollectorPromiseEntry>, [key, args]) => {
       // eslint-disable-next-line @typescript-eslint/ban-types

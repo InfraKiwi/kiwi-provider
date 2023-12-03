@@ -1,10 +1,10 @@
 import Joi from 'joi';
-import { TaskForArchiveSchema, TaskSchema } from './task.schema';
+import { TaskSchema } from './task.schema';
 import { joiMetaClassName, joiObjectWithPattern, joiValidateSemVer, joiValidateValidJoiSchema } from '../util/joi';
-import { TestMockSchema } from './testing.schema';
 
 import { RecipeSourceListSchema } from '../recipeSources/recipeSourceList.schema';
 import { VarsSchema } from './varsContainer.schema';
+import { TestMockBaseSchema, ConditionSetSchema } from './testingCommon.schema';
 
 export const regexRecipeId = /^(?:(\w+):)?(.+)$/;
 
@@ -38,47 +38,57 @@ export const RecipeInputsSchema = joiObjectWithPattern(
   ]),
 ).meta({ className: 'RecipeInputsInterface' });
 
-export const RecipeAsDependencySchema = Joi.object({
+export const RecipeTestMockSchema = TestMockBaseSchema.pattern(
+  Joi.string(),
+  // NOTE: this explicitly uses the .pattern instead of joiObjectAddPattern to not
+  // trigger the TS incompatibility on indexed keys with different value types
+  ConditionSetSchema,
+).meta(joiMetaClassName('RecipeTestMockInterface'));
+
+export const RecipeMinimalSchema = Joi.object({
+  // What other recipes we depend on
   dependencies: joiObjectWithPattern(RecipeDependencyWithAlternativesSchema, regexRecipeId),
 
-  tasks: Joi.array().items(TaskForArchiveSchema).min(1).required(),
+  // The tasks to execute in this recipe
+  tasks: Joi.array().items(TaskSchema).min(1).required(),
 
+  // Optional vars passed to the recipe
   vars: VarsSchema,
 
   // Input validation
   inputs: RecipeInputsSchema,
+
+  // Enabled only in testing mode
+  testMocks: Joi.array().items(RecipeTestMockSchema),
 })
   .append(hostVarsBlock)
-  .meta({ className: 'RecipeAsDependencyInterface' });
+  .meta({ className: 'RecipeMinimalInterface' });
 
 /*
 The full schema contains all elements that are not allowed in a dependency
  */
-export const RecipeSchema = RecipeAsDependencySchema.append({
+export const RecipeSchema = RecipeMinimalSchema.append({
   // The list of targets this recipe will be run on
   targets: RecipeTargetsSchema,
 
   // If provided, these hosts' vars will also be fetched at recipe compile time
   otherHosts: RecipeTargetsSchema,
 
-  // Overwrite the previous definition
-  tasks: Joi.array().items(TaskSchema).min(1).required(),
-
   recipeSources: RecipeSourceListSchema,
 
   // If true, use only the recipe sources provided in the recipe config instead of using the ones also provided
   // by the recipe and the upper context
   ignoreContextSources: Joi.boolean(),
-
-  vars: VarsSchema,
-
-  mocks: Joi.array().items(TestMockSchema),
 })
   .required()
   .meta({ className: 'RecipeInterface' });
 
 export const RecipeForArchiveSchema = Joi.object({
-  config: RecipeAsDependencySchema.required(),
+  config: RecipeMinimalSchema.required(),
   targets: RecipeTargetsSchema,
   otherHosts: RecipeTargetsSchema,
 }).meta(joiMetaClassName('RecipeForArchiveInterface'));
+
+export const TestRecipeMinimalSchema = RecipeMinimalSchema.append({}).meta(
+  joiMetaClassName('TestRecipeMinimalInterface'),
+);

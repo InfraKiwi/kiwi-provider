@@ -14,10 +14,6 @@ const debug = newDebug(__filename);
 export type ModuleEvalResult = any;
 
 export class ModuleEval extends AbstractModuleBase<ModuleEvalInterface, ModuleEvalResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   async run(context: RunContext): Promise<ModuleRunResult<ModuleEvalResult>> {
     let code: string;
     if (this.config.code) {

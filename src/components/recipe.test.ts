@@ -12,6 +12,7 @@ import { RunContext } from '../util/runContext';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import path from 'node:path';
 import { getTestRunContext } from './inventory.testutils';
+import { testTimeoutLong } from '../util/testUtils';
 
 const testDir = path.resolve(__dirname, 'test', 'recipe');
 
@@ -38,6 +39,7 @@ const sourceListTest = new RecipeSourceList(context, [{ dir: { path: testDir } }
 async function testRecipe(context: RecipeCtorContext, recipe: Recipe, vars?: VarsInterface): Promise<RecipeRunResult> {
   const runContext = getTestRunContext({
     ...context,
+    isTesting: true,
   });
   runContext.host.loadGroupNamesFromInventory(new Inventory({}));
   return await recipe.run(runContext, vars);
@@ -85,206 +87,215 @@ describe('recipe', () => {
     });
   });
 
-  describe('aggregateHostVars', () => {
-    let varCounter = 1;
+  test(
+    'it support testMocks',
+    async () => {
+      const recipe = await sourceListTest.findAndLoadRecipe(context, 'mocks', {});
+      await testRecipe(context, recipe);
+    },
+    testTimeoutLong,
+  );
+});
 
-    const rawHosts: HostSourceRawInterface = {
-      'test-1.hello.io': { varHost1: varCounter++ },
-      'test-2.hello.io': { varHost2: varCounter++ },
-      'test-3.hello.io': { varHost3: varCounter++ },
-      'test-4.hello.io': { varHost4: varCounter++ },
-      'test-ungrouped.hello.io': { varHostUngrouped: varCounter++ },
-      'test-6.hello.io': { varHost6: varCounter++ },
-    };
+describe('recipe aggregateHostVars', () => {
+  let varCounter = 1;
 
-    const groups: Record<string, InventoryGroupInterface> = {
-      [groupNameAll]: {
-        vars: {
-          varGroupAll: varCounter++,
+  const rawHosts: HostSourceRawInterface = {
+    'test-1.hello.io': { varHost1: varCounter++ },
+    'test-2.hello.io': { varHost2: varCounter++ },
+    'test-3.hello.io': { varHost3: varCounter++ },
+    'test-4.hello.io': { varHost4: varCounter++ },
+    'test-ungrouped.hello.io': { varHostUngrouped: varCounter++ },
+    'test-6.hello.io': { varHost6: varCounter++ },
+  };
+
+  const groups: Record<string, InventoryGroupInterface> = {
+    [groupNameAll]: {
+      vars: {
+        varGroupAll: varCounter++,
+      },
+    },
+    [groupNameGrouped]: {
+      vars: {
+        varGroupGrouped: varCounter++,
+      },
+    },
+    [groupNameUngrouped]: {
+      vars: {
+        varGroupUngrouped: varCounter++,
+      },
+    },
+    group1: {
+      pattern: ['~test-[12].*'],
+      vars: {
+        varGroup1: varCounter++,
+      },
+    },
+    group2: {
+      pattern: ['~test-[34].*'],
+      vars: {
+        varGroup2: varCounter++,
+      },
+    },
+    groupMixed: {
+      pattern: ['~test-[23].*'],
+      vars: {
+        varGroupMixed: varCounter++,
+      },
+    },
+  };
+
+  const recipe = new Recipe(
+    context,
+    {
+      tasks: [
+        {
+          debug: 'hello',
+        },
+      ],
+      groupVars: {
+        group1: { varRecipeGroup1: varCounter++ },
+        group2: { varRecipeGroup2: varCounter++ },
+      },
+      hostVars: {
+        ['test-1.hello.io']: {
+          varRecipeHost1: varCounter++,
+        },
+        ['test-2.hello.io']: {
+          varRecipeHost2: varCounter++,
+        },
+        ['test-3.hello.io']: {
+          varRecipeHost3: varCounter++,
+        },
+        ['test-4.hello.io']: {
+          varRecipeHost4: varCounter++,
         },
       },
-      [groupNameGrouped]: {
-        vars: {
-          varGroupGrouped: varCounter++,
-        },
-      },
-      [groupNameUngrouped]: {
-        vars: {
-          varGroupUngrouped: varCounter++,
-        },
-      },
-      group1: {
-        pattern: ['~test-[12].*'],
-        vars: {
-          varGroup1: varCounter++,
-        },
-      },
-      group2: {
-        pattern: ['~test-[34].*'],
-        vars: {
-          varGroup2: varCounter++,
-        },
-      },
-      groupMixed: {
-        pattern: ['~test-[23].*'],
-        vars: {
-          varGroupMixed: varCounter++,
-        },
-      },
-    };
+    },
+    {
+      fileName: '/myfakerecipe.yaml',
+    },
+  );
 
-    const recipe = new Recipe(
-      context,
-      {
-        tasks: [
-          {
-            debug: 'hello',
-          },
-        ],
-        groupVars: {
-          group1: { varRecipeGroup1: varCounter++ },
-          group2: { varRecipeGroup2: varCounter++ },
+  const tests: AggregateHostVarsTest[] = [
+    // inventory file or script group vars
+    // Object.assign(vars, inventory.inventoryConfig.vars);
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varInventory'] != null,
+    },
+    // inventory group_vars/all
+    // Object.assign(vars, inventory.inventoryConfig.groups?.[groupNameAll]);
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varGroupAll'] != null,
+    },
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varGroupGrouped'] != null,
+    },
+    {
+      hostPattern: 'test-ungrouped.hello.io',
+      matchFn: (v) => v['varGroupUngrouped'] != null,
+    },
+    {
+      hostPattern: 'test-ungrouped.hello.io',
+      matchFn: (v) => v['varGroupAll'] != null,
+    },
+    {
+      hostPattern: 'test-ungrouped.hello.io',
+      matchFn: (v) => v['varGroupGrouped'] == null,
+    },
+    // inventory group_vars/*
+    // Object.assign(vars, inventory.aggregateGroupVarsForHost(host));
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varGroup1'] != null,
+    },
+    {
+      hostPattern: 'test-3.hello.io',
+      matchFn: (v) => v['varGroup2'] != null,
+    },
+    {
+      hostPattern: 'test-2.hello.io',
+      matchFn: (v) => v['varGroupMixed'] != null,
+    },
+    {
+      hostPattern: 'test-3.hello.io',
+      matchFn: (v) => v['varGroupMixed'] != null,
+    },
+    // playbook group_vars/*
+    // Object.assign(vars, this.aggregateGroupVarsForHost(inventory, host));
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varRecipeGroup1'] != null,
+    },
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varRecipeGroup1'] != null,
+    },
+    // inventory host_vars/*
+    // Object.assign(vars, await host.loadHostVarsFromSource());
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varHost1'] != null,
+    },
+    {
+      hostPattern: 'test-2.hello.io',
+      matchFn: (v) => v['varHost2'] != null,
+    },
+    {
+      hostPattern: 'test-3.hello.io',
+      matchFn: (v) => v['varHost3'] != null,
+    },
+    // playbook host_vars/*
+    // Object.assign(vars, this.config.hostVars?.[host.meta.hostname]);
+    {
+      hostPattern: 'test-1.hello.io',
+      matchFn: (v) => v['varRecipeHost1'] != null,
+    },
+    {
+      hostPattern: 'test-2.hello.io',
+      matchFn: (v) => v['varRecipeHost2'] != null,
+    },
+    {
+      hostPattern: 'test-3.hello.io',
+      matchFn: (v) => v['varRecipeHost3'] != null,
+    },
+  ];
+
+  test.each(tests)('$#', async (t) => {
+    debug(`test ${t.hostPattern}: ${t.matchFn.toString()}`);
+
+    const inventory = new Inventory({
+      hostSources: [
+        {
+          raw: rawHosts,
         },
-        hostVars: {
-          ['test-1.hello.io']: {
-            varRecipeHost1: varCounter++,
-          },
-          ['test-2.hello.io']: {
-            varRecipeHost2: varCounter++,
-          },
-          ['test-3.hello.io']: {
-            varRecipeHost3: varCounter++,
-          },
-          ['test-4.hello.io']: {
-            varRecipeHost4: varCounter++,
-          },
-        },
+      ],
+      groups: groups,
+      vars: {
+        varInventory: varCounter++,
       },
-      {
-        fileName: '/myfakerecipe.yaml',
-      },
-    );
-
-    const tests: AggregateHostVarsTest[] = [
-      // inventory file or script group vars
-      // Object.assign(vars, inventory.inventoryConfig.vars);
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varInventory'] != null,
-      },
-      // inventory group_vars/all
-      // Object.assign(vars, inventory.inventoryConfig.groups?.[groupNameAll]);
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varGroupAll'] != null,
-      },
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varGroupGrouped'] != null,
-      },
-      {
-        hostPattern: 'test-ungrouped.hello.io',
-        matchFn: (v) => v['varGroupUngrouped'] != null,
-      },
-      {
-        hostPattern: 'test-ungrouped.hello.io',
-        matchFn: (v) => v['varGroupAll'] != null,
-      },
-      {
-        hostPattern: 'test-ungrouped.hello.io',
-        matchFn: (v) => v['varGroupGrouped'] == null,
-      },
-      // inventory group_vars/*
-      // Object.assign(vars, inventory.aggregateGroupVarsForHost(host));
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varGroup1'] != null,
-      },
-      {
-        hostPattern: 'test-3.hello.io',
-        matchFn: (v) => v['varGroup2'] != null,
-      },
-      {
-        hostPattern: 'test-2.hello.io',
-        matchFn: (v) => v['varGroupMixed'] != null,
-      },
-      {
-        hostPattern: 'test-3.hello.io',
-        matchFn: (v) => v['varGroupMixed'] != null,
-      },
-      // playbook group_vars/*
-      // Object.assign(vars, this.aggregateGroupVarsForHost(inventory, host));
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varRecipeGroup1'] != null,
-      },
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varRecipeGroup1'] != null,
-      },
-      // inventory host_vars/*
-      // Object.assign(vars, await host.loadHostVarsFromSource());
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varHost1'] != null,
-      },
-      {
-        hostPattern: 'test-2.hello.io',
-        matchFn: (v) => v['varHost2'] != null,
-      },
-      {
-        hostPattern: 'test-3.hello.io',
-        matchFn: (v) => v['varHost3'] != null,
-      },
-      // playbook host_vars/*
-      // Object.assign(vars, this.config.hostVars?.[host.meta.hostname]);
-      {
-        hostPattern: 'test-1.hello.io',
-        matchFn: (v) => v['varRecipeHost1'] != null,
-      },
-      {
-        hostPattern: 'test-2.hello.io',
-        matchFn: (v) => v['varRecipeHost2'] != null,
-      },
-      {
-        hostPattern: 'test-3.hello.io',
-        matchFn: (v) => v['varRecipeHost3'] != null,
-      },
-    ];
-
-    test.each(tests)('$#', async (t) => {
-      debug(`test ${t.hostPattern}: ${t.matchFn.toString()}`);
-
-      const inventory = new Inventory({
-        hostSources: [
-          {
-            raw: rawHosts,
-          },
-        ],
-        groups: groups,
-        vars: {
-          varInventory: varCounter++,
-        },
-      });
-      inventory.throwOnHostNotMatched = true;
-      await inventory.loadGroupsAndStubs(context);
-
-      const hosts = inventory.getHostsByPattern(t.hostPattern);
-      expect(Object.keys(hosts).length).toBeGreaterThan(0);
-      for (const hostname in hosts) {
-        const host = hosts[hostname];
-        const runContext = new RunContext(host, context);
-
-        const varsFromInventory = await inventory.aggregateBaseVarsForHost(host);
-        const varsFromRecipe = await recipe.aggregateHostVars(runContext, host);
-
-        const aggregated: VarsInterface = {
-          ...varsFromInventory,
-          ...varsFromRecipe,
-        };
-
-        expect(t.matchFn(aggregated)).toEqual(true);
-      }
     });
+    inventory.throwOnHostNotMatched = true;
+    await inventory.loadGroupsAndStubs(context);
+
+    const hosts = inventory.getHostsByPattern(t.hostPattern);
+    expect(Object.keys(hosts).length).toBeGreaterThan(0);
+    for (const hostname in hosts) {
+      const host = hosts[hostname];
+      const runContext = new RunContext(host, context);
+
+      const varsFromInventory = await inventory.aggregateBaseVarsForHost(host);
+      const varsFromRecipe = await recipe.aggregateHostVars(runContext, host);
+
+      const aggregated: VarsInterface = {
+        ...varsFromInventory,
+        ...varsFromRecipe,
+      };
+
+      expect(t.matchFn(aggregated)).toEqual(true);
+    }
   });
 });

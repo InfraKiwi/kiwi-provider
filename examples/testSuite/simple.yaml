@@ -1,0 +1,17 @@
+runner:
+  local: {}
+
+tests:
+  - label: test 1
+    tasks:
+      - set:
+          myVar: hello
+        out: result1
+      - fail: 'Bad vars: ${{ getVars() | dump }}'
+        if: result1.myVar != "world"
+
+    testMocks:
+      - set: 'true'
+        result:
+          vars:
+            myVar: world

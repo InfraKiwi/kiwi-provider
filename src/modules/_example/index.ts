@@ -21,9 +21,6 @@ export class ModuleExample extends AbstractModuleBase<ModuleExampleInterface, Mo
       changed: true,
     };
   }
-  get requiresMock(): boolean {
-    return false;
-  }
 }
 
 moduleRegistryEntryFactory.register(ModuleExampleSchema, ModuleExample);

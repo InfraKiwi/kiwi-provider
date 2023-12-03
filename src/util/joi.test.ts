@@ -1,6 +1,6 @@
 import { describe, test } from '@jest/globals';
 import Joi from 'joi';
-import { keepOnlyKeysNotInJoiObjectDiff } from './joi';
+import { joiKeepOnlyKeysNotInJoiObjectDiff } from './joi';
 
 describe('joi utils', () => {
   test('keys diff', () => {
@@ -14,7 +14,7 @@ describe('joi utils', () => {
       d: Joi.string(),
     });
 
-    const diff = keepOnlyKeysNotInJoiObjectDiff(
+    const diff = joiKeepOnlyKeysNotInJoiObjectDiff(
       {
         a: 1,
         b: 2,

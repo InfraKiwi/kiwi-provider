@@ -1,6 +1,7 @@
 import { Registry, RegistryEntryFactory } from '../util/registry';
+import path from 'node:path';
 
-export const dataSourceRegistry = new Registry('data source');
+export const dataSourceRegistry = new Registry(path.basename(__dirname));
 
 export const dataSourceRegistryEntryFactory = new RegistryEntryFactory({
   typeName: 'DataSource',

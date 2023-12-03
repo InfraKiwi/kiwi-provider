@@ -22,12 +22,6 @@ declare namespace expect {
   };
 }
 
-declare global {
-  const expect: jest.Expect;
-}
-
-// export declare
-
 declare namespace jest {
   type ExpectCustomMessageOptions = { showMatcherMessage?: boolean; showPrefix?: boolean; showStack?: boolean };
 

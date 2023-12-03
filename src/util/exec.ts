@@ -10,6 +10,7 @@ const promiseExecFile = util.promisify(childProcess.execFile);
 
 export interface ExecOptionsCommon {
   ignoreBadExitCode?: boolean;
+  logVerbose?: boolean;
 }
 
 export type PromiseExecWithChild = childProcess.PromiseWithChild<{ stdout: string | Buffer; stderr: string | Buffer }>;
@@ -59,14 +60,20 @@ export async function execCmd(
   const { ignoreBadExitCode, ...otherOptions } = options;
   const promise = promiseExecFile(cmd, args, otherOptions);
   try {
+    options.logVerbose &&
+      context.logger.verbose(`Exec cmd`, {
+        cmd,
+        args,
+      });
     const result = await runShellCommandInternal(context, promise, {
       ignoreBadExitCode,
     });
-    context.logger.verbose(`Exec cmd result`, {
-      cmd,
-      args,
-      ...result,
-    });
+    options.logVerbose &&
+      context.logger.verbose(`Exec cmd (result)`, {
+        cmd,
+        args,
+        ...result,
+      });
     return result;
   } catch (ex) {
     throw ExecCmdErrorThrow.withCause(ex, ex);

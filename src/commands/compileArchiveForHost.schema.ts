@@ -5,7 +5,7 @@ import { ArchiveSchema } from '../components/archive.schema';
 import { InventorySchema } from '../components/inventory.schema';
 
 export const CompileArchiveForHostArgsSchema = Joi.object({
-  hostname: Joi.string().hostname().required(),
+  hostname: Joi.string().required(),
   inventory: joiObjectFromInstanceOf('Inventory', path.resolve(__dirname, '../components/inventory')).required(),
   archive: joiObjectFromInstanceOf('Archive', path.resolve(__dirname, '../components/archive')).required(),
 

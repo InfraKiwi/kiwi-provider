@@ -1,6 +1,6 @@
 app:
   inventoryPath: examples/inventory.yaml
-  archivePath: test_archive
+  archiveDir: test_archive
 
   assetsDistribution:
     dir:

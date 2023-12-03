@@ -2,8 +2,7 @@ import type { Express, Request } from 'express';
 import express from 'express';
 import { compileArchiveForHost } from '../../commands/compileArchiveForHost';
 import type { Logger } from 'winston';
-import { loadYAML } from '../../util/yaml';
-import { fsPromiseReadFile } from '../../util/fs';
+import { loadYAMLFromFile } from '../../util/yaml';
 import { tryOrThrow, tryOrThrowAsync } from '../../util/try';
 import { Inventory } from '../../components/inventory';
 import type { InventoryInterface } from '../../components/inventory.schema.gen';
@@ -87,7 +86,7 @@ export class ServerConfig {
   async initialize(): Promise<void> {
     // Perform all needed checks and load our static config
     {
-      const data = loadYAML(await fsPromiseReadFile(this.#config.inventoryPath, 'utf8'));
+      const data = await loadYAMLFromFile(this.#config.inventoryPath);
       const inventory = tryOrThrow(
         () => new Inventory(data as InventoryInterface),
         `Failed to load inventory ${this.#config.inventoryPath}`,
@@ -96,7 +95,7 @@ export class ServerConfig {
       this.#inventory = inventory;
     }
 
-    this.#archive = await Archive.fromDir(this.#config.archivePath);
+    this.#archive = await Archive.fromDir(this.#config.archiveDir);
   }
 
   mountRoutes(app: Express) {

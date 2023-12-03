@@ -8,10 +8,6 @@ import { AbstractModuleBase } from '../abstractModuleBase';
 export interface ModuleSetResult {}
 
 export class ModuleSet extends AbstractModuleBase<ModuleSetInterface, ModuleSetResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   async run(context: RunContext): Promise<ModuleRunResult<ModuleSetResult>> {
     return {
       vars: this.config,

@@ -1,14 +1,12 @@
 import { AbstractRegistryEntry } from '../util/registry';
 import type { RunContext } from '../util/runContext';
+import type { ModuleRunResultInterface } from './abstractModuleBase.schema.gen';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ModuleRunResultBaseType = Record<string, any>;
 
-export interface ModuleRunResult<Type extends ModuleRunResultBaseType> {
-  failed?: string;
-  exit?: boolean;
+export interface ModuleRunResult<Type extends ModuleRunResultBaseType> extends Omit<ModuleRunResultInterface, 'vars'> {
   vars?: Type;
-  changed: boolean;
 }
 
 export abstract class AbstractModuleBase<
@@ -17,11 +15,6 @@ export abstract class AbstractModuleBase<
 > extends AbstractRegistryEntry<ConfigType> {
   get label(): string | undefined {
     return;
-  }
-
-  // If by default a module performs changes to the system, it must require a mock
-  get requiresMock(): boolean {
-    return true;
   }
 
   async run(context: RunContext): Promise<ModuleRunResult<ResultType>> {

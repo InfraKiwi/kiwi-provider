@@ -5,7 +5,7 @@ import { InventoryEntryRelationsSchema, InventoryEntrySchema } from './inventory
 import { VarsContainer } from './varsContainer';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import type { VarsInterface } from './varsContainer.schema.gen';
-import { keepOnlyKeysInJoiSchema } from '../util/joi';
+import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
 
 const debug = newDebug(__filename);
@@ -18,7 +18,7 @@ export abstract class InventoryEntry extends VarsContainer {
 
   protected constructor(id: string, config: InventoryEntryInterface) {
     config = Joi.attempt(config, InventoryEntrySchema, 'validate inventory entry config');
-    super(keepOnlyKeysInJoiSchema(config, VarsContainerSchema));
+    super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
 
     this.#config = config;
     this.id = id;

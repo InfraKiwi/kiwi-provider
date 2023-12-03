@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="esBuild" type="NodeJSConfigurationType" application-parameters="-e cmd/cli.ts -o dist/test.cjs" node-parameters="--require ts-node/register" path-to-js-file="cmd/esBuild.ts" working-dir="$PROJECT_DIR$">
+    <method v="2" />
+  </configuration>
+</component>

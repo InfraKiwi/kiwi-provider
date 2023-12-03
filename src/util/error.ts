@@ -32,3 +32,13 @@ export function instanceOfNodeError<T extends new (...args: any) => Error>(
 ): value is InstanceType<T> & NodeJS.ErrnoException {
   return value instanceof errorType;
 }
+
+export function getErrorCauseChain(err: Error): string {
+  const messages: string[] = [err.message];
+  let currentCause: Error | undefined = err.cause instanceof Error ? err.cause : undefined;
+  while (currentCause) {
+    messages.push(currentCause.message);
+    currentCause = currentCause.cause instanceof Error ? currentCause.cause : undefined;
+  }
+  return messages.join('\n');
+}

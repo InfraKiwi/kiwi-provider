@@ -3,11 +3,11 @@ import { newDebug } from './debug';
 import type { Logger } from 'winston';
 import { defaultLogger } from './logger';
 import type { VarsInterface } from '../components/varsContainer.schema.gen';
-import type { RecipeTestMock } from '../components/recipeTestMock';
 
 import type { InventoryHost } from '../components/inventoryHost';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import type { ContextLogger, ContextRecipeSourceList, ContextWorkDir } from './context';
+import type { TestMock } from '../components/testingCommon';
 
 const debug = newDebug(__filename);
 
@@ -20,7 +20,19 @@ export interface RunStatistics {
   totalTasksCount: number;
   processedTasksCount: number;
   skippedTasksCount: number;
-  startTime: Date;
+  startTime: number;
+  endTime?: number;
+  failed: boolean;
+}
+
+export function newRunStatistics(): RunStatistics {
+  return {
+    totalTasksCount: 0,
+    processedTasksCount: 0,
+    skippedTasksCount: 0,
+    startTime: new Date().getTime(),
+    failed: false,
+  };
 }
 
 export class RunContext implements ContextLogger, ContextRecipeSourceList, ContextWorkDir {
@@ -50,16 +62,11 @@ export class RunContext implements ContextLogger, ContextRecipeSourceList, Conte
   workDir: string | undefined;
 
   // General execution statistics
-  statistics: RunStatistics = {
-    totalTasksCount: 0,
-    processedTasksCount: 0,
-    skippedTasksCount: 0,
-    startTime: new Date(),
-  };
+  statistics: RunStatistics = newRunStatistics();
 
   // Testing vars
   isTesting: boolean = false;
-  testMocks: RecipeTestMock[] = [];
+  testMocks: TestMock[] = [];
 
   // --- Methods
 
@@ -137,7 +144,7 @@ export class RunContext implements ContextLogger, ContextRecipeSourceList, Conte
     });
   }
 
-  prependTestMocks(testMocks: RecipeTestMock[]): RunContext {
+  prependTestMocks(testMocks: TestMock[]): RunContext {
     if (testMocks.length == 0) {
       return this;
     }

@@ -282,6 +282,10 @@ async function genRegistriesLoadAll() {
       genFileSuffix: '.serverConfig',
       excludeFromAll: true,
     },
+    '.loadAllTestSuite': {
+      genFileSuffix: '.testSuite',
+      excludeFromAll: true,
+    },
   };
 
   const loadAllGroups: Record<string, string[]> = {

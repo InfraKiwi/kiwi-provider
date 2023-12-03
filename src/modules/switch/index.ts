@@ -76,10 +76,6 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
       changed: changed,
     };
   }
-
-  get requiresMock(): boolean {
-    return false;
-  }
 }
 
 moduleRegistryEntryFactory.register(ModuleSwitchSchema, ModuleSwitch);

@@ -8,7 +8,7 @@ import { Recipe } from './recipe';
  * Do not modify this file manually
  */
 
-import { RecipeAsDependencyInterface, RecipeTargetsInterface } from './recipe.schema.gen';
+import { RecipeMinimalInterface, RecipeTargetsInterface } from './recipe.schema.gen';
 
 export interface ArchiveInterface {
   recipeSources: {
@@ -20,7 +20,7 @@ export interface ArchiveInterface {
 
 export interface ArchiveRecipeEntryInterface {
   assetsArchive?: string;
-  config: RecipeAsDependencyInterface;
+  config: RecipeMinimalInterface;
   otherHosts?: RecipeTargetsInterface;
   targets?: RecipeTargetsInterface;
 }

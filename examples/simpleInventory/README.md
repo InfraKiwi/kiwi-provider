@@ -6,5 +6,5 @@ the `hack/simpleInventory` folder and then you can try to run this example.
 Run with:
 
 ```
-ts-node cmd/run.ts -i examples/simpleInventory/inventory.yaml examples/simpleInventory/rb-debug.yaml -h host-2
+ts-node cmd/cli.ts -i examples/simpleInventory/inventory.yaml examples/simpleInventory/rb-debug.yaml -h host-2
 ```

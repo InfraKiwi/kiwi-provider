@@ -20,10 +20,6 @@ export interface ModuleShellResult {
 const ModuleShellErrorBadExitCode = getErrorPrintfClass('ModuleShellErrorBadExitCode', `Bad exit code: %d`);
 
 export class ModuleShell extends AbstractModuleBase<ModuleShellInterface, ModuleShellResult> {
-  get requiresMock(): boolean {
-    return true;
-  }
-
   protected get disableShortie(): boolean {
     return true;
   }

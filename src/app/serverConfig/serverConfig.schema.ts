@@ -18,7 +18,7 @@ export const ServerConfigHooksKeysSchema = Joi.string()
 
 export const ServerConfigConfigSchema = Joi.object({
   inventoryPath: Joi.string().required(),
-  archivePath: Joi.string().required(),
+  archiveDir: Joi.string().required(),
   assetsDistribution: AssetsDistributionSchema.required(),
   logsStorage: LogsStorageSchema.required(),
 

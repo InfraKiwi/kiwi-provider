@@ -12,7 +12,7 @@ const debug = newDebug(__filename);
 
 interface FailTest {
   fail: ModuleFailInterface;
-  failIf: string;
+  failedIf: string;
   expectFail: boolean;
 }
 
@@ -58,12 +58,12 @@ describe('task', () => {
   const failTests: FailTest[] = [
     {
       fail: {},
-      failIf: 'true',
+      failedIf: 'true',
       expectFail: true,
     },
     {
       fail: {},
-      failIf: 'false',
+      failedIf: 'false',
       expectFail: false,
     },
     {
@@ -72,7 +72,7 @@ describe('task', () => {
           hello: 'world',
         },
       },
-      failIf: 'result.vars.hello == "world"',
+      failedIf: 'result.vars.hello == "world"',
       expectFail: true,
     },
     {
@@ -81,7 +81,7 @@ describe('task', () => {
           hello: 'world',
         },
       },
-      failIf: 'result.vars.hello == "worldz"',
+      failedIf: 'result.vars.hello == "worldz"',
       expectFail: false,
     },
   ];
@@ -89,7 +89,7 @@ describe('task', () => {
   test.each(failTests)('fail test %#', async (test) => {
     const task = new Task({
       fail: test.fail,
-      failIf: test.failIf,
+      failedIf: test.failedIf,
     });
 
     const p = task.run(getTestRunContext());

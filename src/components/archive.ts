@@ -2,9 +2,9 @@ import type { RecipeCtorContext } from './recipe';
 import { Recipe } from './recipe';
 import path from 'node:path';
 import { mkdirp } from 'mkdirp';
-import { fsPromiseReadFile, fsPromiseTmpDir, fsPromiseWriteFile, getAllFiles } from '../util/fs';
+import { fsPromiseTmpDir, fsPromiseWriteFile, getAllFiles } from '../util/fs';
 import { newLogger } from '../util/logger';
-import { dumpYAML, loadYAML } from '../util/yaml';
+import { dumpYAML, loadYAMLFromFile } from '../util/yaml';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import type { ContextLogger, ContextRecipeSourceList, ContextWorkDir } from '../util/context';
 import type {
@@ -82,7 +82,7 @@ export class Archive {
 
   static async fromDir(archiveDir: string): Promise<Archive> {
     const archiveConfigPath = path.resolve(archiveDir, ArchiveConfigFilename);
-    const config = loadYAML(await fsPromiseReadFile(archiveConfigPath, 'utf8'));
+    const config = await loadYAMLFromFile(archiveConfigPath);
     const archive = new Archive(config, archiveDir);
     return archive;
   }
@@ -113,10 +113,19 @@ export class Archive {
     return recipeSources;
   }
 
-  async getInstantiatedRootRecipes(context: DataSourceContext, dryRun: boolean) {
+  async getInstantiatedRootRecipes(context: DataSourceContext, dryRun: boolean, ids?: string[]) {
     const recipes: Recipe[] = [];
-    for (const recipeKey in this.config.rootRecipes) {
-      const recipe = await this.instantiateRecipe(context, recipeKey, this.config.rootRecipes[recipeKey], dryRun);
+    Joi.assert(
+      ids,
+      Joi.array().items(Joi.string().valid(...Object.keys(this.config.rootRecipes))),
+      'Invalid root recipes ids',
+    );
+    for (const recipeId of ids ?? Object.keys(this.config.rootRecipes)) {
+      const archiveEntry = this.config.rootRecipes[recipeId];
+      if (archiveEntry == null) {
+        throw new Error(`Internal error: null archive entry found for recipe id ${recipeId}`);
+      }
+      const recipe = await this.instantiateRecipe(context, recipeId, archiveEntry, dryRun);
       recipes.push(recipe);
     }
     return recipes;
@@ -125,7 +134,7 @@ export class Archive {
   // Initialize the recipe will validate all dependencies
   async instantiateRecipe(
     context: DataSourceContext,
-    key: string,
+    id: string,
     archiveEntry: ArchiveRecipeEntryInterface,
     dryRun: boolean,
   ): Promise<Recipe> {
@@ -143,11 +152,11 @@ export class Archive {
         cwd: assetsDir,
         file: fullArchivePath,
       });
-      context.logger.debug(`Unpacked temporary recipe ${key} assets into ${assetsDir}`);
+      context.logger.debug(`Unpacked temporary recipe ${id} assets into ${assetsDir}`);
     }
 
     return await Recipe.fromRecipeForArchiveInterface(recipeCtorContext, archiveEntry, {
-      id: key,
+      id,
       assetsDir,
     });
   }

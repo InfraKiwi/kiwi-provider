@@ -11,10 +11,6 @@ const debug = newDebug(__filename);
 export interface ModuleDebugResult {}
 
 export class ModuleDebug extends AbstractModuleBase<ModuleDebugInterface, ModuleDebugResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   protected get disableShortie(): boolean {
     return true;
   }

@@ -3,7 +3,7 @@ import type { Inventory } from './inventory';
 import type { AbstractHostSourceInstance } from '../hostSources/abstractHostSource';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import Joi from 'joi';
-import { keepOnlyKeysInJoiSchema } from '../util/joi';
+import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
 import { InventoryHostSchema, specialGroupNames } from './inventory.schema';
 import type { InventoryHostInterface } from './inventory.schema.gen';
@@ -16,7 +16,7 @@ export class InventoryHost extends InventoryEntry {
 
   constructor(id: string, config: InventoryHostInterface, hostSource?: AbstractHostSourceInstance) {
     config = Joi.attempt(config, InventoryHostSchema, `Error validating inventory host config: `);
-    super(id, keepOnlyKeysInJoiSchema(config, VarsContainerSchema));
+    super(id, joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
     this.#hostSource = hostSource;
   }
 

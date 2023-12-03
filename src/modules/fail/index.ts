@@ -30,10 +30,6 @@ export class ModuleFail extends AbstractModuleBase<ModuleFailInterface, ModuleFa
     };
   }
 
-  get requiresMock(): boolean {
-    return false;
-  }
-
   protected get disableShortie(): boolean {
     return true;
   }

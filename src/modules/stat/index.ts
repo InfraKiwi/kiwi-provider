@@ -57,10 +57,6 @@ export interface ModuleStatResult {
 export const ModuleStatErrorFileNotFound = getErrorPrintfClass('ModuleStatFileNotFound', 'Path not found: %s');
 
 export class ModuleStat extends AbstractModuleBase<ModuleStatInterface, ModuleStatResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   async run(context: RunContext): Promise<ModuleRunResult<ModuleStatResult>> {
     if (!(await fsPromiseExists(this.config.path))) {
       if (this.config.throw) {

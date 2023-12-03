@@ -1,8 +1,7 @@
 import Joi from 'joi';
-import { getJoiParseArgsLogOptions, parseArgsLogOptions } from './logger';
+import { joiParseArgsLogOptions, parseArgsLogOptions } from './logger';
 import { joiAttemptAsync, joiValidateAsyncFileExists } from './joi';
-import { loadYAML } from './yaml';
-import { fsPromiseReadFile } from './fs';
+import { loadYAMLFromFile } from './yaml';
 
 export const parseArgsConfigOptions: ParseArgsOptionsConfig = {
   // Config file path
@@ -13,17 +12,17 @@ export const parseArgsConfigOptions: ParseArgsOptionsConfig = {
 };
 
 export async function loadConfig<T>(configPath: string | undefined, schema: Joi.Schema): Promise<T> {
-  const configObject = (configPath ? loadYAML(await fsPromiseReadFile(configPath, 'utf8')) : {}) ?? {};
+  const configObject = (configPath ? await loadYAMLFromFile(configPath) : {}) ?? {};
   return await joiAttemptAsync(configObject, schema);
 }
 
-export const parseArgsBaseOptions: ParseArgsOptionsConfig = {
+export const parseArgsAppBaseOptions: ParseArgsOptionsConfig = {
   ...parseArgsLogOptions,
   ...parseArgsConfigOptions,
 };
 
-export const parseArgsBaseJoiObject = Joi.object()
-  .append(getJoiParseArgsLogOptions())
+export const parseArgsAppBaseJoiObject = Joi.object()
+  .append(joiParseArgsLogOptions)
   .append({
     configPath: Joi.string().external(joiValidateAsyncFileExists),
   });

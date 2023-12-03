@@ -17,12 +17,6 @@ export interface ModuleTempResult {
 }
 
 export class ModuleTemp extends AbstractModuleBase<ModuleTempInterface, ModuleTempResult> {
-  get requiresMock(): boolean {
-    // A bit of a special case, this will make changes to the system but at the same time
-    // it will only create temporary files
-    return false;
-  }
-
   async run(context: RunContext): Promise<ModuleRunResult<ModuleTempResult>> {
     const { prefix, extension, keep } = this.config;
 

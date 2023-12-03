@@ -14,10 +14,6 @@ const debug = newDebug(__filename);
 export interface ModuleHTTPResult extends DataSourceHTTPResult {}
 
 export class ModuleHTTP extends AbstractModuleBase<ModuleHTTPInterface, ModuleHTTPResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   #dataSource = new DataSourceHTTP(this.config);
 
   async run(context: RunContext): Promise<ModuleRunResult<ModuleHTTPResult>> {

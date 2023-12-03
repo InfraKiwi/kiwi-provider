@@ -3,18 +3,14 @@ import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import Joi from 'joi';
 import { glob } from 'glob';
-import { newLogger, setGlobalLogLevel } from '../src/util/logger';
+import { joiParseArgsLogOptionsSchema, newLoggerFromParseArgs, parseArgsLogOptions } from '../src/util/logger';
 import { shortieToObject } from '../src/util/shortie';
-import { parseArgsBaseJoiObject, parseArgsBaseOptions } from '../src/util/parseArgs';
 import { RecipeSourceList } from '../src/recipeSources/recipeSourceList';
 import { createArchiveFile } from '../src/commands/createArchiveFile';
 import type { ContextLogger, ContextWorkDir } from '../src/util/context';
 import { fsPromiseMkdir, fsPromiseRm } from '../src/util/fs';
 import { joiAttemptAsync } from '../src/util/joi';
 import { setupUncaughtHandler } from '../src/util/uncaught';
-
-const logger = newLogger();
-setupUncaughtHandler(logger);
 
 const debug = newDebug(__filename);
 
@@ -25,7 +21,7 @@ const argsConfig: ParseArgsConfig = {
   allowPositionals: true,
   strict: true,
   options: {
-    ...parseArgsBaseOptions,
+    ...parseArgsLogOptions,
 
     source: {
       type: 'string',
@@ -50,9 +46,9 @@ const argsConfig: ParseArgsConfig = {
 async function main() {
   const { positionals, values } = parseArgs(argsConfig);
 
-  const { logLevel, source, outputTarFile, archiveDir, dump } = await joiAttemptAsync(
+  const { source, outputTarFile, archiveDir, dump, ...otherArgs } = await joiAttemptAsync(
     values,
-    parseArgsBaseJoiObject.append({
+    joiParseArgsLogOptionsSchema.append({
       source: Joi.array().items(Joi.string()).default([]),
       outputTarFile: Joi.string(),
       dump: Joi.string(),
@@ -60,7 +56,8 @@ async function main() {
     }),
     'Error evaluating command args:',
   );
-  setGlobalLogLevel(logLevel);
+  const logger = newLoggerFromParseArgs(otherArgs);
+  setupUncaughtHandler(logger);
 
   if (archiveDir) {
     await fsPromiseRm(archiveDir, { recursive: true, force: true });
@@ -95,4 +92,4 @@ async function main() {
   });
 }
 
-void main(); // .catch(debug.uncaught);
+void main();

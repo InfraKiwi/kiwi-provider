@@ -4,7 +4,7 @@ import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import type { InventoryGroupInterface } from './inventory.schema.gen';
 import Joi from 'joi';
 import { InventoryGroupSchema } from './inventory.schema';
-import { keepOnlyKeysInJoiSchema } from '../util/joi';
+import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { InventoryEntrySchema } from './inventoryEntry.schema';
 
 export class InventoryGroup extends InventoryEntry {
@@ -12,7 +12,7 @@ export class InventoryGroup extends InventoryEntry {
 
   constructor(id: string, config: InventoryGroupInterface) {
     config = Joi.attempt(config, InventoryGroupSchema, `Error validating inventory group config: `);
-    super(id, keepOnlyKeysInJoiSchema(config, InventoryEntrySchema));
+    super(id, joiKeepOnlyKeysInJoiSchema(config, InventoryEntrySchema));
     this.pattern = config.pattern ? (Array.isArray(config.pattern) ? config.pattern : [config.pattern]) : [];
   }
 

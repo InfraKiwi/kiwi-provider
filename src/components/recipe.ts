@@ -1,19 +1,19 @@
 import { newDebug } from '../util/debug';
 import type { RunContext } from '../util/runContext';
-import { RecipeAsDependencySchema, RecipeSchema } from './recipe.schema';
+import { RecipeMinimalSchema, RecipeSchema, RecipeTestMockSchema } from './recipe.schema';
 import type {
-  RecipeAsDependencyInterface,
   RecipeDependencyInterface,
   RecipeDependencyWithAlternativesInterface,
   RecipeForArchiveInterface,
   RecipeInterface,
+  RecipeMinimalInterface,
+  RecipeTestMockInterface,
 } from './recipe.schema.gen';
 import { extractAllTemplates } from '../util/tpl';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import { Task } from './task';
 import path from 'node:path';
 import { fsPromiseExists, fsPromiseStat } from '../util/fs';
-import { RecipeTestMock } from './recipeTestMock';
 
 import type { InventoryHost } from './inventoryHost';
 import { DataSourceFile } from '../dataSources/file';
@@ -21,9 +21,15 @@ import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import type { AbstractRecipeSourceInstance } from '../recipeSources/abstractRecipeSource';
 import type { ContextLogger, ContextRecipeSourceList, ContextWorkDir } from '../util/context';
-import { keepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
+import { joiKeepOnlyKeysInJoiSchema, joiKeepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
 import Joi from 'joi';
 import { getErrorPrintfClass } from '../util/error';
+import type { RegistryEntry } from '../util/registry';
+import { moduleRegistry } from '../modules/registry';
+import { TestMockBaseSchema } from './testingCommon.schema';
+import type { AbstractModuleBaseInstance } from '../modules/abstractModuleBase';
+import { TestMock } from './testingCommon';
+import type { ConditionSetInterface } from './testingCommon.schema.gen';
 
 const debug = newDebug(__filename);
 
@@ -51,9 +57,24 @@ export interface RecipeGetConfigForArchiveArgs {
   keepVars?: boolean;
 }
 
-export interface RecipeListAssetsResult {
-  assetsDir: string;
-  // assets: string[];
+export class RecipeTestMock extends TestMock {
+  #module: RegistryEntry;
+
+  constructor(config: RecipeTestMockInterface) {
+    config = Joi.attempt(config, RecipeTestMockSchema);
+    const module = moduleRegistry.findRegistryEntryFromIndexedConfig(config, RecipeTestMockSchema);
+
+    const conditions = config[module.entryName] as ConditionSetInterface;
+    super(joiKeepOnlyKeysInJoiSchema(config, TestMockBaseSchema), conditions);
+    this.#module = module;
+  }
+
+  matchesModule(context: DataSourceContext, module: AbstractModuleBaseInstance): boolean {
+    if (module.registryEntry.entryName != this.#module.entryName) {
+      return false;
+    }
+    return super.matchesModuleConfig(context, module);
+  }
 }
 
 export class Recipe {
@@ -61,11 +82,11 @@ export class Recipe {
   readonly meta?: RecipeMetadata;
 
   readonly #tasks: Task[] = [];
-  readonly #mocks: RecipeTestMock[] = [];
+  readonly #testMocks: RecipeTestMock[] = [];
   readonly #recipeSources?: RecipeSourceList;
   readonly #recipeSourcesCombinedWithMinimal?: RecipeSourceList;
 
-  constructor(context: RecipeCtorContext, config: RecipeInterface, meta: RecipeMetadata) {
+  constructor(context: RecipeCtorContext, config: RecipeInterface, meta?: RecipeMetadata) {
     this.config = Joi.attempt(config, RecipeSchema, 'validate recipe config');
     this.meta = meta;
 
@@ -73,11 +94,13 @@ export class Recipe {
     this.config.hostVars = extractAllTemplates(this.config.hostVars);
     this.config.groupVars = extractAllTemplates(this.config.groupVars);
     this.#tasks = this.config.tasks.map((taskInterface) => new Task(extractAllTemplates(taskInterface)));
-    this.#mocks = (this.config.mocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
+
+    // TODO template this?
+    this.#testMocks = (this.config.testMocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
 
     const recipeSourceContext: RecipeCtorContext = {
       ...context,
-      workDir: meta.fileName ? path.dirname(meta.fileName) : undefined,
+      workDir: meta?.fileName ? path.dirname(meta.fileName) : undefined,
     };
 
     const newRecipeSources = this.config.recipeSources
@@ -118,8 +141,8 @@ export class Recipe {
 
   async getConfigForArchive(args: RecipeGetConfigForArchiveArgs): Promise<RecipeForArchiveInterface> {
     // Strip out unnecessary items
-    const cleanedConfig: RecipeAsDependencyInterface = {
-      ...keepOnlyKeysNotInJoiObjectDiff(this.config, RecipeAsDependencySchema, RecipeSchema),
+    const cleanedConfig: RecipeMinimalInterface = {
+      ...joiKeepOnlyKeysNotInJoiObjectDiff(this.config, RecipeMinimalSchema, RecipeSchema),
       // Strip some data
       tasks: this.#tasks.map((t) => t.getConfigForArchive()),
     };
@@ -195,8 +218,16 @@ export class Recipe {
     return this.config.targets ?? [];
   }
 
+  static cleanId(input: string): string {
+    return input.replace(/\W/g, '_');
+  }
+
   get standaloneId(): string | undefined {
-    return (this.meta?.id ?? this.meta?.fileName)?.replace(/\W/g, '_');
+    const baseId = this.meta?.id ?? this.meta?.fileName;
+    if (baseId == undefined) {
+      return;
+    }
+    return Recipe.cleanId(baseId);
   }
 
   get fullId(): string | null {
@@ -296,7 +327,7 @@ export class Recipe {
       .withLoggerFields({
         statistics: context.statistics,
       })
-      .prependTestMocks(this.#mocks);
+      .prependTestMocks(this.#testMocks);
 
     // Store the original vars
     const oldVars = context.vars;

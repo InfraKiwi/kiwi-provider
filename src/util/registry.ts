@@ -2,7 +2,6 @@ import Joi from 'joi';
 import { newDebug } from './debug';
 import { toPascalCase } from 'js-convert-case';
 import { shortieToArray, shortieToObject } from './shortie';
-import path from 'node:path';
 
 const debug = newDebug(__filename);
 
@@ -194,10 +193,10 @@ export class Registry {
 
   getRegistryEntryInstanceFromIndexedConfig<ReturnType extends InstanceType<typeof AbstractRegistryEntry>>(
     config: RegistryEntryGenericConfig,
-    baseSchema: Joi.ObjectSchema,
+    outerSchema: Joi.ObjectSchema,
     label?: string,
   ): ReturnType {
-    const registryEntry = this.findRegistryEntryFromIndexedConfig(config, baseSchema, label);
+    const registryEntry = this.findRegistryEntryFromIndexedConfig(config, outerSchema, label);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const moduleConfig = config[registryEntry.entryName] as any;
@@ -254,7 +253,7 @@ export class RegistryEntryFactory {
   }
 
   createJoiEntrySchema(entryNameRaw: string, schema: Joi.Schema, options?: createJoiEntrySchemaOptions) {
-    const entryNameBase = entryNameRaw.replace(this.baseDir, '').replace(path.sep, '');
+    const entryNameBase = entryNameRaw.replace(this.baseDir, '').substring(1);
     options ??= {};
     options.label ??= toPascalCase(this.typeName) + toPascalCase(entryNameBase) + 'Interface';
     return schema.meta({

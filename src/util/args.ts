@@ -1,5 +1,5 @@
 import type { ParseArgsConfig } from 'node:util';
-import { version10InfraConfig } from './version';
+import { version10InfraConfig } from './build';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getArgDefault(argsConfig: ParseArgsConfig, key: string): any {

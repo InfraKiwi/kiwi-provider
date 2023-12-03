@@ -14,10 +14,6 @@ const debug = newDebug(__filename);
 export interface ModuleLoadResult {}
 
 export class ModuleLoad extends AbstractModuleBase<ModuleLoadInterface, ModuleLoadResult> {
-  get requiresMock(): boolean {
-    return false;
-  }
-
   constructor(config: ModuleLoadInterface) {
     super(config);
   }

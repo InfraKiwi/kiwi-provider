@@ -1,69 +1,32 @@
-import { Inventory } from '../components/inventory';
-import fs from 'node:fs';
-import type { InventoryInterface } from '../components/inventory.schema.gen';
-import { tryOrThrowAsync } from '../util/try';
-import type { RecipeCtorContext } from '../components/recipe';
-import { Recipe } from '../components/recipe';
+import type { Inventory } from '../components/inventory';
+import type { Recipe } from '../components/recipe';
 import type { MyPartialRunContextOmit } from '../util/runContext';
 import { RunContext } from '../util/runContext';
-import { loadYAML } from '../util/yaml';
-import type { VarsInterface } from '../components/varsContainer.schema.gen';
-import { InventoryHost } from '../components/inventoryHost';
-
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import { groupNameAll } from '../components/inventory.schema';
+import { InventoryHost } from '../components/inventoryHost';
+import { aggregateForcedContextVars } from './common';
 
 export interface RunRecipeArgs {
-  recipePath: string;
   hostname: string;
-
-  inventoryPath?: string;
-
+  inventory: Inventory;
+  recipe: Recipe;
   runContextPartial?: Partial<MyPartialRunContextOmit>;
 }
 
-async function loadInventory(context: DataSourceContext, inventoryPath?: string): Promise<Inventory> {
-  let inventory: Inventory;
-  {
-    if (inventoryPath) {
-      const data = loadYAML(fs.readFileSync(inventoryPath, 'utf8'));
-      inventory = new Inventory(data as InventoryInterface);
-    } else {
-      inventory = new Inventory({});
-    }
-  }
-  await inventory.loadGroupsAndStubs(context);
-  return inventory;
-}
-
-export interface ForcedContextVars {
-  inventory: Inventory;
-  host: InventoryHost;
-}
-
-// Simple utility function to make sure we always pass the right vars and don't forget about them
-export function aggregateForcedContextVars(vars: ForcedContextVars): VarsInterface {
-  return {
-    ...vars,
-    hostname: vars.host.id,
-  };
-}
-
-export async function runRecipe(context: RecipeCtorContext, args: RunRecipeArgs) {
-  const inventory = await loadInventory(context, args.inventoryPath);
-
-  // Load recipe
-  const recipe = await tryOrThrowAsync(() => Recipe.fromPath(context, args.recipePath), 'Failed to load recipe');
-
-  const hosts = inventory.getHostsByPattern(args.hostname);
+export async function runRecipe(
+  context: DataSourceContext & Partial<MyPartialRunContextOmit>,
+  { hostname, inventory, recipe, runContextPartial }: RunRecipeArgs,
+): Promise<void> {
+  const hosts = inventory.getHostsByPattern(hostname);
   const hostnames = Object.keys(hosts);
   if (hostnames.length == 0) {
     if (recipe.targets.length == 0 || recipe.targets.includes(groupNameAll)) {
       // This recipe will be run in any case because the recipe does not specify any targets
-      const host = new InventoryHost(args.hostname, {});
+      const host = new InventoryHost(hostname, {});
       inventory.setHost(host);
-      hosts[args.hostname] = host;
-      hostnames.push(args.hostname);
+      hosts[hostname] = host;
+      hostnames.push(hostname);
     } else {
       throw new Error('The recipe needs to be run on a single host, 0 found');
     }
@@ -73,6 +36,7 @@ export async function runRecipe(context: RecipeCtorContext, args: RunRecipeArgs)
   }
 
   const host = hosts[hostnames[0]];
+  await host.loadVars(context);
 
   const otherHosts = inventory.getHostsByPattern(recipe.config.otherHosts ?? []);
   for (const otherHostsKey in otherHosts) {
@@ -81,7 +45,7 @@ export async function runRecipe(context: RecipeCtorContext, args: RunRecipeArgs)
 
   const runContext = new RunContext(host, {
     ...context,
-    ...args.runContextPartial,
+    ...runContextPartial,
   })
     .withLoggerFields({
       hostname: host.id,

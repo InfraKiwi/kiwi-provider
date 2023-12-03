@@ -3,10 +3,12 @@ import path from 'node:path';
 import { fsPromiseReadFile } from './fs';
 import { createRequire } from 'node:module';
 
+const requireOnDemand = createRequire(__filename);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const requireFn = (id: string): any => {
   try {
-    return createRequire(id);
+    return requireOnDemand(id);
   } catch (ex) {
     const requireResolutionPaths = [
       path.resolve(process.cwd(), 'node_modules'),
@@ -15,7 +17,7 @@ const requireFn = (id: string): any => {
 
     for (const p of requireResolutionPaths) {
       try {
-        return createRequire(path.resolve(p, id));
+        return requireOnDemand(path.resolve(p, id));
       } catch (ex) {
         // NOOP
       }

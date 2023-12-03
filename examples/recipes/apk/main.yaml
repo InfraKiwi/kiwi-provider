@@ -1,4 +1,4 @@
-mocks:
+testMocks:
   - shell: (r/^apk.*/).test(config)
 
 tasks:

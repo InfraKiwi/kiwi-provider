@@ -1,4 +1,4 @@
 recipe: main
 
-mocks:
+testMocks:
   - shell: (r/command -v/).test(config)

@@ -34,10 +34,9 @@ import { mkdirp } from 'mkdirp';
 import type { ContextLogger } from '../../util/context';
 import { addDefaultInterceptors } from '../../util/axios';
 import { Inventory } from '../../components/inventory';
-import { RunContext } from '../../util/runContext';
-import { aggregateForcedContextVars } from '../../commands/runRecipe';
 import * as os from 'node:os';
 import type { InventoryInterface } from '../../components/inventory.schema.gen';
+import { runRecipe } from '../../commands/runRecipe';
 
 interface QueueItem {
   release: string;
@@ -223,7 +222,7 @@ export class ServerWorker {
         try {
           await this.#uploadLogs(originalContext, release, HostReportType.init, release, status, childLogger.logFile);
         } catch (ex) {
-          originalContext.logger.error(`Failed to upload logs`, { ex });
+          originalContext.logger.error(`Failed to upload logs`, { error: ex });
         }
       },
     );
@@ -286,23 +285,12 @@ export class ServerWorker {
   async runRecipeFromQueueItem(context: DataSourceContext, queueItem: QueueItem) {
     const inventory = new Inventory(queueItem.inventory);
     await inventory.loadGroupsAndStubs(context, true);
-    const host = await inventory.getHostAndLoadVars(context, this.#hostname);
 
-    const runContext = new RunContext(host, context)
-      .withLoggerFields({
-        hostname: host.id,
-      })
-      .withForcedVars(
-        aggregateForcedContextVars({
-          inventory,
-          host,
-        }),
-      );
-
-    // Process variables from inventory
-    const hostVars = await inventory.aggregateBaseVarsForHost(host);
-    Object.assign(runContext.vars, hostVars);
-    await queueItem.recipe.run(runContext);
+    await runRecipe(context, {
+      hostname: this.#hostname,
+      inventory,
+      recipe: queueItem.recipe,
+    });
   }
 
   async #processQueue(context: ApiContext) {
@@ -341,7 +329,7 @@ export class ServerWorker {
               HostReportStatus.success,
             );
           } catch (ex) {
-            context.logger.error('Failed to run recipe', { ex });
+            context.logger.error('Failed to run recipe', { error: ex });
             status = await this.#reportStatus(
               context,
               queueItem.release,
@@ -366,7 +354,7 @@ export class ServerWorker {
               childLogger.logFile,
             );
           } catch (ex) {
-            originalContext.logger.error(`Failed to upload logs`, { ex });
+            originalContext.logger.error(`Failed to upload logs`, { error: ex });
           }
         },
       );
