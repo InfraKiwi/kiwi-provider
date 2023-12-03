@@ -253,7 +253,10 @@ export class RegistryEntryFactory {
   }
 
   createJoiEntrySchema(entryNameRaw: string, schema: Joi.Schema, options?: createJoiEntrySchemaOptions) {
-    const entryNameBase = entryNameRaw.replace(this.baseDir, '').substring(1);
+    const entryNameWithoutPath = entryNameRaw.replace(this.baseDir, '');
+    const entryNameBase = /^[/\\]/.test(entryNameWithoutPath)
+      ? entryNameWithoutPath.substring(1)
+      : entryNameWithoutPath;
     options ??= {};
     options.label ??= toPascalCase(this.typeName) + toPascalCase(entryNameBase) + 'Interface';
     return schema.meta({
