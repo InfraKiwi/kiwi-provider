@@ -10,7 +10,7 @@ __metadata:
   resolution: "10infra-config@workspace:."
   dependencies:
     "@jest/globals": "npm:^29.7.0"
-    "@prisma/client": "npm:^5.4.2"
+    "@prisma/client": "npm:^5.7.0"
     "@types/debug": "npm:^4.1.10"
     "@types/express": "npm:^4.17.20"
     "@types/express-requests-logger": "npm:^3.0.3"
@@ -1168,17 +1168,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@prisma/client@npm:^5.4.2":
-  version: 5.4.2
-  resolution: "@prisma/client@npm:5.4.2"
-  dependencies:
-    "@prisma/engines-version": "npm:5.4.1-2.ac9d7041ed77bcc8a8dbd2ab6616b39013829574"
+"@prisma/client@npm:^5.7.0":
+  version: 5.7.0
+  resolution: "@prisma/client@npm:5.7.0"
   peerDependencies:
     prisma: "*"
   peerDependenciesMeta:
     prisma:
       optional: true
-  checksum: b681e95a323797461ebbf8e94a5058f814b915d637e7d49f19f6700e0748306357dc3c1f9d6ca8d3b8acb92ab4bef73a172aa36d047f7909aef8aa2d98dbc1c5
+  checksum: f5a634a735fdcb9576f949a9ba84da48744db514ce853b04021c7a13c673081cfb110244f20f7985516c69a101000fefcecf51ad634fd2b9c41c6715bec1c014
   languageName: node
   linkType: hard
 
@@ -1197,13 +1195,6 @@ __metadata:
   version: 4.16.1-1.4bc8b6e1b66cb932731fb1bdbbc550d1e010de81
   resolution: "@prisma/engines-version@npm:4.16.1-1.4bc8b6e1b66cb932731fb1bdbbc550d1e010de81"
   checksum: abbc2a14be5ca49d86306fd4087d89c65e2190c99012d54f797b48ff0c4e13ab27dd69aecdd2bf94c2c93f7b09b47dce301ec57ad32123344243118015b60d76
-  languageName: node
-  linkType: hard
-
-"@prisma/engines-version@npm:5.4.1-2.ac9d7041ed77bcc8a8dbd2ab6616b39013829574":
-  version: 5.4.1-2.ac9d7041ed77bcc8a8dbd2ab6616b39013829574
-  resolution: "@prisma/engines-version@npm:5.4.1-2.ac9d7041ed77bcc8a8dbd2ab6616b39013829574"
-  checksum: 21bc6113c5d0322f18b6390ba0682fa4fd60f19cc9063dbe805274779e3442ff0af2a3d780b83b89a23714d5f7f3710c1ae3224382ab09627725005cb43705c6
   languageName: node
   linkType: hard
 
