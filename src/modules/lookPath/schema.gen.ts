@@ -1,9 +1,11 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 // [block ModuleLookPathInterface begin]
-/**
- * @example //disableShortie:true
- */
 export type ModuleLookPathInterface =
   | string
   | {
@@ -12,6 +14,7 @@ export type ModuleLookPathInterface =
     exclude?: string[];
   };
 // [block ModuleLookPathInterface end]
+//meta:ModuleLookPathInterface:[{"className":"ModuleLookPathInterface","entryNames":["lookPath"]},{"disableShortie":true}]
 
 export type ModuleLookPathInterfaceConfigKey = 'lookPath';
 export const ModuleLookPathInterfaceConfigKeyFirst = 'lookPath';

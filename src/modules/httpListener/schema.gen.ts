@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 // [block ModuleHTTPListenerInterface begin]
@@ -5,7 +10,9 @@ export interface ModuleHTTPListenerInterface {
   /**
    * The address to listen to. If not provided, will listen on 127.0.0.1.
    */
-  addr?: '127.0.0.1' | string;
+  addr?:
+    | '127.0.0.1'
+    | string;
 
   /**
    * The port to listen on. If not defined, a random one will be used and it will be
@@ -23,10 +30,12 @@ export interface ModuleHTTPListenerInterface {
      *     get: !!eval |
      *       return (req, res) => res.send('Hello world!');
      */
-    [x: string]: ModuleHTTPListenerRouteInterface; //typeRef:ModuleHTTPListenerRouteInterface:schema.gen.ts:false
+    [x: string]: ModuleHTTPListenerRouteInterface; //typeRef:ModuleHTTPListenerRouteInterface:{"relPath":"self","isRegistryExport":false}
+
   };
 }
 // [block ModuleHTTPListenerInterface end]
+//meta:ModuleHTTPListenerInterface:[{"className":"ModuleHTTPListenerInterface","entryNames":["httpListener"]}]
 
 // [block ModuleHTTPListenerRouteHandlerFunctionInterface begin]
 /**
@@ -40,8 +49,9 @@ export interface ModuleHTTPListenerInterface {
  *         res.send('World')
  *       }
  */
-export type ModuleHTTPListenerRouteHandlerFunctionInterface = (...args: any[]) => any;
+export type ModuleHTTPListenerRouteHandlerFunctionInterface = ((...args: any[]) => any);
 // [block ModuleHTTPListenerRouteHandlerFunctionInterface end]
+//meta:ModuleHTTPListenerRouteHandlerFunctionInterface:[{"className":"ModuleHTTPListenerRouteHandlerFunctionInterface"}]
 
 // [block ModuleHTTPListenerRouteHandlerInterface begin]
 /**
@@ -60,19 +70,20 @@ export type ModuleHTTPListenerRouteHandlerInterface =
    *         res.send('World')
    *       }
    */
-  | ModuleHTTPListenerRouteHandlerFunctionInterface //typeRef:ModuleHTTPListenerRouteHandlerFunctionInterface:schema.gen.ts:false
+  | ModuleHTTPListenerRouteHandlerFunctionInterface //typeRef:ModuleHTTPListenerRouteHandlerFunctionInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * Any static value the route should return JSON-encoded
    */
-  | ModuleHTTPListenerRouteHandlerJSONInterface //typeRef:ModuleHTTPListenerRouteHandlerJSONInterface:schema.gen.ts:false
+  | ModuleHTTPListenerRouteHandlerJSONInterface //typeRef:ModuleHTTPListenerRouteHandlerJSONInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * Any static string value the route should return verbatim
    */
-  | ModuleHTTPListenerRouteHandlerRawInterface; //typeRef:ModuleHTTPListenerRouteHandlerRawInterface:schema.gen.ts:false
+  | ModuleHTTPListenerRouteHandlerRawInterface; //typeRef:ModuleHTTPListenerRouteHandlerRawInterface:{"relPath":"self","isRegistryExport":false}
 
 // [block ModuleHTTPListenerRouteHandlerInterface end]
+//meta:ModuleHTTPListenerRouteHandlerInterface:[{"className":"ModuleHTTPListenerRouteHandlerInterface"}]
 
 // [block ModuleHTTPListenerRouteHandlerJSONInterface begin]
 /**
@@ -82,6 +93,7 @@ export interface ModuleHTTPListenerRouteHandlerJSONInterface {
   json: any;
 }
 // [block ModuleHTTPListenerRouteHandlerJSONInterface end]
+//meta:ModuleHTTPListenerRouteHandlerJSONInterface:[{"className":"ModuleHTTPListenerRouteHandlerJSONInterface"}]
 
 // [block ModuleHTTPListenerRouteHandlerRawInterface begin]
 /**
@@ -91,6 +103,7 @@ export interface ModuleHTTPListenerRouteHandlerRawInterface {
   raw: string;
 }
 // [block ModuleHTTPListenerRouteHandlerRawInterface end]
+//meta:ModuleHTTPListenerRouteHandlerRawInterface:[{"className":"ModuleHTTPListenerRouteHandlerRawInterface"}]
 
 // [block ModuleHTTPListenerRouteInterface begin]
 /**
@@ -98,21 +111,23 @@ export interface ModuleHTTPListenerRouteHandlerRawInterface {
  * Each key represents an HTTP method, and the corresponding value holds the handler.
  */
 export interface ModuleHTTPListenerRouteInterface {
-  get?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:schema.gen.ts:false
+  get?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
-  delete?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:schema.gen.ts:false
+  delete?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
-  head?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:schema.gen.ts:false
+  head?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
-  options?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:schema.gen.ts:false
+  options?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
-  post?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:schema.gen.ts:false
+  post?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
-  put?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:schema.gen.ts:false
+  put?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
-  patch?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:schema.gen.ts:false
+  patch?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
+
 }
 // [block ModuleHTTPListenerRouteInterface end]
+//meta:ModuleHTTPListenerRouteInterface:[{"className":"ModuleHTTPListenerRouteInterface"}]
 
 export type ModuleHTTPListenerInterfaceConfigKey = 'httpListener';
 export const ModuleHTTPListenerInterfaceConfigKeyFirst = 'httpListener';

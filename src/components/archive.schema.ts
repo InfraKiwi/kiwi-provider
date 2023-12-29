@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { joiMetaClassName, joiObjectFromInstanceOf, joiObjectWithPattern } from '../util/joi';
 import { recipeSourceRegistryEntryFactory } from '../recipeSources/registry';
@@ -9,11 +14,11 @@ export const ArchiveConfigFilename = 'config.yaml';
 export const ArchiveAssetsCompressedFileName = 'archive.tar.gz';
 
 export const ArchiveRecipeEntrySchema = RecipeForArchiveSchema.append({ assetsArchive: Joi.string() }).meta(
-  joiMetaClassName('ArchiveRecipeEntryInterface'),
+  joiMetaClassName('ArchiveRecipeEntryInterface')
 );
 
 export const ArchiveRecipesMapSchema = joiObjectWithPattern(ArchiveRecipeEntrySchema).meta(
-  joiMetaClassName('ArchiveRecipesMapInterface'),
+  joiMetaClassName('ArchiveRecipesMapInterface')
 );
 
 export const ArchiveSchema = Joi.object({
@@ -36,7 +41,7 @@ export const RecipeSourceArchiveSchema = recipeSourceRegistryEntryFactory
       recipesMap: ArchiveRecipesMapSchema.required(),
       // If true, do not extract assets for instantiated recipes
       dryRun: Joi.boolean().required(),
-    }),
+    })
   )
   .meta(joiMetaClassName('RecipeSourceArchiveInterface'));
 

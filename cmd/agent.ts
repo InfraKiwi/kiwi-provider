@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { NewLoggerArgs } from '../src/util/logger';
 import {
   joiParseArgsLogOptions,
@@ -69,7 +74,7 @@ async function commandBootstrap(args: string[]) {
   const allArgs = Joi.attempt(
     values,
     AgentBootstrapConfigSchema.append(joiParseArgsLogOptions),
-    'Error evaluating command args:',
+    'Error evaluating command args:'
   );
   const logArgs = joiKeepOnlyKeysInJoiSchema<NewLoggerArgs>(allArgs, joiParseArgsLogOptionsSchema);
   const logger = newLoggerFromParseArgs(logArgs);
@@ -82,7 +87,7 @@ async function commandBootstrap(args: string[]) {
   const agent = new Agent(logger, config.app);
 
   const reloadResult = await agent.reloadRelease(true);
-  logger.info(`Processed first release`, { result: reloadResult });
+  logger.info('Processed first release', { result: reloadResult });
 
   /*
    * TODO
@@ -124,7 +129,7 @@ async function commandServe(args: string[]) {
   agent.mountRoutes(app);
 
   const server = app.listen(config.listener.port, config.listener.addr ?? localhost127, () => {
-    logger.info(`Server listening`, {
+    logger.info('Server listening', {
       address: server.address(),
       config,
     });

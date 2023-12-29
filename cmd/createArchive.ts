@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import Joi from 'joi';
@@ -50,7 +55,7 @@ async function main() {
       dump: Joi.string(),
       archiveDir: Joi.string(),
     }),
-    'Error evaluating command args:',
+    'Error evaluating command args:'
   );
   const logger = newLoggerFromParseArgs(otherArgs);
   setupUncaughtHandler(logger);
@@ -78,7 +83,7 @@ async function main() {
           (source as string[]).map((c) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return shortieToObject(c) as any;
-          }),
+          })
         )
       : undefined;
 

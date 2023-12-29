@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Matchers, BaseExpect, AsymmetricMatchers } from 'expect';
 
 declare namespace expect {
@@ -33,7 +38,7 @@ declare namespace jest {
   type Expect = (<T = unknown>(
     actual: T,
     message?: string,
-    options?: ExpectCustomMessageOptions,
+    options?: ExpectCustomMessageOptions
   ) => import('expect').Matchers<void, T> & expect.Inverse<Matchers<void, T>> & expect.PromiseMatchers<T>) &
   BaseExpect &
   AsymmetricMatchers &

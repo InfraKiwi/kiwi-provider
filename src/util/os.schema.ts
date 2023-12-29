@@ -1,31 +1,36 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { joiMetaClassName, joiObjectWithPattern } from './joi';
 
 export const OSInfoCPUInfoSchema = Joi.object({
   model: Joi.string().required(),
-  speed: Joi.number().required().description(`The core speed in MHz.`),
+  speed: Joi.number().required().description('The core speed in MHz.'),
   times: Joi.object({
-    user: Joi.number().required().description(`The number of milliseconds the CPU has spent in user mode.`),
-    nice: Joi.number().required().description(`The number of milliseconds the CPU has spent in nice mode.`),
-    sys: Joi.number().required().description(`The number of milliseconds the CPU has spent in sys mode.`),
-    idle: Joi.number().required().description(`The number of milliseconds the CPU has spent in idle mode.`),
-    irq: Joi.number().required().description(`The number of milliseconds the CPU has spent in irq mode.`),
+    user: Joi.number().required().description('The number of milliseconds the CPU has spent in user mode.'),
+    nice: Joi.number().required().description('The number of milliseconds the CPU has spent in nice mode.'),
+    sys: Joi.number().required().description('The number of milliseconds the CPU has spent in sys mode.'),
+    idle: Joi.number().required().description('The number of milliseconds the CPU has spent in idle mode.'),
+    irq: Joi.number().required().description('The number of milliseconds the CPU has spent in irq mode.'),
   }).required(),
 }).meta(joiMetaClassName('OSInfoCPUInfoInterface'));
 
 export const OSInfoNetworkInterfaceBaseSchemaObject = Joi.object({
-  mac: Joi.string().required().description(`The MAC address of the network interface`),
+  mac: Joi.string().required().description('The MAC address of the network interface'),
   internal: Joi.boolean()
     .required()
     .description(
-      `\`true\` if the network interface is a loopback or similar interface that is not remotely accessible; otherwise \`false\``,
+      '`true` if the network interface is a loopback or similar interface that is not remotely accessible; otherwise `false`'
     ),
 });
 
 export const OSInfoNetworkInterfaceInfoIPv4Schema = OSInfoNetworkInterfaceBaseSchemaObject.append({
   family: 'IPv4',
-  address: Joi.string().required().description(`The assigned IPv4 address`),
-  netmask: Joi.string().required().description(`The IPv4 network mask`),
+  address: Joi.string().required().description('The assigned IPv4 address'),
+  netmask: Joi.string().required().description('The IPv4 network mask'),
   cidr: Joi.alternatives([Joi.string(), Joi.string().allow(null)]).required().description(`
   The assigned IPv4 address with the routing prefix in CIDR notation. If the 
   netmask is invalid, this property is set to null.
@@ -34,9 +39,9 @@ export const OSInfoNetworkInterfaceInfoIPv4Schema = OSInfoNetworkInterfaceBaseSc
 
 export const OSInfoNetworkInterfaceInfoIPv6Schema = OSInfoNetworkInterfaceBaseSchemaObject.append({
   family: 'IPv6',
-  address: Joi.string().required().description(`The assigned IPv6 address`),
-  netmask: Joi.string().required().description(`The IPv6 network mask`),
-  scopeid: Joi.number().required().description(`The numeric IPv6 scope ID`),
+  address: Joi.string().required().description('The assigned IPv6 address'),
+  netmask: Joi.string().required().description('The IPv6 network mask'),
+  scopeid: Joi.number().required().description('The numeric IPv6 scope ID'),
   cidr: Joi.alternatives([Joi.string(), Joi.string().allow(null)]).required().description(`
   The assigned IPv6 address with the routing prefix in CIDR notation. If the 
   netmask is invalid, this property is set to null.
@@ -132,16 +137,16 @@ The array will be empty if no CPU information is available, such as if the
   always [0, 0, 0].
   `),
 
-  hostname: Joi.string().required().description(`Contains the host name of the operating system as a string.`),
+  hostname: Joi.string().required().description('Contains the host name of the operating system as a string.'),
 
   networkInterfaces: joiObjectWithPattern(
     Joi.alternatives([
       Joi.array().items(
-        Joi.alternatives(OSInfoNetworkInterfaceInfoIPv4Schema, OSInfoNetworkInterfaceInfoIPv6Schema).optional(),
+        Joi.alternatives(OSInfoNetworkInterfaceInfoIPv4Schema, OSInfoNetworkInterfaceInfoIPv6Schema).optional()
       ),
       // Undefined
       Joi.alternatives(),
-    ]),
+    ])
   ).required().description(`
   Contains an object containing network interfaces that have been assigned a 
   network address.

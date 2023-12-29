@@ -1,4 +1,9 @@
 /*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
+/*
  * Creates the SEA package
  * https://nodejs.org/docs/latest-v20.x/api/single-executable-applications.html
  */
@@ -29,7 +34,7 @@ export interface CommandPkgArgs {
 
 export async function createNodeJSBundle(
   context: ContextLogger,
-  { nodeArch, nodePlatform, outDir, entryPoint }: CommandPkgArgs,
+  { nodeArch, nodePlatform, outDir, entryPoint }: CommandPkgArgs
 ): Promise<string> {
   // Generate blob
   const cjsBundle = await createCJSRunnerBundle(context, { entryPoint });
@@ -80,7 +85,7 @@ export async function createNodeJSBundle(
    */
 
   // Inject data
-  context.logger.info(`Injecting data`);
+  context.logger.info('Injecting data');
   await inject(bundleFile, 'NODE_SEA_BLOB', seaBlob, {
     sentinelFuse: 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
     machoSegmentName: nodePlatform == NodeJSExecutablePlatform.darwin ? 'NODE_SEA' : undefined,

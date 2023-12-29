@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { load } from 'js-yaml';
 import { newDebug } from './debug';
 
@@ -28,7 +33,7 @@ export class Shortie {
    * protect each other as in the shell.) By default, includes ASCII single
    * and double quotes.
    */
-  readonly charsQuotes = `'"`;
+  readonly charsQuotes = '\'"';
 
   /**
    * Characters that will be considered as escape. Just `\` by default.

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Express } from 'express';
 import type { Logger } from 'winston';
 import { fsPromiseTmpDir } from '../../util/fs';
@@ -96,7 +101,7 @@ export class Agent {
   async reloadRelease(force?: boolean): Promise<ReloadReleaseResult> {
     const oldRelease = (await this.#db.exists()) ? await this.#db.getRelease() : undefined;
 
-    const release = (await this.#context.apiClient.get(`/release`)).data.release as string;
+    const release = (await this.#context.apiClient.get('/release')).data.release as string;
 
     if (!force && oldRelease == release) {
       return {
@@ -110,7 +115,7 @@ export class Agent {
         ...this.#context,
         workDir: undefined,
       },
-      release,
+      release
     );
 
     await this.#db.set({ release });
@@ -139,7 +144,7 @@ export class Agent {
     release: string,
     type: HostReportType,
     key: string,
-    status: HostReportStatus,
+    status: HostReportStatus
   ): Promise<HostReportStatus> {
     const data: HostReportRequestInterface = {
       hostname: this.#hostname,
@@ -151,10 +156,10 @@ export class Agent {
     };
 
     try {
-      await context.apiClient.post(`/report`, data);
-      context.logger.info(`Reported status`, data);
+      await context.apiClient.post('/report', data);
+      context.logger.info('Reported status', data);
     } catch (ex) {
-      context.logger.info(`Failed to report status`, {
+      context.logger.info('Failed to report status', {
         report: data,
         ex,
       });
@@ -166,7 +171,7 @@ export class Agent {
   async #downloadAllAssetsArchives(
     context: ApiContext,
     assetsDir: string,
-    config: CompileArchiveForHostResultInterface,
+    config: CompileArchiveForHostResultInterface
   ) {
     context.logger.info(`Downloading assets to ${assetsDir}`);
     const allAssets: string[] = [
@@ -184,7 +189,7 @@ export class Agent {
       const downloadUrl = (
         Joi.attempt(
           resp.data,
-          AbstractAssetsDistributionGetDownloadUrlResponseSchema,
+          AbstractAssetsDistributionGetDownloadUrlResponseSchema
         ) as AbstractAssetsDistributionGetDownloadUrlResponseInterface
       ).downloadUrl;
       context.logger.info(`Downloading archive ${assetFile} from ${downloadUrl}`);
@@ -197,7 +202,7 @@ export class Agent {
 
   async #processNewRelease(context: ApiContext, release: string) {
     context.logger.info(`Processing new release: ${release}`);
-    const childLogger = await getChildLoggerWithLogFile(context, `init`);
+    const childLogger = await getChildLoggerWithLogFile(context, 'init');
     let status = HostReportStatus.pending;
     await childLogger.wrapContext(
       context,
@@ -240,9 +245,9 @@ export class Agent {
         try {
           await this.#uploadLogs(originalContext, release, HostReportType.init, release, status, childLogger.logFile);
         } catch (ex) {
-          originalContext.logger.error(`Failed to upload logs`, { error: ex });
+          originalContext.logger.error('Failed to upload logs', { error: ex });
         }
-      },
+      }
     );
 
     await this.#processQueue(context);
@@ -253,7 +258,7 @@ export class Agent {
   async #queueRecipe(context: ApiContext, release: string, inventory: InventoryInterface, recipe: Recipe) {
     const recipeId = recipe.fullId;
     if (recipeId == null) {
-      throw new Error(`Tried to queue a recipe without an id`);
+      throw new Error('Tried to queue a recipe without an id');
     }
     await this.#reportStatus(context, release, HostReportType.recipe, recipeId, HostReportStatus.pending);
     this.#queue.push({
@@ -269,7 +274,7 @@ export class Agent {
     type: HostReportType,
     key: string,
     status: HostReportStatus,
-    logFile: string,
+    logFile: string
   ) {
     const data: AbstractLogsStorageGetUploadUrlRequestInterface = {
       hostname: this.#hostname,
@@ -281,11 +286,11 @@ export class Agent {
     const resp = await context.apiClient.post(`${LogsStorageRoutesMountPrefix}/uploadUrl`, data);
     const uploadInfo = Joi.attempt(
       resp.data,
-      AbstractLogsStorageGetUploadUrlResponseSchema,
+      AbstractLogsStorageGetUploadUrlResponseSchema
     ) as AbstractLogsStorageGetUploadUrlResponseInterface;
 
     context.logger.info(
-      `Uploading log file ${logFile} to ${uploadInfo.uploadUrl} with storageKey ${uploadInfo.storageKey}`,
+      `Uploading log file ${logFile} to ${uploadInfo.uploadUrl} with storageKey ${uploadInfo.storageKey}`
     );
 
     const fileStream = fs.createReadStream(logFile);
@@ -332,7 +337,7 @@ export class Agent {
               queueItem.release,
               HostReportType.recipe,
               recipeId,
-              HostReportStatus.running,
+              HostReportStatus.running
             );
             await this.runRecipeFromQueueItem(recipeRunContext, queueItem);
             status = await this.#reportStatus(
@@ -340,7 +345,7 @@ export class Agent {
               queueItem.release,
               HostReportType.recipe,
               recipeId,
-              HostReportStatus.success,
+              HostReportStatus.success
             );
           } catch (ex) {
             context.logger.error('Failed to run recipe', { error: ex });
@@ -349,7 +354,7 @@ export class Agent {
               queueItem.release,
               HostReportType.recipe,
               recipeId,
-              HostReportStatus.failure,
+              HostReportStatus.failure
             );
             // Interrupt the whole processing
             throw ex;
@@ -365,12 +370,12 @@ export class Agent {
               HostReportType.recipe,
               recipeId,
               status,
-              childLogger.logFile,
+              childLogger.logFile
             );
           } catch (ex) {
-            originalContext.logger.error(`Failed to upload logs`, { error: ex });
+            originalContext.logger.error('Failed to upload logs', { error: ex });
           }
-        },
+        }
       );
     }
   }

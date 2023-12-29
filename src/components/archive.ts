@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RecipeCtorContext } from './recipe';
 import { Recipe } from './recipe';
 import path from 'node:path';
@@ -51,7 +56,7 @@ class RecipeSourceArchive extends AbstractRecipeSource<
   RecipeSourceArchiveInterfaceConfigKey
 > {
   // We directly override the unique id
-  protected readonly configId = `NOOP`;
+  protected readonly configId = 'NOOP';
 
   get uniqueId(): string {
     return this.config.uniqueId;
@@ -104,7 +109,7 @@ export class Archive {
           id,
           [RecipeSourceArchiveEntryNameRaw]: config,
         };
-      },
+      }
     );
     const recipeSources = new RecipeSourceList(context, recipeSourceListInterface);
     this.#compiledRecipeSources = recipeSources;
@@ -116,7 +121,7 @@ export class Archive {
     Joi.assert(
       ids,
       Joi.array().items(Joi.string().valid(...Object.keys(this.config.rootRecipes))),
-      'Invalid root recipes ids',
+      'Invalid root recipes ids'
     );
     for (const recipeId of ids ?? Object.keys(this.config.rootRecipes)) {
       const archiveEntry = this.config.rootRecipes[recipeId];
@@ -134,7 +139,7 @@ export class Archive {
     context: DataSourceContext,
     id: string,
     archiveEntry: ArchiveRecipeEntryInterface,
-    dryRun: boolean,
+    dryRun: boolean
   ): Promise<Recipe> {
     const recipeCtorContext: RecipeCtorContext = {
       ...context,
@@ -166,7 +171,7 @@ export class Archive {
     dependenciesBySource: Record<string, Record<string, Recipe>>,
     dependenciesBySourceArchiveConfigs: Record<string, ArchiveRecipesMapInterface>,
     recipe: Recipe,
-    dryRun: boolean,
+    dryRun: boolean
   ): Promise<void> {
     // We want to collect all possible dependencies and add them to the archive for the host
     const recipeDeps = await recipe.validateDependencies(context);
@@ -179,7 +184,7 @@ export class Archive {
       }
       const depRecipeConfig = archive.recipeSources[sourceId][recipeId];
       const depRecipe = await stats.measureBlock(`dependency recipe init: ${recipeId}`, () =>
-        this.instantiateRecipe(context, recipeId, depRecipeConfig, dryRun),);
+        this.instantiateRecipe(context, recipeId, depRecipeConfig, dryRun));
       dependenciesBySource[sourceId][recipeId] = depRecipe;
       dependenciesBySourceArchiveConfigs[sourceId][recipeId] = {
         ...depRecipeConfig,
@@ -195,7 +200,7 @@ export class Archive {
         dependenciesBySource,
         dependenciesBySourceArchiveConfigs,
         depRecipe,
-        dryRun,
+        dryRun
       );
     }
   }
@@ -204,7 +209,7 @@ export class Archive {
     context: DataSourceContext,
     inventory: Inventory,
     hostname: string,
-    visitedCache?: VisitedCache,
+    visitedCache?: VisitedCache
   ): Promise<GetArchiveForHostResult> {
     const stats = new Stats();
 
@@ -244,7 +249,7 @@ export class Archive {
 
     // Load all other hosts we need to load
     const otherHostsPatterns = Array.from(
-      new Set(rootRecipesForHost.map((recipeId) => archive.rootRecipes[recipeId].otherHosts ?? []).flat()),
+      new Set(rootRecipesForHost.map((recipeId) => archive.rootRecipes[recipeId].otherHosts ?? []).flat())
     );
 
     const otherHosts: Record<string, InventoryHost> = {};
@@ -267,7 +272,7 @@ export class Archive {
       const archiveEntry = archive.rootRecipes[rootRecipeId]!;
 
       const recipe = await stats.measureBlock(`root recipe init: ${rootRecipeId}`, () =>
-        this.instantiateRecipe(context, rootRecipeId, archiveEntry, true),);
+        this.instantiateRecipe(context, rootRecipeId, archiveEntry, true));
       rootRecipes[rootRecipeId] = recipe;
       rootRecipesArchiveConfigs[rootRecipeId] = {
         ...archiveEntry,
@@ -282,7 +287,7 @@ export class Archive {
         dependenciesBySource,
         dependenciesBySourceArchiveConfigs,
         recipe,
-        true,
+        true
       );
     }
 
@@ -360,7 +365,7 @@ export class Archive {
         cwd: this.assetsDir,
         file: fileName,
       },
-      allFiles,
+      allFiles
     );
   }
 }
@@ -370,7 +375,7 @@ export async function generateRecipeForArchiveEntry(
   archive: ArchiveInterface,
   recipe: Recipe,
   isDependency: boolean,
-  archiveDir: string,
+  archiveDir: string
 ): Promise<void> {
   context.logger.debug(`generateRecipeForArchiveEntry: ${recipe.fullId}`);
   const recipeForArchive = await recipe.getConfigForArchive({
@@ -423,7 +428,7 @@ async function buildRecipeDependenciesTree(
   context: BuildRecipeDependenciesTreeContext,
   archive: ArchiveInterface,
   parentRecipe: Recipe,
-  archiveDir: string,
+  archiveDir: string
 ): Promise<Record<string, string[]>> {
   context.logger.debug(`buildRecipeDependenciesTree: ${parentRecipe.fullId}`);
 
@@ -439,7 +444,7 @@ async function buildRecipeDependenciesTree(
     }
 
     if (recipeSources == null) {
-      throw new Error(`No recipe sources defined`);
+      throw new Error('No recipe sources defined');
     }
 
     const contextWithSources: BuildRecipeDependenciesTreeContext = {
@@ -449,7 +454,7 @@ async function buildRecipeDependenciesTree(
 
     const recipe = await contextWithSources.recipeSources!.findAndLoadRecipe(context, id, dependencyArg);
     if (recipe.meta?.recipeSource == null) {
-      throw new Error(`Recipe source not defined in meta`);
+      throw new Error('Recipe source not defined in meta');
     }
 
     const depsContext: BuildRecipeDependenciesTreeContext = {
@@ -481,7 +486,7 @@ async function copyAssets(
   { logger, visitedAssetsDirs }: BuildRecipeDependenciesTreeContext,
   recipeId: string,
   recipeAssetsDir: string,
-  archiveDir: string,
+  archiveDir: string
 ): Promise<string | undefined> {
   if (recipeAssetsDir in visitedAssetsDirs) {
     return visitedAssetsDirs[recipeAssetsDir];
@@ -501,7 +506,7 @@ async function copyAssets(
       cwd: recipeAssetsDir,
       file: archiveFile,
     },
-    files,
+    files
   );
   const relative = path.relative(archiveDir, archiveFile);
 

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { IRouter } from 'express';
 import express from 'express';
 import type { AbstractAssetsDistributionInstance } from '../../assetsDistribution/abstractAssetsDistribution';
@@ -35,13 +40,13 @@ export interface RoutesAgentDistributionArgs {
 export function mountRoutesAgentDistribution(
   context: ContextLogger,
   app: IRouter,
-  { assetDistributionInstance, appExternalUrl, routerParentPath }: RoutesAgentDistributionArgs,
+  { assetDistributionInstance, appExternalUrl, routerParentPath }: RoutesAgentDistributionArgs
 ) {
   const router = express.Router();
 
   const nj = new nunjucks.Environment(
     new nunjucks.FileSystemLoader(path.join(__dirname, 'viewsAgentDistribution'), { watch: true }),
-    { autoescape: true },
+    { autoescape: true }
   );
   nunjucksApplyCustomFunctions(nj);
 
@@ -49,7 +54,7 @@ export function mountRoutesAgentDistribution(
   router.get('/install.sh', async (req, res) => {
     const reqData = Joi.attempt(
       req.query,
-      AgentDistributionInstallShRequestSchema,
+      AgentDistributionInstallShRequestSchema
     ) as AgentDistributionInstallShRequestInterface;
 
     const externalUrl = reqData.externalUrl ?? appExternalUrl;
@@ -69,14 +74,14 @@ export function mountRoutesAgentDistribution(
   router.get(`${RoutesAgentDistributionDownloadRoutePrefix}/:nodePlatform/:nodeArch`, async (req, res) => {
     const reqData = Joi.attempt(
       req.params,
-      AgentDistributionGetDownloadRequestSchema,
+      AgentDistributionGetDownloadRequestSchema
     ) as AgentDistributionGetDownloadRequestInterface;
 
     const queryParams: AbstractAssetsDistributionGetDownloadUrlRequestInterface = {
       assetFile: await getNodeJSBundleFileName(
         'agent',
         reqData.nodePlatform as NodeJSExecutablePlatform,
-        reqData.nodeArch as NodeJSExecutableArch,
+        reqData.nodeArch as NodeJSExecutableArch
       ),
       plain: true,
     };
@@ -85,7 +90,7 @@ export function mountRoutesAgentDistribution(
       url.format({
         pathname: `../..${AbstractAssetsDistributionGetDownloadUrlRoutePath}`,
         query: queryParams as unknown as ParsedUrlQueryInput,
-      }),
+      })
     );
   });
 

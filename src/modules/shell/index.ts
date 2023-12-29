@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { ModuleShellSchema } from './schema';
 import type { RunContext } from '../../util/runContext';
 import type { ModuleShellInterface } from './schema.gen';
@@ -14,7 +19,7 @@ export interface ModuleShellResult {
   exitCode: number;
 }
 
-const ModuleShellErrorBadExitCode = getErrorPrintfClass('ModuleShellErrorBadExitCode', `Bad exit code: %d`);
+const ModuleShellErrorBadExitCode = getErrorPrintfClass('ModuleShellErrorBadExitCode', 'Bad exit code: %d');
 
 export class ModuleShell extends AbstractModuleBase<ModuleShellInterface, ModuleShellResult> {
   get label(): string | undefined {

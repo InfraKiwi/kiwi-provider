@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { InventoryGroupInterface, InventoryInterface } from './inventory.schema.gen';
 import {
   groupNameAll,
@@ -125,7 +130,7 @@ export class Inventory extends VarsContainer {
   getHostsByGroup(
     context: ContextLogger,
     groupName: string,
-    visitedCache?: VisitedCache,
+    visitedCache?: VisitedCache
   ): Record<string, InventoryHost> {
     if (groupName in this.#inventoryCache.hostsByGroup) {
       return this.#inventoryCache.hostsByGroup[groupName];
@@ -197,7 +202,7 @@ export class Inventory extends VarsContainer {
     patternStr: string | string[],
     // If provided, this is used as a start group of hostnames that will be filtered down with the query
     allHostnames?: Set<string>,
-    visitedCache?: VisitedCache,
+    visitedCache?: VisitedCache
   ): Record<string, InventoryHost> {
     allHostnames ??= new Set();
     visitedCache ??= newVisitedCache();
@@ -240,7 +245,7 @@ export class Inventory extends VarsContainer {
   #getHostsByMatchingHostPatternWithoutForceInclusion(
     context: ContextLogger,
     pattern: HostPattern,
-    visitedCache?: VisitedCache,
+    visitedCache?: VisitedCache
   ): Record<string, InventoryHost> {
     visitedCache ??= newVisitedCache();
     const filtered: Record<string, InventoryHost> = {};
@@ -317,22 +322,22 @@ export class Inventory extends VarsContainer {
         const hostSource =
           hostSourceRegistry.getRegistryEntryInstanceFromWrappedIndexedConfig<AbstractHostSourceInstance>(
             inventoryHostSourceConfig,
-            InventoryHostSourceSchema,
+            InventoryHostSourceSchema
           );
         Object.assign(
           hosts,
           await tryOrThrowAsync(
             () => hostSource.loadHostsStubs(context),
             `Failed to load hosts stubs for source ${hostSource.registryEntry.entryName}`,
-          ),
+          )
         );
-      }),
+      })
     );
 
     for (const hostname in hosts) {
       if (hostname in this.#hosts) {
         context.logger.debug(
-          `Host definition for ${hostname} already loaded via ${this.#hosts[hostname].hostSource?.registryEntry.entryName}, overwriting...`,
+          `Host definition for ${hostname} already loaded via ${this.#hosts[hostname].hostSource?.registryEntry.entryName}, overwriting...`
         );
       }
       const host = hosts[hostname];
@@ -366,7 +371,7 @@ export class Inventory extends VarsContainer {
     context: ContextLogger,
     host: InventoryHost,
     visitedCache?: VisitedCache,
-    includeSpecialGroups?: boolean,
+    includeSpecialGroups?: boolean
   ): string[] {
     visitedCache ??= newVisitedCache();
     const groups = new Set<string>();
@@ -421,7 +426,7 @@ export class Inventory extends VarsContainer {
     allRelations: Set<string>,
     allHosts: Set<InventoryHost>,
     allGroups: Set<InventoryGroup>,
-    visitedCache: VisitedCache,
+    visitedCache: VisitedCache
   ) {
     const loopRelations = new Set<string>();
 
@@ -459,7 +464,7 @@ export class Inventory extends VarsContainer {
           allRelations,
           allHosts,
           allGroups,
-          visitedCache,
+          visitedCache
         );
       }
     }
@@ -504,7 +509,7 @@ export class Inventory extends VarsContainer {
         };
         return acc;
       },
-      {},
+      {}
     );
 
     const hostSource: HostSourceRawInterface = Array.from(allHosts).reduce((acc: HostSourceRawInterface, host) => {

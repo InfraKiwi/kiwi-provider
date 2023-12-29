@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Logger } from 'winston';
 import winston from 'winston';
 import type { RunStatistics } from './runContext';
@@ -94,7 +99,7 @@ const maskSecrets = format(
       [SPLAT]: symSplat,
       ...rest,
     };
-  },
+  }
 );
 
 const compact = format.printf(
@@ -130,7 +135,7 @@ const compact = format.printf(
     return `${ts} ${parts.join('')} ${message}${other}${
       errors.length > 0 ? ', Errors: ' + util.inspect(errors, false, 5) : ''
     }`;
-  },
+  }
 );
 
 export interface NewLoggerArgs {
@@ -168,7 +173,7 @@ function getStandardFormat(json?: boolean): logform.Format {
           circularValue: null,
           replacer: jsonReplacer,
         })
-      : compact,
+      : compact
   );
 }
 
@@ -239,7 +244,7 @@ export class ChildLoggerWithLogFile {
   async wrapContext<T extends ContextLogger, R>(
     context: T,
     fn: (context: T) => Promise<R>,
-    onFinally?: (originalContext: T) => Promise<void>,
+    onFinally?: (originalContext: T) => Promise<void>
   ): Promise<R> {
     try {
       return await fn({
@@ -276,7 +281,7 @@ async function getTemporaryLogFileTransport(context: ContextLogger, label: strin
 
 export async function getChildLoggerWithLogFile(
   context: ContextLogger,
-  label: string,
+  label: string
 ): Promise<ChildLoggerWithLogFile> {
   const childLogger = newLogger({ defaultMeta: context.logger.defaultMeta });
   const transport = await getTemporaryLogFileTransport(context, label);

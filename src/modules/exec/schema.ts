@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
 import { joiMetaClassName, joiObjectWithPattern } from '../../util/joi';
@@ -8,7 +13,7 @@ export const ModuleExecResultSchema = Joi.object({
   exitCode: Joi.number().required(),
 })
   .meta(joiMetaClassName('ModuleExecResultInterface'))
-  .description(`The result of the \`exec\` module.`).example(`
+  .description('The result of the `exec` module.').example(`
   tasks:
   - label: Execute the binary
     exec:
@@ -22,12 +27,12 @@ export const ModuleExecSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
   Joi.alternatives([
     Joi.object({
-      cmd: Joi.string().min(1).required().description(`The path of the binary to execute.`),
-      args: Joi.array().items(Joi.string()).description(`The arguments to pass to the binary.`),
-      workDir: Joi.string().description(`The working directory of the execution.`),
-      uid: Joi.number().description(`The id of the user under which to execute the binary.`),
-      gid: Joi.number().description(`The id of the group under which to execute the binary.`),
-      env: joiObjectWithPattern(Joi.string()).description(`Any environment variables to pass to the binary.`),
+      cmd: Joi.string().min(1).required().description('The path of the binary to execute.'),
+      args: Joi.array().items(Joi.string()).description('The arguments to pass to the binary.'),
+      workDir: Joi.string().description('The working directory of the execution.'),
+      uid: Joi.number().description('The id of the user under which to execute the binary.'),
+      gid: Joi.number().description('The id of the group under which to execute the binary.'),
+      env: joiObjectWithPattern(Joi.string()).description('Any environment variables to pass to the binary.'),
     }).example(`
     exec:
       cmd: my-bin
@@ -35,7 +40,7 @@ export const ModuleExecSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
         - --hello
         - --world
     `),
-    Joi.string().min(1).description(`The path of the binary to execute`).example(`
+    Joi.string().min(1).description('The path of the binary to execute').example(`
     exec: my-bin
     `),
     Joi.array().items(Joi.string()).min(1).description(`
@@ -47,5 +52,5 @@ export const ModuleExecSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
       - --hello
       - --world
     `),
-  ]),
+  ])
 );

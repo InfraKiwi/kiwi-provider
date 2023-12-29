@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { TaskSchema } from './task.schema';
 import { joiMetaClassName, joiObjectWithPattern, joiValidateSemVer, joiValidateValidJoiSchema } from '../util/joi';
@@ -36,7 +41,7 @@ export const RecipeInputsSchema = joiObjectWithPattern(
     Joi.string().allow(...Object.keys(Joi.types())),
     // A full-fledged schema
     Joi.custom(joiValidateValidJoiSchema),
-  ]),
+  ])
 ).meta({ className: 'RecipeInputsInterface' });
 
 export const RecipeTestMockSchema = TestMockBaseSchema.pattern(
@@ -46,7 +51,7 @@ export const RecipeTestMockSchema = TestMockBaseSchema.pattern(
    * NOTE: this explicitly uses the .pattern instead of joiObjectAddPattern to not
    * trigger the TS incompatibility on indexed keys with different value types
    */
-  ConditionSetSchema,
+  ConditionSetSchema
 ).meta(joiMetaClassName('RecipeTestMockInterface'));
 
 export const RecipeMinimalSchema = Joi.object({
@@ -94,5 +99,5 @@ export const RecipeForArchiveSchema = Joi.object({
 }).meta(joiMetaClassName('RecipeForArchiveInterface'));
 
 export const TestRecipeMinimalSchema = RecipeMinimalSchema.append({}).meta(
-  joiMetaClassName('TestRecipeMinimalInterface'),
+  joiMetaClassName('TestRecipeMinimalInterface')
 );

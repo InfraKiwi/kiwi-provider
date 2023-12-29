@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import {
   TestRunnerSchema,
   testSuiteRecipeIdAfterAll,
@@ -137,7 +142,7 @@ export class TestSuite {
       Joi.assert(
         testIds,
         Joi.array().items(Joi.string().valid(...testRecipes.map((r) => r.recipeId))),
-        'Failed to find defined test ids in the test suite archive',
+        'Failed to find defined test ids in the test suite archive'
       );
     }
 
@@ -168,7 +173,7 @@ export class TestSuite {
 
         const runner = runnerRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractRunnerInstance>(
           this.config.runner,
-          TestRunnerSchema,
+          TestRunnerSchema
         );
 
         try {
@@ -179,7 +184,7 @@ export class TestSuite {
           // Make sure to always terminate runners
           await runner
             .tearDown(context)
-            .catch((ex) => context.logger.error(`Failed to teardown test runner`, { error: ex }));
+            .catch((ex) => context.logger.error('Failed to teardown test runner', { error: ex }));
         }
       }
       return testSuiteResult;
@@ -187,7 +192,7 @@ export class TestSuite {
 
     const runner = runnerRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractRunnerInstance>(
       this.config.runner,
-      TestRunnerSchema,
+      TestRunnerSchema
     );
 
     try {
@@ -204,7 +209,7 @@ export class TestSuite {
       // Make sure to always terminate runners
       await runner
         .tearDown(context)
-        .catch((ex) => context.logger.error(`Failed to teardown test runner`, { error: ex }));
+        .catch((ex) => context.logger.error('Failed to teardown test runner', { error: ex }));
     }
 
     return testSuiteResult;
@@ -215,7 +220,7 @@ export class TestSuite {
     runner: AbstractRunnerInstance,
     archiveDir: string,
     testRecipe: TestRecipe,
-    testSuiteResult: TestSuiteResult,
+    testSuiteResult: TestSuiteResult
   ) {
     const restResult: TestSuiteTestSetResult = {
       tests: {},
@@ -229,7 +234,7 @@ export class TestSuite {
       ...(testRecipe.after ? [testRecipe.after] : []),
     ];
 
-    context.logger.info(`Running recipes`, {
+    context.logger.info('Running recipes', {
       recipeId: testRecipe.recipeId,
       allIds: recipeIds,
     });
@@ -239,7 +244,7 @@ export class TestSuite {
         testingMode: true,
       },
       archiveDir,
-      recipeIds,
+      recipeIds
     );
     for (const recipeId in runResult.statistics) {
       const statistics = runResult.statistics[recipeId];
@@ -270,7 +275,7 @@ export class TestSuite {
             elapsed,
             status,
           },
-          { color: result.failed ? 'red' : undefined },
+          { color: result.failed ? 'red' : undefined }
         );
       }
 

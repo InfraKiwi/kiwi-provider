@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { newLoggerFromParseArgs } from '../src/util/logger';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
@@ -40,7 +45,7 @@ async function main() {
   const externalUrl = Joi.attempt(
     config.listener.externalUrl,
     Joi.string().uri(),
-    'The externalUrl config option must be defined',
+    'The externalUrl config option must be defined'
   );
   const configProvider = new ConfigProvider(logger, config.app, externalUrl);
 
@@ -50,7 +55,7 @@ async function main() {
   configProvider.mountRoutes(app);
 
   const server = app.listen(config.listener.port, config.listener.addr ?? localhost127, () => {
-    logger.info(`Server listening`, { address: server.address() });
+    logger.info('Server listening', { address: server.address() });
   });
 }
 

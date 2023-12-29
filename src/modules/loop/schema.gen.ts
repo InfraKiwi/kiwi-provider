@@ -1,14 +1,22 @@
-import type { TaskInterface } from '../../components/task.schema.gen';
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
+
+import type { TaskInterface } from '../../components/task.schema.gen';
 
 // [block ModuleLoopInterface begin]
 export interface ModuleLoopInterface {
   /**
    * The items to iterate over.
    */
-  items: /**
-   * An array to iterate over.
-   */
+  items:
+
+    /**
+     * An array to iterate over.
+     */
     | any[]
 
     /**
@@ -28,18 +36,24 @@ export interface ModuleLoopInterface {
    * - `key`: the current index of the array (number).
    * - `item`: the corresponding value.
    */
-  var?: '__loop' | string;
-  task: /**
-   * The task to be executed.
-   */
-    | TaskInterface //typeRef:TaskInterface:../../components/task.schema.gen.ts:false
+  var?:
+    | '__loop'
+    | string;
+  task:
+
+    /**
+     * The task to be executed.
+     */
+    | TaskInterface //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
 
     /**
      * An array of tasks to be executed.
      */
-    | TaskInterface[]; //typeRef:TaskInterface:../../components/task.schema.gen.ts:false
+    | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
+
 }
 // [block ModuleLoopInterface end]
+//meta:ModuleLoopInterface:[{"className":"ModuleLoopInterface","entryNames":["loop"]}]
 
 export type ModuleLoopInterfaceConfigKey = 'loop';
 export const ModuleLoopInterfaceConfigKeyFirst = 'loop';

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RecipeSourceDirInterface, RecipeSourceDirInterfaceConfigKey } from './schema.gen';
 import { RecipeSourceDirSchema } from './schema';
 
@@ -19,15 +24,15 @@ const availableExtensions = getAvailableFileLoadersExtensions();
 
 export const RecipeSourceDirErrorDirNotFound = getErrorPrintfClass(
   'RecipeSourceDirErrorDirNotFound',
-  'Provided recipes source path does not exist: %s',
+  'Provided recipes source path does not exist: %s'
 );
 export const RecipeSourceDirErrorNotADir = getErrorPrintfClass(
   'RecipeSourceDirErrorNotADir',
-  'Provided path is not a directory: %s',
+  'Provided path is not a directory: %s'
 );
 export const RecipeSourceDirRecipeNotFound = getErrorPrintfClass(
   'RecipeSourceDirRecipeNotFound',
-  'Could not find suitable file or directory for recipe: %s',
+  'Could not find suitable file or directory for recipe: %s'
 );
 
 interface IdParts {
@@ -74,7 +79,7 @@ export class RecipeSourceDir extends AbstractRecipeSource<RecipeSourceDirInterfa
 
     // Possible files are dirs containing a main.yaml file, or standalone recipe.yaml files
     const stats = await Promise.all(
-      possibleFiles.map(async (f): Promise<[string, Stats]> => [f, await fsPromiseStat(f)]),
+      possibleFiles.map(async (f): Promise<[string, Stats]> => [f, await fsPromiseStat(f)])
     );
     for (const [f, stat] of stats) {
       if (!stat.isDirectory()) {

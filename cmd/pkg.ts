@@ -1,4 +1,9 @@
 /*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
+/*
  * Creates the SEA package
  * https://nodejs.org/docs/latest-v20.x/api/single-executable-applications.html
  */
@@ -44,7 +49,7 @@ async function main() {
       outDir: Joi.string().custom(joiValidateSyncFSExists).required(),
       entryPoint: Joi.string().custom(joiValidateSyncFSExists).required(),
     }),
-    'Error evaluating command args:',
+    'Error evaluating command args:'
   );
   const logger = newLoggerFromParseArgs(otherArgs);
   setupUncaughtHandler(logger);

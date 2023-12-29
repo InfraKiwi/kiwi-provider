@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { AbstractRecipeSourceInstance } from './abstractRecipeSource';
 import { RecipeSourceListSchema } from './recipeSourceList.schema';
 import type { RecipeSourceListInterface } from './recipeSourceList.schema.gen';
@@ -13,15 +18,15 @@ import type { DataSourceContext } from '../dataSources/abstractDataSource';
 
 export const RecipeSourceListErrorSourceNotFound = getErrorPrintfClass(
   'RecipeSourceListErrorSourceNotFound',
-  'Failed to find recipe source: %s',
+  'Failed to find recipe source: %s'
 );
 export const RecipeSourceListErrorRecipeNotFoundBySourceId = getErrorPrintfClass(
   'RecipeSourceListErrorRecipeNotFoundBySourceId',
-  'Failed to find recipe in source with id %s: %s',
+  'Failed to find recipe in source with id %s: %s'
 );
 export const RecipeSourceListErrorRecipeNotFound = getErrorPrintfClass(
   'RecipeSourceListErrorRecipeNotFound',
-  'Failed to find recipe: %s',
+  'Failed to find recipe: %s'
 );
 
 export interface RecipeSourceListCtorCache {
@@ -40,7 +45,7 @@ export class RecipeSourceList {
   constructor(
     context: RecipeSourceCtorContext,
     config: RecipeSourceListInterface,
-    rawEntries?: AbstractRecipeSourceInstance[],
+    rawEntries?: AbstractRecipeSourceInstance[]
   ) {
     // Make sure there are no sources with duplicate ids
     this.#config = Joi.attempt(config, RecipeSourceListSchema);
@@ -64,7 +69,7 @@ export class RecipeSourceList {
 
       let source = recipeSourceRegistry.getRegistryEntryInstanceFromWrappedIndexedConfig<AbstractRecipeSourceInstance>(
         elClone,
-        RecipeSourceWrapperSchema,
+        RecipeSourceWrapperSchema
       );
       const uniqueId = source.uniqueId;
       if (uniqueId in this.#sourcesByUniqueId) {
@@ -92,7 +97,7 @@ export class RecipeSourceList {
           this.#sourcesById[source.id] = source;
         }
         return source;
-      }),
+      })
     );
   }
 
@@ -104,14 +109,14 @@ export class RecipeSourceList {
     return new RecipeSourceList(
       context,
       [],
-      this.#sourceEntries.filter((s) => s.canPropagate),
+      this.#sourceEntries.filter((s) => s.canPropagate)
     );
   }
 
   async findSourceForRecipe(
     context: DataSourceContext,
     id: string,
-    dependencyArg: RecipeDependencyInterface,
+    dependencyArg: RecipeDependencyInterface
   ): Promise<AbstractRecipeSourceInstance> {
     // TODO support versioning
 
@@ -137,7 +142,7 @@ export class RecipeSourceList {
   async findAndLoadRecipe(
     context: RecipeCtorContext,
     id: string,
-    dependencyArg: RecipeDependencyInterface,
+    dependencyArg: RecipeDependencyInterface
   ): Promise<Recipe> {
     // TODO support versioning
     context = {
@@ -172,7 +177,7 @@ export class RecipeSourceList {
   static mergePrepend(
     context: RecipeSourceCtorContext,
     entry: RecipeSourceList,
-    to: RecipeSourceList | undefined,
+    to: RecipeSourceList | undefined
   ): RecipeSourceList | undefined {
     if (to == null) {
       return entry;
@@ -188,7 +193,7 @@ export class RecipeSourceList {
     const newList = new RecipeSourceList(
       context,
       [],
-      Array.from(new Set([...entry.#sourceEntries, ...to.#sourceEntries])),
+      Array.from(new Set([...entry.#sourceEntries, ...to.#sourceEntries]))
     );
     return newList;
   }

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunContext } from '../../util/runContext';
 import { ModuleLoopSchema, ModuleLoopSchemaVarDefault } from './schema';
 import type { ModuleLoopInterface } from './schema.gen';
@@ -44,13 +49,13 @@ export class ModuleLoop extends AbstractModuleBase<ModuleLoopInterface, ModuleLo
     }
 
     const results: ModuleRunResult<VarsInterface>[] | Record<string, ModuleRunResult<VarsInterface>> = Array.isArray(
-      this.config.items,
+      this.config.items
     )
       ? []
       : {};
 
     const tasksToExecute = (Array.isArray(this.config.task) ? this.config.task : [this.config.task]).map(
-      (t) => new Task(t),
+      (t) => new Task(t)
     );
     let exit = false;
     let changed = false;

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunnerContext, RunnerRunRecipesResult } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
@@ -39,7 +44,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async runRecipes(context: RunnerContext, archiveDir: string, ids: string[]): Promise<RunnerRunRecipesResult> {
-    context.logger.verbose(`Running recipes`, {
+    context.logger.verbose('Running recipes', {
       archiveDir,
       ids,
     });
@@ -89,7 +94,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       await this.#dockerDownload(context, statsFileName, statsFileLocal);
       statistics = JSON.parse(await fsPromiseReadFile(statsFileLocal, 'utf-8'));
     } catch (ex) {
-      context.logger.error(`Failed to download or process statistics file`, { error: ex });
+      context.logger.error('Failed to download or process statistics file', { error: ex });
       statistics = {};
     }
 
@@ -100,7 +105,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async uploadFileToTmpFile(context: ContextLogger, src: string, extension?: string): Promise<string> {
-    context.logger.verbose(`Uploading to tmp file`, {
+    context.logger.verbose('Uploading to tmp file', {
       src,
       extension,
     });
@@ -110,7 +115,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async uploadAndExtractTarGZArchive(context: ContextLogger, src: string): Promise<string> {
-    context.logger.verbose(`Uploading and extracting archive`, { src });
+    context.logger.verbose('Uploading and extracting archive', { src });
     const tmpFile = await this.uploadFileToTmpFile(context, src);
     const tmpDir = await this.#dockerGetTmpDir(context);
     await this.#dockerExtractTarGZArchive(context, tmpFile, tmpDir);
@@ -120,28 +125,28 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   async #execDockerBinCommand(
     context: ContextLogger,
     args: string[],
-    options?: ExecCmdOptions,
+    options?: ExecCmdOptions
   ): Promise<RunShellResult> {
     return await execCmd(context, this.config.bin ?? RunnerDockerBinaryDefault, args, options);
   }
 
   #assertContainerId(): string {
     if (this.#containerId == null) {
-      throw new Error(`Container not initialized`);
+      throw new Error('Container not initialized');
     }
     return this.#containerId;
   }
 
   #assertNodeBin(): string {
     if (this.#nodeBin == null) {
-      throw new Error(`Node binary not initialized`);
+      throw new Error('Node binary not initialized');
     }
     return this.#nodeBin;
   }
 
   #assertCJSBundle(): string {
     if (this.#cjsBundle == null) {
-      throw new Error(`Runner binary not initialized`);
+      throw new Error('Runner binary not initialized');
     }
     return this.#cjsBundle;
   }
@@ -211,12 +216,12 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       const tmpFileDocker = await this.uploadFileToTmpFile(context, runnerBundle, '.cjs');
 
       // Test
-      context.logger.verbose(`Testing bundle`);
+      context.logger.verbose('Testing bundle');
       await this.#nodeExec(context, [tmpFileDocker, 'version']);
       this.#cjsBundle = tmpFileDocker;
     }
 
-    context.logger.verbose(`Docker runner set up`, {
+    context.logger.verbose('Docker runner set up', {
       containerId: this.#assertContainerId(),
       cjsBundle: this.#assertCJSBundle(),
       nodeBin: this.#assertNodeBin(),
@@ -225,14 +230,14 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
   async #nodeExec(context: ContextLogger, args: string[]) {
     const nodeBin = this.#assertNodeBin();
-    context.logger.verbose(`Executing NodeJS command`, { args });
+    context.logger.verbose('Executing NodeJS command', { args });
     return await this.dockerExec(context, [nodeBin, ...args]);
   }
 
   async #runnerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
     const nodeBin = this.#assertNodeBin();
     const cjsBundle = this.#assertCJSBundle();
-    context.logger.verbose(`Executing runner command`, { args });
+    context.logger.verbose('Executing runner command', { args });
     return await this.dockerExec(context, [nodeBin, cjsBundle, ...args], options);
   }
 
@@ -254,7 +259,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     const platform = this.#platform;
     const image = this.config.image;
-    context.logger.verbose(`Spinning up container`, {
+    context.logger.verbose('Spinning up container', {
       platform,
       image,
       waitCommand,
@@ -306,7 +311,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       this.#basePlatform == 'windows' ? ['powershell', '/C', '(New-TemporaryFile).FullName'] : ['mktemp'];
     const tmpFile = (await this.dockerExec(context, tmpFileCmd)).stdout.trim();
     if (tmpFile == '') {
-      throw new Error(`Empty temporary file path returned`);
+      throw new Error('Empty temporary file path returned');
     }
     return tmpFile + (extension ?? '');
   }
@@ -328,7 +333,7 @@ $fullPath`,
         : ['mktemp', '-d'];
     const tmpFile = (await this.dockerExec(context, tmpDirCmd)).stdout.trim();
     if (tmpFile == '') {
-      throw new Error(`Empty temporary dir path returned`);
+      throw new Error('Empty temporary dir path returned');
     }
     return tmpFile;
   }

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunnerContext, RunnerRunRecipesResult } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
@@ -57,7 +62,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
     }
 
     this.#workDir = await fsPromiseTmpDir({ keep: false });
-    context.logger.verbose(`Local runner set up`, {
+    context.logger.verbose('Local runner set up', {
       workDir: this.#assertWorkDir(),
       cjsBundle: this.#assertCJSBundle(),
       nodeBin: this.#assertNodeBin(),
@@ -65,7 +70,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
   }
 
   async runRecipes(context: RunnerContext, archiveDir: string, ids: string[]): Promise<RunnerRunRecipesResult> {
-    context.logger.verbose(`Running recipes`, {
+    context.logger.verbose('Running recipes', {
       archiveDir,
       ids,
     });
@@ -111,7 +116,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
     try {
       statistics = JSON.parse(await fsPromiseReadFile(statsFileName, 'utf-8'));
     } catch (ex) {
-      context.logger.error(`Failed to process statistics file`, { error: ex });
+      context.logger.error('Failed to process statistics file', { error: ex });
       statistics = {};
     }
 
@@ -122,7 +127,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
   }
 
   async uploadAndExtractTarGZArchive(context: ContextLogger, src: string): Promise<string> {
-    context.logger.verbose(`Uploading and extracting archive`, { src });
+    context.logger.verbose('Uploading and extracting archive', { src });
     const tmpDir = await fsPromiseTmpDir({ keep: false });
     await this.#localExtractTarGZArchive(context, src, tmpDir);
     return tmpDir;
@@ -130,28 +135,28 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
 
   #assertNodeBin(): string {
     if (this.#nodeBin == null) {
-      throw new Error(`Node binary not initialized`);
+      throw new Error('Node binary not initialized');
     }
     return this.#nodeBin;
   }
 
   #assertWorkDir(): string {
     if (this.#workDir == null) {
-      throw new Error(`Working directory not initialized`);
+      throw new Error('Working directory not initialized');
     }
     return this.#workDir;
   }
 
   #assertCJSBundle(): string {
     if (this.#cjsBundle == null) {
-      throw new Error(`Runner binary not initialized`);
+      throw new Error('Runner binary not initialized');
     }
     return this.#cjsBundle;
   }
 
   async #nodeExec(context: ContextLogger, args: string[]) {
     const nodeBin = this.#assertNodeBin();
-    context.logger.verbose(`Executing NodeJS command`, { args });
+    context.logger.verbose('Executing NodeJS command', { args });
     return await execCmd(context, nodeBin, args);
   }
 
@@ -159,7 +164,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
     const workDir = this.#assertWorkDir();
     const nodeBin = this.#assertNodeBin();
     const cjsBundle = this.#assertCJSBundle();
-    context.logger.verbose(`Executing runner command`, { args });
+    context.logger.verbose('Executing runner command', { args });
     return await execCmd(context, nodeBin, [cjsBundle, ...args], {
       ...options,
       cwd: workDir,

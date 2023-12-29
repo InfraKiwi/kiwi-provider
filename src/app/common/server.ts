@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Express } from 'express';
 import express from 'express';
 import type { CommonOptions, ResponseOptions } from 'express-requests-logger';
@@ -29,7 +34,7 @@ class LoggerWrapper {
 
 export function getAppConfigSchemaObject(
   appSchema: Joi.Schema,
-  serverDefaults?: ServerListenerInterface,
+  serverDefaults?: ServerListenerInterface
 ): Joi.ObjectSchema {
   return Joi.object({
     ...getServerListenerSchemaObject(serverDefaults),
@@ -54,7 +59,7 @@ export function newServer(context: ContextLogger, args: NewServerArgs): Express 
       logger: loggerWrapper,
       request: args.auditRequestOptions,
       response: args.auditResponseOptions,
-    }),
+    })
   );
 
   return app;

@@ -1,12 +1,17 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
 import { joiMetaClassName, joiObjectWithPattern, joiValidateValidIfTemplate } from '../../util/joi';
 import { TaskSchema } from '../../components/task.schema';
 
 const SwitchThenSchema = Joi.alternatives([
-  TaskSchema.description(`The task to be executed.`),
-  Joi.array().items(TaskSchema).min(1).description(`An array of tasks to be executed.`),
-]).description(`The task configuration`);
+  TaskSchema.description('The task to be executed.'),
+  Joi.array().items(TaskSchema).min(1).description('An array of tasks to be executed.'),
+]).description('The task configuration');
 
 export const ModuleSwitchCaseFullSchema = Joi.object({
   if: Joi.string().custom(joiValidateValidIfTemplate).description(`
@@ -23,7 +28,7 @@ export const ModuleSwitchCaseFullSchema = Joi.object({
 export const ModuleSwitchSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
   Joi.object({
-    value: Joi.any().description(`The value to evaluate.`),
+    value: Joi.any().description('The value to evaluate.'),
     cases: Joi.alternatives([
       // key -> task
       joiObjectWithPattern(SwitchThenSchema).description(`
@@ -39,5 +44,5 @@ export const ModuleSwitchSchema = moduleRegistryEntryFactory.createJoiEntrySchem
     default: SwitchThenSchema.description(`
     The default case, which is executed if no other cases match successfully.
     `),
-  }),
+  })
 );

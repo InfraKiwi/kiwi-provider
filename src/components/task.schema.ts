@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { joiMetaClassName, joiMetaUnknownType, joiValidateValidIfTemplate } from '../util/joi';
 import { VarsSchema } from './varsContainer.schema';
@@ -14,7 +19,7 @@ export const ExitIfFullSchema = ModuleExitFullSchema.append({
 }).meta(joiMetaClassName('ExitIfFullInterface'));
 
 export const TaskTestMockSchema = TestMockBaseSchema.append({ if: ConditionSetSchema }).meta(
-  joiMetaClassName('TaskTestMockInterface'),
+  joiMetaClassName('TaskTestMockInterface')
 );
 
 export const TaskSchema = Joi.object({
@@ -69,11 +74,13 @@ export const TaskSchema = Joi.object({
   .unknown(true)
   .meta({
     className: 'TaskInterface',
-    ...joiMetaUnknownType(Joi.any().description(`The module to use in the task.`)),
+    ...joiMetaUnknownType(Joi.any().description(`
+    The module to use in the task.
+    You can check the available task modules here: ##link#See all available task modules#/modules
+    `)),
   })
   .description(
     `
   Defines a task to be executed.
-  `,
+  `
   );
-// .example('You can check the available task modules here: ' + getRegistryEntriesTypeRefString('modules', __dirname));

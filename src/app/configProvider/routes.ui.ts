@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { IRouter } from 'express';
 import express from 'express';
 import nunjucks from 'nunjucks';
@@ -67,7 +72,7 @@ export function mountRoutesUI(context: RoutesUIContext, app: IRouter) {
       nj.render('report.html', {
         groups,
         groupsOrder,
-      }),
+      })
     );
   });
 

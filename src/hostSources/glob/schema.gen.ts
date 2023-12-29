@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 // [block HostSourceGlobInterface begin]
@@ -5,7 +10,9 @@ export interface HostSourceGlobInterface {
   /**
    * A string or string[] array of glob patterns.
    */
-  pattern: string | string[];
+  pattern:
+    | string
+    | string[];
 
   /**
    * The working directory to use as root for the glob matching.
@@ -39,7 +46,9 @@ export interface HostSourceGlobInterface {
      * **Note** `ignore` patterns are _always_ in `dot:true` mode, regardless of
      * any other settings.
      */
-    ignore?: string | string[];
+    ignore?:
+      | string
+      | string[];
 
     /**
      * Treat brace expansion like `{a,b}` as a "magic" pattern.
@@ -56,6 +65,7 @@ export interface HostSourceGlobInterface {
   };
 }
 // [block HostSourceGlobInterface end]
+//meta:HostSourceGlobInterface:[{"className":"MultiDataSourceGlobInterface","entryNames":["glob"]},{"className":"HostSourceGlobInterface","entryNames":["glob"]}]
 
 export type HostSourceGlobInterfaceConfigKey = 'glob';
 export const HostSourceGlobInterfaceConfigKeyFirst = 'glob';

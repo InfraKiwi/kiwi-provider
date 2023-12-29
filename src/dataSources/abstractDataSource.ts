@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { AbstractRegistryEntry } from '../util/registry';
 import type { ContextLogger, ContextWorkDir } from '../util/context';
 
@@ -43,7 +48,7 @@ export abstract class AbstractMultiDataSource<ConfigType, DataType> extends Abst
       allEntries.map(async (entry) => {
         const data = await this.loadEntry(context, entry);
         result[entry] = data;
-      }),
+      })
     );
 
     return result;

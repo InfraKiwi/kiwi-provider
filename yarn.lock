@@ -55,7 +55,7 @@ __metadata:
     jest: "npm:^29.7.0"
     jest-expect-message: "npm:^1.1.3"
     joi: "npm:17.11.0"
-    joi-to-typescript: "https://github.com/cmaster11/joi-to-typescript.git#release-6ff1d5b7a237204887ce193adad364c214ea9246"
+    joi-to-typescript: "https://github.com/cmaster11/joi-to-typescript.git#release-0eddc1b3430a95e0f8832b3090598484ff544ce5"
     js-convert-case: "npm:^4.2.0"
     js-yaml: "npm:^4.1.0"
     jsonpath-plus: "npm:^7.2.0"
@@ -5920,12 +5920,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"joi-to-typescript@https://github.com/cmaster11/joi-to-typescript.git#release-6ff1d5b7a237204887ce193adad364c214ea9246":
+"joi-to-typescript@https://github.com/cmaster11/joi-to-typescript.git#release-0eddc1b3430a95e0f8832b3090598484ff544ce5":
   version: 4.11.0
-  resolution: "joi-to-typescript@https://github.com/cmaster11/joi-to-typescript.git#commit=59d2e0013d18dd1dd4a4a14565d0a7aaf2188ea1"
+  resolution: "joi-to-typescript@https://github.com/cmaster11/joi-to-typescript.git#commit=e1dc124bcb3dffea8cf32f650a813896837ed593"
   peerDependencies:
     joi: 17.x
-  checksum: f290dfe2b3cd2d300377cec2bd934a6781309addb2adadafd65897cad26337d44d8156d8a0d18decd124bda5bd6cf0977d6fb16d60ec003d1712ce113cb00804
+  checksum: d295162b9bb51f35d27b45be54cd858a9cd4cafef519b38e7f4181f7ab44dcf61439df10e2dcd8fb0ecb3e1094351496045c34007809809aaebbf0589fd3760f
   languageName: node
   linkType: hard
 

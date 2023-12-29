@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { ContextLogger } from '../../util/context';
 import type { AgentBootstrapConfigInterface } from './agent.bootstrap.schema.gen';
 import Joi from 'joi';
@@ -12,17 +17,17 @@ import { dumpYAML } from '../../util/yaml';
 
 export async function agentBootstrapConfig(
   { logger }: ContextLogger,
-  config: AgentBootstrapConfigInterface,
+  config: AgentBootstrapConfigInterface
 ): Promise<string> {
   config = Joi.attempt(config, AgentBootstrapConfigSchema, 'Failed to parse agent bootstrap config');
 
-  logger.info(`Bootstrapping 10infra agent`, config);
+  logger.info('Bootstrapping 10infra agent', config);
 
   const configPath = path.join(config.installDir, 'config.yaml');
   if (await fsPromiseExists(configPath)) {
     if (config.force != true) {
       throw new Error(
-        `10infra agent configuration already exists at ${configPath}. If you want to overwrite it, please use the --force flag.`,
+        `10infra agent configuration already exists at ${configPath}. If you want to overwrite it, please use the --force flag.`
       );
     }
 

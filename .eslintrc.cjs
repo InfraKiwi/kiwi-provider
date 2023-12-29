@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 module.exports = {
   extends: [
     'eslint:recommended',
@@ -31,9 +36,10 @@ module.exports = {
       },
     },
     {
-      files: ['**/**schema.gen.ts'],
+      files: ['**schema.gen.ts'],
       rules: {
         '@stylistic/indent': ['error', 2],
+        'multiline-comment-style': ['off'],
       },
     },
     {
@@ -45,7 +51,15 @@ module.exports = {
   ],
 
   rules: {
+    quotes: [
+      'error',
+      'single',
+      {
+        allowTemplateLiterals: true,
+      },
+    ],
     'comma-spacing': ['error'],
+    '@stylistic/comma-dangle': ['error', 'always-multiline'],
     curly: ['error', 'all'],
     'keyword-spacing': ['error'],
     'no-unused-vars': ['off'],

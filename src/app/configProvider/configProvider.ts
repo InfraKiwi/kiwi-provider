@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Express, Request } from 'express';
 import express from 'express';
 import { compileArchiveForHost } from '../../commands/compileArchiveForHost';
@@ -73,17 +78,17 @@ export class ConfigProvider {
     this.#assetsDistribution =
       assetsDistributionRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractAssetsDistributionInstance>(
         this.#config.assetsDistribution,
-        AssetsDistributionSchema,
+        AssetsDistributionSchema
       );
     this.#agentDistribution =
       assetsDistributionRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractAssetsDistributionInstance>(
         this.#config.agentDistribution,
-        AssetsDistributionSchema,
+        AssetsDistributionSchema
       );
 
     this.#logsStorage = logsStorageRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractLogsStorageInstance>(
       this.#config.logsStorage,
-      LogsStorageSchema,
+      LogsStorageSchema
     );
   }
 
@@ -100,9 +105,9 @@ export class ConfigProvider {
       const data = await loadYAMLFromFile(this.#config.inventoryPath);
       const inventory = tryOrThrow(
         () => new Inventory(data as InventoryInterface),
-        `Failed to load inventory ${this.#config.inventoryPath}`,
+        `Failed to load inventory ${this.#config.inventoryPath}`
       );
-      await tryOrThrowAsync(() => inventory.loadGroupsAndStubs(this.#context), `Failed to load inventory host stubs`);
+      await tryOrThrowAsync(() => inventory.loadGroupsAndStubs(this.#context), 'Failed to load inventory host stubs');
       this.#inventory = inventory;
     }
 
@@ -119,7 +124,7 @@ export class ConfigProvider {
           ...this.#context,
           client: this.#client,
         },
-        routesForAdminGroup,
+        routesForAdminGroup
       );
 
       /*
@@ -194,7 +199,7 @@ export class ConfigProvider {
       routesForHostGroup.post('/report', async (req, res) => {
         const data = Joi.attempt(req.body, HostReportRequestSchema) as HostReportRequestInterface;
         if (data.hostname != req.clientHostname) {
-          throw new Error(`Mismatching hostname`);
+          throw new Error('Mismatching hostname');
         }
 
         const fixedData = {
@@ -233,7 +238,7 @@ export class ConfigProvider {
         logsStorageContext,
         this.#logsStorage,
         logsStorageRouterForHost,
-        logsStorageRouterForAdmin,
+        logsStorageRouterForAdmin
       );
       this.#logsStorage.mountRoutes(logsStorageContext, logsStorageRouterForHost, logsStorageRouterForAdmin);
       routesForHostGroup.use(LogsStorageRoutesMountPrefix, logsStorageRouterForHost);
@@ -249,7 +254,7 @@ export class ConfigProvider {
     const key = Joi.attempt(
       hookKey,
       ConfigProviderHooksKeysSchema,
-      `Invalid hook key ${hookKey}: `,
+      `Invalid hook key ${hookKey}: `
     ) as keyof ConfigProviderHooksInterface;
     const schema = this.#config.hooks?.[key];
     if (schema == null) {
@@ -273,7 +278,7 @@ export class ConfigProvider {
 
         const instance = hookRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractHookInstance>(
           config,
-          ServerHookSchema,
+          ServerHookSchema
         );
 
         await instance.notify(context);

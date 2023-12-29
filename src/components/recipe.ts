@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunContext } from '../util/runContext';
 import { contextVarAssetsDir, RecipeMinimalSchema, RecipeSchema, RecipeTestMockSchema } from './recipe.schema';
 import type {
@@ -37,7 +42,7 @@ export interface RecipeCtorContext extends ContextLogger, ContextRecipeSourceLis
 
 export const RecipeErrorInputValidationFailed = getErrorPrintfClass(
   'RecipeErrorInputValidationFailed',
-  'The input variable "%s" does not satisfy the required validation rule',
+  'The input variable "%s" does not satisfy the required validation rule'
 );
 
 export interface RecipeRunResult {
@@ -193,7 +198,7 @@ export class Recipe extends VarsContainer {
   static async fromRecipeForArchiveInterface(
     context: RecipeCtorContext,
     entry: RecipeForArchiveInterface,
-    meta: RecipeMetadata,
+    meta: RecipeMetadata
   ): Promise<Recipe> {
     const recipe = new Recipe(
       context,
@@ -202,7 +207,7 @@ export class Recipe extends VarsContainer {
         targets: entry.targets,
         otherHosts: entry.otherHosts,
       },
-      meta,
+      meta
     );
     await recipe.validateDependencies(context);
     return recipe;
@@ -407,7 +412,7 @@ export class Recipe extends VarsContainer {
   async aggregateHostVars(
     context: DataSourceContext,
     host: InventoryHost,
-    contextVars?: VarsInterface,
+    contextVars?: VarsInterface
   ): Promise<VarsInterface> {
     await this.loadVars(context);
 

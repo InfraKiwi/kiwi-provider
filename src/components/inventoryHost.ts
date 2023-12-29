@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { InventoryEntry } from './inventoryEntry';
 import type { Inventory } from './inventory';
 import type { AbstractHostSourceInstance } from '../hostSources/abstractHostSource';
@@ -16,7 +21,7 @@ export class InventoryHost extends InventoryEntry {
   #groupNamesCache?: string[];
 
   constructor(id: string, config: InventoryHostInterface, hostSource?: AbstractHostSourceInstance) {
-    config = Joi.attempt(config, InventoryHostSchema, `Error validating inventory host config: `);
+    config = Joi.attempt(config, InventoryHostSchema, 'Error validating inventory host config: ');
     super(id, joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
     this.#hostSource = hostSource;
   }

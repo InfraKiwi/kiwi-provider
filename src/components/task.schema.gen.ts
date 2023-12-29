@@ -1,5 +1,11 @@
-import type { ModuleRunResultInterface } from '../modules/abstractModuleBase.schema.gen';
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
+
+import type { ModuleRunResultInterface } from '../modules/abstractModuleBase.schema.gen';
 
 import type { VarsInterface } from './varsContainer.schema.gen';
 import type { ConditionSetInterface } from './testingCommon.schema.gen';
@@ -10,6 +16,7 @@ export interface ExitIfFullInterface {
   if: string;
 }
 // [block ExitIfFullInterface end]
+//meta:ExitIfFullInterface:[{"className":"ModuleExitFullInterface"},{"className":"ExitIfFullInterface"}]
 
 // [block FailedIfFullInterface begin]
 export interface FailedIfFullInterface {
@@ -17,6 +24,7 @@ export interface FailedIfFullInterface {
   if: string;
 }
 // [block FailedIfFullInterface end]
+//meta:FailedIfFullInterface:[{"className":"ModuleFailFullInterface"},{"className":"FailedIfFullInterface"}]
 
 // [block TaskInterface begin]
 /**
@@ -37,7 +45,7 @@ export interface TaskInterface {
   /**
    * Any vars you want to provide to the task.
    */
-  vars?: VarsInterface; //typeRef:VarsInterface:varsContainer.schema.gen.ts:false
+  vars?: VarsInterface; //typeRef:VarsInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
   /**
    * If provided, registers any output variables into the variable name
@@ -51,7 +59,7 @@ export interface TaskInterface {
    */
   failedIf?:
     | string
-    | FailedIfFullInterface; //typeRef:FailedIfFullInterface:task.schema.gen.ts:false
+    | FailedIfFullInterface; //typeRef:FailedIfFullInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * When provided, the recipe will stop successfully if this condition succeeds.
@@ -59,7 +67,7 @@ export interface TaskInterface {
    */
   exitIf?:
     | string
-    | ExitIfFullInterface; //typeRef:ExitIfFullInterface:task.schema.gen.ts:false
+    | ExitIfFullInterface; //typeRef:ExitIfFullInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * If true, registers any output variables into the global context.
@@ -82,20 +90,23 @@ export interface TaskInterface {
   /**
    * Enabled only in testing mode.
    */
-  testMocks?: TaskTestMockInterface[]; //typeRef:TaskTestMockInterface:task.schema.gen.ts:false
+  testMocks?: TaskTestMockInterface[]; //typeRef:TaskTestMockInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * The module to use in the task.
+   * You can check the available task modules here: ##link#See all available task modules#/modules
    */
   [x: string]: any;
 }
 // [block TaskInterface end]
+//meta:TaskInterface:[{"className":"TaskInterface","unknownType":{"type":"any","flags":{"description":"\n    The module to use in the task.\n    You can check the available task modules here: ##link#See all available task modules#/modules\n    "}}}]
 
 // [block TaskTestMockInterface begin]
 export interface TaskTestMockInterface {
-  result: ModuleRunResultInterface; //typeRef:ModuleRunResultInterface:../modules/abstractModuleBase.schema.gen.ts:false
+  result: ModuleRunResultInterface; //typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts","isRegistryExport":false}
 
-  if?: ConditionSetInterface; //typeRef:ConditionSetInterface:testingCommon.schema.gen.ts:false
+  if?: ConditionSetInterface; //typeRef:ConditionSetInterface:{"relPath":"testingCommon.schema.gen.ts","isRegistryExport":false}
 
 }
 // [block TaskTestMockInterface end]
+//meta:TaskTestMockInterface:[{"className":"TestMockBaseInterface"},{"className":"TaskTestMockInterface"}]

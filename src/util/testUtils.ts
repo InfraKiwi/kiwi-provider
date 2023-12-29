@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import path from 'node:path';
 import { getAllFilesSync } from './fs';
 import type { Recipe, RecipeCtorContext } from '../components/recipe';
@@ -30,7 +35,7 @@ export function testExamples(rootDir: string) {
   const allFiles = getAllFilesSync(examplesDir, 0).filter((f) => path.extname(f) == '.yaml');
 
   describe('test examples', () => {
-    test.each(allFiles)(`recipe %s`, async (file) => {
+    test.each(allFiles)('recipe %s', async (file) => {
       const recipe = await sourceList.findAndLoadRecipe(context, file, {});
       await testRecipe(context, recipe, { [contextVarAssetsDir]: assetsDir });
     });
@@ -40,7 +45,7 @@ export function testExamples(rootDir: string) {
 export async function testRecipe(
   context: RecipeCtorContext,
   recipe: Recipe,
-  vars?: VarsInterface,
+  vars?: VarsInterface
 ): Promise<RecipeRunResult> {
   const runContext = getTestRunContext({
     ...context,

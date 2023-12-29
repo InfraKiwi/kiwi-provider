@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { Inventory } from '../components/inventory';
 import type { MyPartialRunContextOmit, RunStatistics } from '../util/runContext';
 import { newRunStatistics } from '../util/runContext';
@@ -19,7 +24,7 @@ export interface RunRecipeFromArchiveArgs {
 
 export async function runRecipesFromArchive(
   context: DataSourceContext & Partial<MyPartialRunContextOmit>,
-  args: RunRecipeFromArchiveArgs,
+  args: RunRecipeFromArchiveArgs
 ): Promise<Record<string, RunStatistics>> {
   const inventory = args.inventoryPath ? await Inventory.fromFile(context, args.inventoryPath) : new Inventory({});
 
@@ -47,7 +52,7 @@ export async function runRecipesFromArchive(
       }
 
       if (ex instanceof Error) {
-        context.logger.error(`Recipe execution failed`, { cause: getErrorCauseChain(ex) });
+        context.logger.error('Recipe execution failed', { cause: getErrorCauseChain(ex) });
         break;
       }
     } finally {

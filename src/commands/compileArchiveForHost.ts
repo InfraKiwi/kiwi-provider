@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { newLogger } from '../util/logger';
 import type { HostSourceContext } from '../hostSources/abstractHostSource';
 import { InventoryHost } from '../components/inventoryHost';
@@ -11,7 +16,7 @@ import { CompileArchiveForHostArgsSchema } from './compileArchiveForHost.schema'
 
 export async function compileArchiveForHost(
   context: HostSourceContext,
-  args: CompileArchiveForHostArgsInterface,
+  args: CompileArchiveForHostArgsInterface
 ): Promise<CompileArchiveForHostResultInterface> {
   args = Joi.attempt(args, CompileArchiveForHostArgsSchema);
 
@@ -20,7 +25,7 @@ export async function compileArchiveForHost(
 
   const { hostname, inventory, archive, implicitHosts } = args;
 
-  logger.info(`Compiling archive for host`, { hostname });
+  logger.info('Compiling archive for host', { hostname });
 
   for (const implicitHost of [...(implicitHosts ?? []), hostname]) {
     if (inventory.hasHost(implicitHost)) {

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
 import { localhost127 } from '../../util/constants';
@@ -10,7 +15,7 @@ export const ModuleHTTPListenerRouteHandlerFunctionSchema = Joi.function()
   .description(
     `
 A route handler in the form of \`(req, res, [next]) => {}\`. Define it using an \`!!eval\` YAML block.
-`,
+`
   )
   .example(
     `
@@ -20,20 +25,20 @@ routes:
       return (req, res) => {
         res.send('World')
       }
-`,
+`
   )
   .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerFunctionInterface'));
 
 export const ModuleHTTPListenerRouteHandlerJSONSchema = Joi.object({
   json: Joi.any().required(),
 })
-  .description(`Any static value the route should return JSON-encoded`)
+  .description('Any static value the route should return JSON-encoded')
   .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerJSONInterface'));
 
 export const ModuleHTTPListenerRouteHandlerRawSchema = Joi.object({
   raw: Joi.string().required(),
 })
-  .description(`Any static string value the route should return verbatim`)
+  .description('Any static string value the route should return verbatim')
   .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerRawInterface'));
 
 export const ModuleHTTPListenerRouteHandlerSchema = Joi.alternatives([
@@ -41,20 +46,20 @@ export const ModuleHTTPListenerRouteHandlerSchema = Joi.alternatives([
   ModuleHTTPListenerRouteHandlerJSONSchema,
   ModuleHTTPListenerRouteHandlerRawSchema,
 ])
-  .description(`All possible types of route handlers supported by the listener`)
+  .description('All possible types of route handlers supported by the listener')
   .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerInterface'));
 
 export const ModuleHTTPListenerRouteSchema = Joi.object(
   validHTTPMethods.reduce((acc: Record<string, Joi.Schema>, el) => {
     acc[el] = ModuleHTTPListenerRouteHandlerSchema.meta({ disableDescription: true });
     return acc;
-  }, {}),
+  }, {})
 )
   .description(
     `
 For each route, define which methods are supported, and for each method defined the route handler.
 Each key represents an HTTP method, and the corresponding value holds the handler.
-`,
+`
   )
   .meta(joiMetaClassName('ModuleHTTPListenerRouteInterface'));
 
@@ -78,10 +83,10 @@ The mapping \`Route path -> handler\`.
 E.g. /hello:
     get: !!eval |
       return (req, res) => res.send('Hello world!');
-`),
+`)
     ).description(`
 The definition of all available routes. Each object key represents a route path, e.g. \`/hello\`.
 `),
   }),
-  { label: 'ModuleHTTPListenerInterface' },
+  { label: 'ModuleHTTPListenerInterface' }
 );

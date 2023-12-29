@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { describe, expect, test } from '@jest/globals';
 import type { InventoryInterface } from './inventory.schema.gen';
 import { Inventory } from './inventory';
@@ -70,7 +75,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
       {
         query: 'grouped',
         expectedHostnames: Object.keys(hostSourceRaw as HostSourceRawInterface).filter(
-          (key) => key != 'ungroupedforever',
+          (key) => key != 'ungroupedforever'
         ),
       },
       {
@@ -103,16 +108,11 @@ describe('inventory - can get the right hosts in the right groups', () => {
         'test',
       ]);
       expect(
-        inventory.getGroupNamesForHost(
-          context,
-          inventory.getRawHostObject('test-another-3.hello.io')!,
-          undefined,
-          true,
-        ),
+        inventory.getGroupNamesForHost(context, inventory.getRawHostObject('test-another-3.hello.io')!, undefined, true)
       ).toEqual([groupNameAll, 'another', groupNameGrouped, 'test'].sort(naturalSortCompareFn));
       expect(inventory.getGroupNamesForHost(context, inventory.getRawHostObject('ungroupedforever')!)).toEqual([]);
       expect(
-        inventory.getGroupNamesForHost(context, inventory.getRawHostObject('ungroupedforever')!, undefined, true),
+        inventory.getGroupNamesForHost(context, inventory.getRawHostObject('ungroupedforever')!, undefined, true)
       ).toEqual([groupNameAll, groupNameUngrouped]);
     });
 

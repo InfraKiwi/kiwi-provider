@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Inventory } from '../components/inventory';
 import type { Recipe } from '../components/recipe';
 import type { MyPartialRunContextOmit } from '../util/runContext';
@@ -16,7 +21,7 @@ export interface RunRecipeArgs {
 
 export async function runRecipe(
   context: DataSourceContext & Partial<MyPartialRunContextOmit>,
-  { hostname, inventory, recipe, runContextPartial }: RunRecipeArgs,
+  { hostname, inventory, recipe, runContextPartial }: RunRecipeArgs
 ): Promise<void> {
   const hosts = inventory.getHostsByPattern(context, hostname);
   const hostnames = Object.keys(hosts);
@@ -52,7 +57,7 @@ export async function runRecipe(
       aggregateForcedContextVars({
         inventory,
         host,
-      }),
+      })
     );
 
   // Process variables from inventory

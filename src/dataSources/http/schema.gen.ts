@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 // [block DataSourceHTTPInterface begin]
@@ -13,7 +18,10 @@ export interface DataSourceHTTPInterface {
   /**
    * Indicates the type of data that the server will respond with.
    */
-  responseType?: 'json' | 'text';
+  responseType?:
+    | 'json'
+
+    | 'text';
 
   /**
    * The URL that will be used for the request
@@ -23,7 +31,18 @@ export interface DataSourceHTTPInterface {
   /**
    * The request method to be used when making the request
    */
-  method?: 'get' | 'delete' | 'head' | 'options' | 'post' | 'put' | 'patch' | 'purge' | 'link' | 'unlink';
+  method?:
+    | 'get'
+
+    | 'delete'
+    | 'head'
+    | 'options'
+    | 'post'
+    | 'put'
+    | 'patch'
+    | 'purge'
+    | 'link'
+    | 'unlink';
 
   /**
    * `baseURL` will be prepended to `url` unless `url` is absolute.
@@ -88,7 +107,9 @@ export interface DataSourceHTTPInterface {
    * Indicates the encoding to use for decoding responses.
    * Default: `utf8`.
    */
-  responseEncoding?: 'utf8' | string;
+  responseEncoding?:
+    | 'utf8'
+    | string;
 
   /**
    * Defines the max size of the http response content in bytes allowed.
@@ -104,14 +125,18 @@ export interface DataSourceHTTPInterface {
    * Defines a list of status codes that will cause the request to be marked as
    * successful, or in alternative a RegExp to perform the same validation.
    */
-  validStatus?: number[] | string;
+  validStatus?:
+    | number[]
+    | string;
 
   /**
    * Defines the maximum number of redirects to follow.
    * If set to 0, no redirects will be followed.
    * Default: `5`.
    */
-  maxRedirects?: 5 | number;
+  maxRedirects?:
+    | 5
+    | number;
 
   /**
    * Defines a UNIX Socket to be used.
@@ -153,7 +178,10 @@ export interface DataSourceHTTPInterface {
          */
         password: string;
       };
-      protocol?: 'http' | 'https';
+      protocol?:
+        | 'http'
+
+        | 'https';
     };
 
   /**
@@ -227,6 +255,7 @@ export interface DataSourceHTTPInterface {
   };
 }
 // [block DataSourceHTTPInterface end]
+//meta:DataSourceHTTPInterface:[{"className":"DataSourceHTTPRawInterface"},{"className":"DataSourceHTTPInterface","entryNames":["http"]}]
 
 // [block DataSourceHTTPRawInterface begin]
 export interface DataSourceHTTPRawInterface {
@@ -241,7 +270,10 @@ export interface DataSourceHTTPRawInterface {
   /**
    * Indicates the type of data that the server will respond with.
    */
-  responseType?: 'json' | 'text';
+  responseType?:
+    | 'json'
+
+    | 'text';
 
   /**
    * The URL that will be used for the request
@@ -251,7 +283,18 @@ export interface DataSourceHTTPRawInterface {
   /**
    * The request method to be used when making the request
    */
-  method?: 'get' | 'delete' | 'head' | 'options' | 'post' | 'put' | 'patch' | 'purge' | 'link' | 'unlink';
+  method?:
+    | 'get'
+
+    | 'delete'
+    | 'head'
+    | 'options'
+    | 'post'
+    | 'put'
+    | 'patch'
+    | 'purge'
+    | 'link'
+    | 'unlink';
 
   /**
    * `baseURL` will be prepended to `url` unless `url` is absolute.
@@ -316,7 +359,9 @@ export interface DataSourceHTTPRawInterface {
    * Indicates the encoding to use for decoding responses.
    * Default: `utf8`.
    */
-  responseEncoding?: 'utf8' | string;
+  responseEncoding?:
+    | 'utf8'
+    | string;
 
   /**
    * Defines the max size of the http response content in bytes allowed.
@@ -332,14 +377,18 @@ export interface DataSourceHTTPRawInterface {
    * Defines a list of status codes that will cause the request to be marked as
    * successful, or in alternative a RegExp to perform the same validation.
    */
-  validStatus?: number[] | string;
+  validStatus?:
+    | number[]
+    | string;
 
   /**
    * Defines the maximum number of redirects to follow.
    * If set to 0, no redirects will be followed.
    * Default: `5`.
    */
-  maxRedirects?: 5 | number;
+  maxRedirects?:
+    | 5
+    | number;
 
   /**
    * Defines a UNIX Socket to be used.
@@ -381,7 +430,10 @@ export interface DataSourceHTTPRawInterface {
          */
         password: string;
       };
-      protocol?: 'http' | 'https';
+      protocol?:
+        | 'http'
+
+        | 'https';
     };
 
   /**
@@ -455,6 +507,7 @@ export interface DataSourceHTTPRawInterface {
   };
 }
 // [block DataSourceHTTPRawInterface end]
+//meta:DataSourceHTTPRawInterface:[{"className":"DataSourceHTTPRawInterface"}]
 
 export type DataSourceHTTPInterfaceConfigKey = 'http';
 export const DataSourceHTTPInterfaceConfigKeyFirst = 'http';

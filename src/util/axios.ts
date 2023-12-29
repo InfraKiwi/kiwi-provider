@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Axios, AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios, { type AxiosError } from 'axios';
 import * as AxiosLogger from 'axios-logger';
@@ -21,7 +26,7 @@ export function addDefaultInterceptors({ logger }: ContextLogger, client: Axios,
       errorLogger(err, {
         logger: logger.error.bind(logger),
         prefixText,
-      }),
+      })
   );
   client.interceptors.response.use(
     (res) => {
@@ -41,7 +46,7 @@ export function addDefaultInterceptors({ logger }: ContextLogger, client: Axios,
       errorLogger(err, {
         logger: logger.error.bind(logger),
         prefixText,
-      }),
+      })
   );
 }
 
@@ -67,7 +72,7 @@ export interface AxiosRequestInterfaceAdditionalProperties {
 
 export async function executeAxiosRequest(
   context: DataSourceContext,
-  config: AxiosRequestInterface & AxiosRequestInterfaceAdditionalProperties,
+  config: AxiosRequestInterface & AxiosRequestInterfaceAdditionalProperties
 ): Promise<AxiosResponse> {
   const { log, validStatus, ...rest } = config;
 

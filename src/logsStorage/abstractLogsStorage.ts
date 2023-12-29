@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { AbstractRegistryEntry } from '../util/registry';
 import type e from 'express';
 import Joi from 'joi';
@@ -48,16 +53,16 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
     context: LogsStorageContext,
     logsStorage: AbstractLogsStorageInstance,
     appForHost: e.IRouter,
-    appForAdmin: e.IRouter,
+    appForAdmin: e.IRouter
   ) {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     appForHost.post('/uploadUrl', async (req, res) => {
       const reqData = Joi.attempt(
         req.body,
-        AbstractLogsStorageGetUploadUrlRequestSchema,
+        AbstractLogsStorageGetUploadUrlRequestSchema
       ) as AbstractLogsStorageGetUploadUrlRequestInterface;
       if (reqData.hostname != req.clientHostname) {
-        throw new Error(`Hostname mismatch`);
+        throw new Error('Hostname mismatch');
       }
 
       const reportId = {

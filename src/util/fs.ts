@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { promisify } from 'node:util';
 import type { CopyOptions } from 'node:fs';
 import fs from 'node:fs';
@@ -19,7 +24,7 @@ export const fsPromiseExists = promisify(fs.exists);
 export const fsPromiseCp = promisify(fs.cp) as (
   source: string | URL,
   destination: string | URL,
-  opts?: CopyOptions,
+  opts?: CopyOptions
 ) => Promise<void>;
 export const fsPromiseCopyFile = promisify(fs.copyFile);
 export const fsPromiseReadFile = promisify(fs.readFile);
@@ -45,7 +50,7 @@ export async function getAllFiles(dirPath: string, maxDepth?: number, prefix?: s
         continue;
       }
       arrayOfFiles.push(
-        ...(await getAllFiles(fullPath, maxDepth != undefined ? maxDepth - 1 : undefined, pathWithPrefix)),
+        ...(await getAllFiles(fullPath, maxDepth != undefined ? maxDepth - 1 : undefined, pathWithPrefix))
       );
     } else {
       arrayOfFiles.push(pathWithPrefix);
@@ -84,7 +89,7 @@ export async function waitForWritable(filePath: string, timeoutMs = 5000, checkI
         await promiseWait(checkIntervalMs);
       }
     })(),
-    timeoutMs,
+    timeoutMs
   );
 }
 

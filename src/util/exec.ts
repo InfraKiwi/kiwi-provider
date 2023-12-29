@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import util from 'node:util';
 import type { ExecFileOptions, ExecOptions } from 'node:child_process';
 import * as childProcess from 'node:child_process';
@@ -32,13 +37,13 @@ export type ExecShellOptions = ExecOptionsCommon & ObjectEncodingOptions & ExecO
 export async function execShell(
   context: ContextLogger,
   cmd: string,
-  options: ExecShellOptions = {},
+  options: ExecShellOptions = {}
 ): Promise<RunShellResult> {
   const { ignoreBadExitCode, ...otherOptions } = options;
   const promise = promiseExec(cmd, otherOptions);
   try {
     const result = await runShellCommandInternal(context, promise, { ignoreBadExitCode });
-    context.logger.verbose(`Exec shell result`, {
+    context.logger.verbose('Exec shell result', {
       cmd,
       ...result,
     });
@@ -54,19 +59,19 @@ export async function execCmd(
   context: ContextLogger,
   cmd: string,
   args?: string[],
-  options: ExecCmdOptions = {},
+  options: ExecCmdOptions = {}
 ): Promise<RunShellResult> {
   const { ignoreBadExitCode, ...otherOptions } = options;
   const promise = promiseExecFile(cmd, args, otherOptions);
   try {
     options.logVerbose &&
-    context.logger.verbose(`Exec cmd`, {
+    context.logger.verbose('Exec cmd', {
         cmd,
         args,
       });
     const result = await runShellCommandInternal(context, promise, { ignoreBadExitCode });
     options.logVerbose &&
-    context.logger.verbose(`Exec cmd (result)`, {
+    context.logger.verbose('Exec cmd (result)', {
         cmd,
         args,
         ...result,
@@ -80,7 +85,7 @@ export async function execCmd(
 async function runShellCommandInternal(
   context: ContextLogger,
   promise: PromiseExecWithChild,
-  options: ExecOptionsCommon,
+  options: ExecOptionsCommon
 ): Promise<RunShellResult> {
   let stdout = '';
   let stderr = '';

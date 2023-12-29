@@ -22,7 +22,7 @@ plugins:
         on_page_read_source: 'docs.hooks:on_page_read_source'
 
 nav:
-  - Core docs: '!include ./hack/docs/mkdocs.main.yaml'
+  - Core docs: '!include ./hack/docs/mkdocs.core.yaml'
   - Task modules: '!include ./hack/docs/mkdocs.modules.yaml'
   - Data Sources: '!include ./hack/docs/mkdocs.dataSources.yaml'
   - Host Sources: '!include ./hack/docs/mkdocs.hostSources.yaml'

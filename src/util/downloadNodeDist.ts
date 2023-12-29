@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { Axios } from 'axios';
 import axios from 'axios';
 import { addDefaultInterceptors } from './axios';
@@ -57,7 +62,7 @@ export interface DownloadNodeDistArgs {
 
 export async function downloadNodeDist(
   context: ContextLogger,
-  { platform, arch, client, cacheDir, unsigned }: DownloadNodeDistArgs,
+  { platform, arch, client, cacheDir, unsigned }: DownloadNodeDistArgs
 ): Promise<string> {
   if (client == null) {
     client = axios.create({});

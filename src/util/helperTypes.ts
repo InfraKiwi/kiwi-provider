@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
 
 // https://stackoverflow.com/a/66802796

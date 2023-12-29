@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { describe, expect, test } from '@jest/globals';
 import type { ModuleTestResult } from './index';
 import { ModuleTest, ModuleTestSilent } from './index';
@@ -27,14 +32,14 @@ describe('test module', () => {
 
   const tests: ModuleStoreTest[] = [
     {
-      args: `num == 123`,
+      args: 'num == 123',
       expect: {
         vars: { tests: { test: true } },
         changed: false,
       },
     },
     {
-      args: [`num == 123`, `hello == 'world'`],
+      args: ['num == 123', 'hello == \'world\''],
       expect: {
         vars: {
           tests: {
@@ -46,18 +51,18 @@ describe('test module', () => {
       },
     },
     {
-      args: { tests: { numTest: `num == 123` } },
+      args: { tests: { numTest: 'num == 123' } },
       expect: {
         vars: { tests: { numTest: true } },
         changed: false,
       },
     },
     {
-      args: `num == 124`,
+      args: 'num == 124',
       expectFail: true,
     },
     {
-      args: `num == 124`,
+      args: 'num == 124',
       expect: {
         vars: { tests: { test: false } },
         changed: false,
@@ -66,7 +71,7 @@ describe('test module', () => {
     },
     {
       args: {
-        tests: { numTest: `num == 124` },
+        tests: { numTest: 'num == 124' },
         silent: true,
       },
       expect: {
@@ -75,14 +80,14 @@ describe('test module', () => {
       },
     },
     {
-      args: { numTest: `num == 123` },
+      args: { numTest: 'num == 123' },
       expect: {
         vars: { tests: { numTest: true } },
         changed: false,
       },
     },
     {
-      args: { numTest: `num == 123` },
+      args: { numTest: 'num == 123' },
       expect: {
         vars: { tests: { numTest: true } },
         changed: false,
@@ -90,7 +95,7 @@ describe('test module', () => {
       useModuleSilent: true,
     },
     {
-      args: { numTest: `num == 124` },
+      args: { numTest: 'num == 124' },
       expect: {
         vars: { tests: { numTest: false } },
         changed: false,

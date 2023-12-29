@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { Inventory } from '../components/inventory';
 import { tryOrThrowAsync } from '../util/try';
 import type { RecipeCtorContext } from '../components/recipe';
@@ -18,7 +23,7 @@ export interface RunRecipeFromFileArgs {
 
 export async function runRecipeFromFile(
   context: RecipeCtorContext & Partial<MyPartialRunContextOmit>,
-  args: RunRecipeFromFileArgs,
+  args: RunRecipeFromFileArgs
 ): Promise<void> {
   const inventory = args.inventoryPath ? await Inventory.fromFile(context, args.inventoryPath) : new Inventory({});
 

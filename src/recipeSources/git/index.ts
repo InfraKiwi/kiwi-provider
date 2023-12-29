@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RecipeSourceGitInterface, RecipeSourceGitInterfaceConfigKey } from './schema.gen';
 import { RecipeSourceGitSchema } from './schema';
 
@@ -16,12 +21,12 @@ import type { DataSourceContext } from '../../dataSources/abstractDataSource';
 
 export const RecipeSourceGitRecipeNotFoundOnCheckout = getErrorPrintfClass(
   'RecipeSourceGitRecipeNotFoundOnCheckout',
-  'Recipe not found on checkout: %s',
+  'Recipe not found on checkout: %s'
 );
 
 export const RecipeSourceGitRecipeNotFound = getErrorPrintfClass(
   'RecipeSourceGitRecipeNotFound',
-  'Recipe not found: %s',
+  'Recipe not found: %s'
 );
 
 // Url -> fs path

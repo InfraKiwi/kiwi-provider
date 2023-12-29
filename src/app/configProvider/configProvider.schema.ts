@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { CompileArchiveForHostResultSchema } from '../../commands/compileArchiveForHost.schema';
 import { getJoiEnumValues, joiMetaClassName, joiObjectSchemaKeys } from '../../util/joi';
@@ -14,7 +19,7 @@ export const LogsStorageSchema = Joi.object().unknown(true).meta({ className: 'L
 
 export const ConfigProviderHooksSchema = Joi.object({
   report: ServerHookWithArraySchema.description(
-    `This hook will be triggered whenever the worker sends a recipe execution report`,
+    'This hook will be triggered whenever the worker sends a recipe execution report'
   ),
 }).meta(joiMetaClassName('ConfigProviderHooksInterface'));
 

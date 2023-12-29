@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { describe, test } from '@jest/globals';
 import { Inventory } from '../components/inventory';
 import { compileArchiveForHost } from './compileArchiveForHost';
@@ -38,7 +43,7 @@ describe('compileArchiveForHost', () => {
     });
 
     expect(Object.keys(compiledArchive.inventory.hostSources![0].raw as HostSourceRawInterface)).toContain(
-      'neverexists-hello',
+      'neverexists-hello'
     );
     expect(Object.keys(compiledArchive.archive.rootRecipes)).toContain(archiveTestRecipeKeyDebug);
   });

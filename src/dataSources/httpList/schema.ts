@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { multiDataSourceRegistryEntryFactory } from '../registry';
 import { DataSourceHTTPRawSchema } from '../http/schema';
@@ -5,7 +10,7 @@ import { joiMetaClassName } from '../../util/joi';
 
 export const MultiDataSourceHTTPListSchemaDefaultIdTag = '{{ id }}';
 export const MultiDataSourceHTTPListArgsSchema = Joi.object({
-  default: DataSourceHTTPRawSchema.description(`Any default values to use for both \`list\` and \`load\` calls.`),
+  default: DataSourceHTTPRawSchema.description('Any default values to use for both `list` and `load` calls.'),
 
   list: Joi.object({
     idField: Joi.string().description(`
@@ -37,5 +42,5 @@ used also to extract the data related to each entry.
 export const MultiDataSourceHTTPListSchema = multiDataSourceRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
   MultiDataSourceHTTPListArgsSchema,
-  { label: 'MultiDataSourceHTTPListInterface' },
+  { label: 'MultiDataSourceHTTPListInterface' }
 );

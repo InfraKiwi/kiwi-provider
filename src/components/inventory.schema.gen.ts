@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 import type { InventoryEntryRelationsInterface } from './inventoryEntry.schema.gen';
@@ -11,12 +16,12 @@ export interface InventoryGroupInterface {
   /**
    * The pattern(s) to use to define the group.
    */
-  pattern?: InventoryGroupStringEntriesInterface; //typeRef:InventoryGroupStringEntriesInterface:inventory.schema.gen.ts:false
+  pattern?: InventoryGroupStringEntriesInterface; //typeRef:InventoryGroupStringEntriesInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * Defines which other hosts/groups shall be included in the compiled inventory
    */
-  relations?: InventoryEntryRelationsInterface; //typeRef:InventoryEntryRelationsInterface:inventoryEntry.schema.gen.ts:false
+  relations?: InventoryEntryRelationsInterface; //typeRef:InventoryEntryRelationsInterface:{"relPath":"inventoryEntry.schema.gen.ts","isRegistryExport":false}
 
   /**
    * Defines a key that, if found in the entry vars, will also be used to populate
@@ -29,15 +34,16 @@ export interface InventoryGroupInterface {
   /**
    * Hardcoded variables for this entry
    */
-  vars?: VarsInterface; //typeRef:VarsInterface:varsContainer.schema.gen.ts:false
+  vars?: VarsInterface; //typeRef:VarsInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
   /**
    * Compile-time vars sources for the entry
    */
-  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:varsContainer.schema.gen.ts:false
+  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
 }
 // [block InventoryGroupInterface end]
+//meta:InventoryGroupInterface:[{"className":"InventoryGroupInterface"}]
 
 // [block InventoryGroupSpecialInterface begin]
 /**
@@ -52,7 +58,7 @@ export interface InventoryGroupSpecialInterface {
   /**
    * Defines which other hosts/groups shall be included in the compiled inventory
    */
-  relations?: InventoryEntryRelationsInterface; //typeRef:InventoryEntryRelationsInterface:inventoryEntry.schema.gen.ts:false
+  relations?: InventoryEntryRelationsInterface; //typeRef:InventoryEntryRelationsInterface:{"relPath":"inventoryEntry.schema.gen.ts","isRegistryExport":false}
 
   /**
    * Defines a key that, if found in the entry vars, will also be used to populate
@@ -65,15 +71,16 @@ export interface InventoryGroupSpecialInterface {
   /**
    * Hardcoded variables for this entry
    */
-  vars?: VarsInterface; //typeRef:VarsInterface:varsContainer.schema.gen.ts:false
+  vars?: VarsInterface; //typeRef:VarsInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
   /**
    * Compile-time vars sources for the entry
    */
-  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:varsContainer.schema.gen.ts:false
+  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
 }
 // [block InventoryGroupSpecialInterface end]
+//meta:InventoryGroupSpecialInterface:[{"className":"InventoryGroupSpecialInterface"}]
 
 // [block InventoryGroupStringEntriesInterface begin]
 /**
@@ -101,13 +108,14 @@ export type InventoryGroupStringEntriesInterface =
    */
   | string[];
 // [block InventoryGroupStringEntriesInterface end]
+//meta:InventoryGroupStringEntriesInterface:[{"className":"InventoryGroupStringEntriesInterface"}]
 
 // [block InventoryHostInterface begin]
 export interface InventoryHostInterface {
   /**
    * Defines which other hosts/groups shall be included in the compiled inventory
    */
-  relations?: InventoryEntryRelationsInterface; //typeRef:InventoryEntryRelationsInterface:inventoryEntry.schema.gen.ts:false
+  relations?: InventoryEntryRelationsInterface; //typeRef:InventoryEntryRelationsInterface:{"relPath":"inventoryEntry.schema.gen.ts","isRegistryExport":false}
 
   /**
    * Defines a key that, if found in the entry vars, will also be used to populate
@@ -120,15 +128,16 @@ export interface InventoryHostInterface {
   /**
    * Hardcoded variables for this entry
    */
-  vars?: VarsInterface; //typeRef:VarsInterface:varsContainer.schema.gen.ts:false
+  vars?: VarsInterface; //typeRef:VarsInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
   /**
    * Compile-time vars sources for the entry
    */
-  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:varsContainer.schema.gen.ts:false
+  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
 }
 // [block InventoryHostInterface end]
+//meta:InventoryHostInterface:[{"className":"InventoryHostInterface"}]
 
 // [block InventoryHostSourceInterface begin]
 export interface InventoryHostSourceInterface {
@@ -138,13 +147,14 @@ export interface InventoryHostSourceInterface {
   [x: string]: unknown;
 }
 // [block InventoryHostSourceInterface end]
+//meta:InventoryHostSourceInterface:[{"className":"InventoryHostSourceInterface"}]
 
 // [block InventoryInterface begin]
 export interface InventoryInterface {
   /**
    * A list of host sources to load hosts definitions from.
    */
-  hostSources?: InventoryHostSourceInterface[]; //typeRef:InventoryHostSourceInterface:inventory.schema.gen.ts:false
+  hostSources?: InventoryHostSourceInterface[]; //typeRef:InventoryHostSourceInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * The definition of all available groups and which hosts belong to them.
@@ -155,29 +165,30 @@ export interface InventoryInterface {
       /**
        * Define the group via simple patterns.
        */
-      | InventoryGroupStringEntriesInterface //typeRef:InventoryGroupStringEntriesInterface:inventory.schema.gen.ts:false
+      | InventoryGroupStringEntriesInterface //typeRef:InventoryGroupStringEntriesInterface:{"relPath":"self","isRegistryExport":false}
 
       /**
        * Define the group with patterns and properties.
        */
-      | InventoryGroupInterface //typeRef:InventoryGroupInterface:inventory.schema.gen.ts:false
+      | InventoryGroupInterface //typeRef:InventoryGroupInterface:{"relPath":"self","isRegistryExport":false}
 
       /**
        * Specify properties for special groups.
        */
-      | InventoryGroupSpecialInterface; //typeRef:InventoryGroupSpecialInterface:inventory.schema.gen.ts:false
+      | InventoryGroupSpecialInterface; //typeRef:InventoryGroupSpecialInterface:{"relPath":"self","isRegistryExport":false}
 
   };
 
   /**
    * Hardcoded variables for this entry
    */
-  vars?: VarsInterface; //typeRef:VarsInterface:varsContainer.schema.gen.ts:false
+  vars?: VarsInterface; //typeRef:VarsInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
   /**
    * Compile-time vars sources for the entry
    */
-  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:varsContainer.schema.gen.ts:false
+  varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
 }
 // [block InventoryInterface end]
+//meta:InventoryInterface:[{"className":"InventoryInterface"}]

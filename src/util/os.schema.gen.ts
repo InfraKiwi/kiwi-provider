@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 // [block OSInfoCPUInfoInterface begin]
@@ -36,6 +41,7 @@ export interface OSInfoCPUInfoInterface {
   };
 }
 // [block OSInfoCPUInfoInterface end]
+//meta:OSInfoCPUInfoInterface:[{"className":"OSInfoCPUInfoInterface"}]
 
 // [block OSInfoInterface begin]
 /**
@@ -133,7 +139,7 @@ export interface OSInfoInterface {
    * The array will be empty if no CPU information is available, such as if the
    * `/proc` file system is unavailable.
    */
-  cpus?: OSInfoCPUInfoInterface[]; //typeRef:OSInfoCPUInfoInterface:os.schema.gen.ts:false
+  cpus?: OSInfoCPUInfoInterface[]; //typeRef:OSInfoCPUInfoInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * Contains an array containing the 1, 5, and 15 minute load averages.
@@ -162,9 +168,9 @@ export interface OSInfoInterface {
   networkInterfaces: {
     [x: string]:
       | (
-        | OSInfoNetworkInterfaceInfoIPv4Interface //typeRef:OSInfoNetworkInterfaceInfoIPv4Interface:os.schema.gen.ts:false
+        | OSInfoNetworkInterfaceInfoIPv4Interface //typeRef:OSInfoNetworkInterfaceInfoIPv4Interface:{"relPath":"self","isRegistryExport":false}
 
-        | OSInfoNetworkInterfaceInfoIPv6Interface)[] //typeRef:OSInfoNetworkInterfaceInfoIPv6Interface:os.schema.gen.ts:false
+        | OSInfoNetworkInterfaceInfoIPv6Interface)[] //typeRef:OSInfoNetworkInterfaceInfoIPv6Interface:{"relPath":"self","isRegistryExport":false}
 
         | undefined;
   };
@@ -193,6 +199,7 @@ export interface OSInfoInterface {
   uptime: number;
 }
 // [block OSInfoInterface end]
+//meta:OSInfoInterface:[{"className":"OSInfoInterface"}]
 
 // [block OSInfoNetworkInterfaceBaseSchemaObject begin]
 export interface OSInfoNetworkInterfaceBaseSchemaObject {
@@ -207,6 +214,7 @@ export interface OSInfoNetworkInterfaceBaseSchemaObject {
   internal: boolean;
 }
 // [block OSInfoNetworkInterfaceBaseSchemaObject end]
+//meta:OSInfoNetworkInterfaceBaseSchemaObject:undefined
 
 // [block OSInfoNetworkInterfaceInfoIPv4Interface begin]
 export interface OSInfoNetworkInterfaceInfoIPv4Interface {
@@ -241,6 +249,7 @@ export interface OSInfoNetworkInterfaceInfoIPv4Interface {
     | null;
 }
 // [block OSInfoNetworkInterfaceInfoIPv4Interface end]
+//meta:OSInfoNetworkInterfaceInfoIPv4Interface:[{"className":"OSInfoNetworkInterfaceInfoIPv4Interface"}]
 
 // [block OSInfoNetworkInterfaceInfoIPv6Interface begin]
 export interface OSInfoNetworkInterfaceInfoIPv6Interface {
@@ -280,3 +289,4 @@ export interface OSInfoNetworkInterfaceInfoIPv6Interface {
     | null;
 }
 // [block OSInfoNetworkInterfaceInfoIPv6Interface end]
+//meta:OSInfoNetworkInterfaceInfoIPv6Interface:[{"className":"OSInfoNetworkInterfaceInfoIPv6Interface"}]

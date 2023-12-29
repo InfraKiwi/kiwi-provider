@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { VarsSourceSchema } from './varsSource.schema';
 import type { VarsSourceInterface } from './varsSource.schema.gen';
 import { AbstractTemplate, extractAllTemplates } from '../util/tpl';
@@ -17,7 +22,7 @@ export class VarsSource {
     this.source = dataSourceRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractDataSourceTypes<VarsInterface>>(
       this.config,
       VarsSourceSchema,
-      'vars source',
+      'vars source'
     );
   }
 

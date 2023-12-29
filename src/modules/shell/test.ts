@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { describe, expect, test } from '@jest/globals';
 import type { ModuleShellResult } from './index';
 import { ModuleShell } from './index';
@@ -12,7 +17,7 @@ describe('shell module', () => {
   testExamples(__dirname);
 
   test('invokes shell', async () => {
-    const config: ModuleShellInterface = `echo Hello`;
+    const config: ModuleShellInterface = 'echo Hello';
 
     const module = new ModuleShell(config);
 

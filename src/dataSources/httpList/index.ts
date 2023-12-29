@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { multiDataSourceRegistryEntryFactory } from '../registry';
 import { MultiDataSourceHTTPListSchema, MultiDataSourceHTTPListSchemaDefaultIdTag } from './schema';
 import type { MultiDataSourceHTTPListInterface } from './schema.gen';
@@ -54,7 +59,7 @@ export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
       }
 
       throw new Error(
-        "The HTTP data source list call returned an array of objects, but no `idField` path was configured to extract each object's id",
+        'The HTTP data source list call returned an array of objects, but no `idField` path was configured to extract each object\'s id'
       );
     }
 

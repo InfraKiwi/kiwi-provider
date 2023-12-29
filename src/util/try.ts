@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { areWeTestingWithJest } from './constants';
 
 export async function tryOrThrowAsync<T>(fn: () => Promise<T>, wrapMessage: string): Promise<T> {
@@ -7,8 +12,8 @@ export async function tryOrThrowAsync<T>(fn: () => Promise<T>, wrapMessage: stri
   } catch (err: any) {
     const errIsError = err instanceof Error;
     throw new Error(
-      wrapMessage + (areWeTestingWithJest() ? `\n\nCaused by: ${err}${errIsError ? `\n\n` + err.stack : ''}` : ''),
-      { cause: err },
+      wrapMessage + (areWeTestingWithJest() ? `\n\nCaused by: ${err}${errIsError ? '\n\n' + err.stack : ''}` : ''),
+      { cause: err }
     );
   }
 }
@@ -20,8 +25,8 @@ export function tryOrThrow<T>(fn: () => T, wrapMessage: string): T {
   } catch (err: any) {
     const errIsError = err instanceof Error;
     throw new Error(
-      wrapMessage + (areWeTestingWithJest() ? `\n\nCaused by: ${err}${errIsError ? `\n\n` + err.stack : ''}` : ''),
-      { cause: err },
+      wrapMessage + (areWeTestingWithJest() ? `\n\nCaused by: ${err}${errIsError ? '\n\n' + err.stack : ''}` : ''),
+      { cause: err }
     );
   }
 }

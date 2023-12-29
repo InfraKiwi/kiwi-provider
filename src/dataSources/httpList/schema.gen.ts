@@ -1,12 +1,18 @@
-import type { DataSourceHTTPRawInterface } from '../http/schema.gen';
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
+
+import type { DataSourceHTTPRawInterface } from '../http/schema.gen';
 
 // [block MultiDataSourceHTTPListArgsInterface begin]
 export interface MultiDataSourceHTTPListArgsInterface {
   /**
    * Any default values to use for both `list` and `load` calls.
    */
-  default?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../http/schema.gen.ts:false
+  default?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
 
   /**
    * The HTTP call to make when loading the list of available entries.
@@ -21,7 +27,8 @@ export interface MultiDataSourceHTTPListArgsInterface {
     /**
      * The configuration of the list HTTP call.
      */
-    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../http/schema.gen.ts:false
+    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
+
   };
 
   /**
@@ -34,22 +41,26 @@ export interface MultiDataSourceHTTPListArgsInterface {
      * The tag to use in the HTTP call, which will be replaced by the entry id
      * obtained in the `list` call.
      */
-    idTag?: '{{ id }}' | string;
+    idTag?:
+      | '{{ id }}'
+      | string;
 
     /**
      * The configuration of the load HTTP call.
      */
-    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../http/schema.gen.ts:false
+    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
+
   };
 }
 // [block MultiDataSourceHTTPListArgsInterface end]
+//meta:MultiDataSourceHTTPListArgsInterface:[{"className":"MultiDataSourceHTTPListArgsInterface"}]
 
 // [block MultiDataSourceHTTPListInterface begin]
 export interface MultiDataSourceHTTPListInterface {
   /**
    * Any default values to use for both `list` and `load` calls.
    */
-  default?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../http/schema.gen.ts:false
+  default?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
 
   /**
    * The HTTP call to make when loading the list of available entries.
@@ -64,7 +75,8 @@ export interface MultiDataSourceHTTPListInterface {
     /**
      * The configuration of the list HTTP call.
      */
-    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../http/schema.gen.ts:false
+    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
+
   };
 
   /**
@@ -77,15 +89,19 @@ export interface MultiDataSourceHTTPListInterface {
      * The tag to use in the HTTP call, which will be replaced by the entry id
      * obtained in the `list` call.
      */
-    idTag?: '{{ id }}' | string;
+    idTag?:
+      | '{{ id }}'
+      | string;
 
     /**
      * The configuration of the load HTTP call.
      */
-    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../http/schema.gen.ts:false
+    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
+
   };
 }
 // [block MultiDataSourceHTTPListInterface end]
+//meta:MultiDataSourceHTTPListInterface:[{"className":"MultiDataSourceHTTPListArgsInterface"},{"className":"MultiDataSourceHTTPListInterface","entryNames":["httpList"]}]
 
 export type MultiDataSourceHTTPListInterfaceConfigKey = 'httpList';
 export const MultiDataSourceHTTPListInterfaceConfigKeyFirst = 'httpList';

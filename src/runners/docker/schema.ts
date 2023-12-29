@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { runnerRegistryEntryFactory } from '../registry';
 import { getJoiEnumValues } from '../../util/joi';
@@ -25,7 +30,7 @@ export const RunnerDockerSchema = runnerRegistryEntryFactory.createJoiEntrySchem
 
     // If provided, overrides which command the runner uses to block the container
     waitCommand: Joi.array().items(Joi.string()).min(1),
-  }),
+  })
 );
 
 export interface DockerInspectResult {

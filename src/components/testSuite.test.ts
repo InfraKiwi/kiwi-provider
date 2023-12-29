@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { test } from '@jest/globals';
 import type { TestSuiteInterface } from './testSuite.schema.gen';
 import { TestSuite } from './testSuite';
@@ -38,7 +43,7 @@ describe('testing stack', () => {
       expect(testResult.tests['my_test'].processedTasksCount).toEqual(1);
       expect(testResult.tests['my_test'].totalTasksCount).toEqual(1);
     },
-    testTimeoutLong,
+    testTimeoutLong
   );
 
   test(
@@ -86,7 +91,7 @@ describe('testing stack', () => {
         expect(testResult.tests['fail_2'].processedTasksCount).toEqual(1);
       }
     },
-    testTimeoutLong,
+    testTimeoutLong
   );
 
   describe('executes tests in independent runners if clean option is true', () => {
@@ -138,7 +143,7 @@ describe('testing stack', () => {
         expect(testResult.tests['test_2'].totalTasksCount).toEqual(1);
         expect(testResult.tests['test_2'].processedTasksCount, 'The test should fail forcefully').toEqual(0);
       },
-      testTimeoutLong,
+      testTimeoutLong
     );
 
     test(
@@ -152,10 +157,10 @@ describe('testing stack', () => {
         expect(testResult.tests['test_2'].failed).toEqual(false);
         expect(
           testResult.tests['test_2'].processedTasksCount,
-          'The test should succeed because we are using the clean option',
+          'The test should succeed because we are using the clean option'
         ).toEqual(1);
       },
-      testTimeoutLong,
+      testTimeoutLong
     );
   });
 });

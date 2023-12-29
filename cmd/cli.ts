@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import Joi from 'joi';
@@ -156,7 +161,7 @@ async function main() {
       inventoryPath,
       hostname,
       throwOnRecipeFailure,
-      statsFileName,
+      statsFileName
     );
     return;
   }
@@ -193,13 +198,13 @@ async function runTestSuite(args: string[]) {
   for (const testSuite of testSuites) {
     try {
       const result = await testSuite.run(context);
-      logger.info(`Test suite finished`, {
+      logger.info('Test suite finished', {
         fileName: testSuite.meta?.fileName,
         result,
       });
       TestSuite.printTestSuiteResult(result);
     } catch (ex) {
-      logger.error(`Failed to run test suite`, {
+      logger.error('Failed to run test suite', {
         fileName: testSuite.meta?.fileName,
         ex,
       });
@@ -214,7 +219,7 @@ async function runRecipes(
   hostname: string,
   throwOnRecipeFailure: boolean,
   statsFileName?: string,
-  runnerConfig?: RegistryEntryGenericConfig,
+  runnerConfig?: RegistryEntryGenericConfig
 ) {
   const runner = runnerConfig
     ? runnerRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractRunnerInstance>(runnerConfig, TestRunnerSchema)
@@ -244,16 +249,16 @@ async function runRecipes(
     try {
       const archiveDir = await runner.uploadAndExtractTarGZArchive(context, archiveFile);
       const recipeIds = recipes.map((r) => r.fullId!);
-      context.logger.info(`Running recipes in runner`, { recipeIds });
+      context.logger.info('Running recipes in runner', { recipeIds });
       const runResult = await runner.runRecipes(
         {
           ...context,
           testingMode: true,
         },
         archiveDir,
-        recipeIds,
+        recipeIds
       );
-      context.logger.info(`Finished running recipes in runner`, {
+      context.logger.info('Finished running recipes in runner', {
         recipeIds,
         runResult,
       });
@@ -263,7 +268,7 @@ async function runRecipes(
     } catch (ex) {
       handleRunError(context, ex, throwOnRecipeFailure);
     } finally {
-      await runner.tearDown(context).catch((ex) => context.logger.error(`Failed to teardown runner`, { error: ex }));
+      await runner.tearDown(context).catch((ex) => context.logger.error('Failed to teardown runner', { error: ex }));
       statsFileName && (await fsPromiseWriteFile(statsFileName, JSON.stringify(recipesStats)));
     }
     return;
@@ -299,7 +304,7 @@ async function runRecipeFromArchive(
   inventoryPath: string,
   hostname: string,
   throwOnRecipeFailure: boolean,
-  statsFileName?: string,
+  statsFileName?: string
 ) {
   const recipesStats = await runRecipesFromArchive(context, {
     archiveDir,
@@ -320,7 +325,7 @@ function getRecipeSourcesFromSourceArg(recipeSourceCtorContext: RecipeSourceCtor
           source.map((c) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return shortieToObject(c) as any;
-          }),
+          })
         )
       : undefined;
   return recipeSources;
@@ -329,11 +334,11 @@ function getRecipeSourcesFromSourceArg(recipeSourceCtorContext: RecipeSourceCtor
 function handleRunError(context: RecipeCtorContext, ex: unknown, throwOnRecipeFailure: boolean) {
   if (!throwOnRecipeFailure) {
     if (ex instanceof Error) {
-      context.logger.error(`Execution failed`, { cause: getErrorCauseChain(ex) });
+      context.logger.error('Execution failed', { cause: getErrorCauseChain(ex) });
       return;
     }
 
-    context.logger.error(`Execution failed`, { error: ex });
+    context.logger.error('Execution failed', { error: ex });
     return;
   }
 

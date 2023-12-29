@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { ContextLogger } from './context';
 import { mkdirp } from 'mkdirp';
 import path from 'node:path';
@@ -29,7 +34,7 @@ export async function createCJSRunnerBundle(context: ContextLogger, args: Create
      * TODO
      * TODO
      */
-    throw new Error(`Not yet implemented`);
+    throw new Error('Not yet implemented');
   }
 
   /*
@@ -47,7 +52,7 @@ export async function createCJSRunnerBundle(context: ContextLogger, args: Create
     return cachedBundle;
   }
 
-  context.logger.info(`Preparing CJS bundle`);
+  context.logger.info('Preparing CJS bundle');
   await runESBuild(args.entryPoint, cachedBundle);
 
   return cachedBundle;

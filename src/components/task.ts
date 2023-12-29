@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // module: ModuleBase<unknown, unknown>
 import { moduleRegistry } from '../modules/registry';
 import type { RunContext } from '../util/runContext';
@@ -41,12 +46,12 @@ export interface TaskRunTasksInContextResult {
 
 export const TaskErrorFailedWithIfCondition = getErrorPrintfClass(
   'TaskErrorFailedWithIfCondition',
-  `Task failed because of failedIf condition: %s`,
+  'Task failed because of failedIf condition: %s'
 );
 
 export const TaskErrorFailedWithExecutionError = getErrorPrintfClass(
   'TaskErrorFailedWithBadResult',
-  `Task failed because of execution error: %s`,
+  'Task failed because of execution error: %s'
 );
 
 export class TaskTestMock extends TestMock {
@@ -112,7 +117,7 @@ export class Task {
 
     const module = moduleRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractModuleBaseInstance>(
       taskConfig,
-      TaskSchema,
+      TaskSchema
     );
 
     let label: string | undefined;
@@ -153,7 +158,7 @@ export class Task {
      * }
      */
 
-    context.logger.debug(`Task running`);
+    context.logger.debug('Task running');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: ModuleRunResult<any>;
@@ -186,7 +191,7 @@ export class Task {
         const failResult = await new ModuleFail(
           typeof this.config.failedIf == 'string'
             ? 'failedIf condition was true'
-            : joiKeepOnlyKeysInJoiSchema(this.config.failedIf, ModuleFailFullSchema),
+            : joiKeepOnlyKeysInJoiSchema(this.config.failedIf, ModuleFailFullSchema)
         ).run(context);
         throw new TaskErrorFailedWithIfCondition(failResult.failed);
       }
@@ -200,7 +205,7 @@ export class Task {
         const exitResult = await new ModuleExit(
           typeof this.config.exitIf == 'string'
             ? 'exitIf condition was true'
-            : joiKeepOnlyKeysInJoiSchema(this.config.exitIf, ModuleExitFullSchema),
+            : joiKeepOnlyKeysInJoiSchema(this.config.exitIf, ModuleExitFullSchema)
         ).run(context);
         forceExit = exitResult.exit == true;
 
@@ -209,7 +214,7 @@ export class Task {
       }
     }
 
-    context.logger.info(`Task completed`, {
+    context.logger.info('Task completed', {
       result,
       forceExit,
     });
@@ -235,7 +240,7 @@ export class Task {
       const task = tasks[i];
       const taskResult = await tryOrThrowAsync(
         async () => await task.run(context),
-        `Failed to run task with index ${i}`,
+        `Failed to run task with index ${i}`
       );
 
       context.statistics.processedTasksCount++;

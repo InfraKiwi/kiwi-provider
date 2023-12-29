@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 // [block DataSourceFileInterface begin]
@@ -24,6 +29,7 @@ export interface DataSourceFileInterface {
   raw?: boolean;
 }
 // [block DataSourceFileInterface end]
+//meta:DataSourceFileInterface:[{"className":"DataSourceFileInterface","entryNames":["file"]}]
 
 // [block DataSourceFileRawInterface begin]
 /**
@@ -41,6 +47,7 @@ export interface DataSourceFileRawInterface {
   workDir?: string;
 }
 // [block DataSourceFileRawInterface end]
+//meta:DataSourceFileRawInterface:[{"className":"DataSourceFileRawInterface","entryNames":["fileRaw"]}]
 
 export type DataSourceFileInterfaceConfigKey = 'file';
 export const DataSourceFileInterfaceConfigKeyFirst = 'file';

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { joiMetaClassName, joiObjectWithPattern } from '../util/joi';
 import { InventoryEntrySchemaObject } from './inventoryEntry.schema';
@@ -22,11 +27,11 @@ export const specialGroupNamesSet = new Set(specialGroupNames);
 export const InventoryHostSourceSchema = Joi.object().unknown(true).meta({ className: 'InventoryHostSourceInterface' });
 
 export const InventoryGroupStringEntriesSchema = Joi.alternatives([
-  Joi.string().description(`A single pattern.`).example(`
+  Joi.string().description('A single pattern.').example(`
   groups:
     myGroup: loadbalancer-az*.hello.com
   `),
-  Joi.array().items(Joi.string()).description(`An array of patterns.`).example(`
+  Joi.array().items(Joi.string()).description('An array of patterns.').example(`
   groups:
     myGroup:
       - loadbalancer-az*.hello.com
@@ -34,10 +39,10 @@ export const InventoryGroupStringEntriesSchema = Joi.alternatives([
 `),
 ])
   .meta({ className: 'InventoryGroupStringEntriesInterface' })
-  .description(`The pattern(s) to use to define the group.`);
+  .description('The pattern(s) to use to define the group.');
 
 export const InventoryHostSchema = Joi.object({ ...InventoryEntrySchemaObject }).meta(
-  joiMetaClassName('InventoryHostInterface'),
+  joiMetaClassName('InventoryHostInterface')
 );
 
 export const InventoryGroupSchema = Joi.object({
@@ -62,10 +67,10 @@ export const InventorySchema = Joi.object({
   `),
   groups: joiObjectWithPattern(
     Joi.alternatives([
-      InventoryGroupStringEntriesSchema.description(`Define the group via simple patterns.`),
-      InventoryGroupSchema.description(`Define the group with patterns and properties.`),
-      InventoryGroupSpecialSchema.description(`Specify properties for special groups.`),
-    ]),
+      InventoryGroupStringEntriesSchema.description('Define the group via simple patterns.'),
+      InventoryGroupSchema.description('Define the group with patterns and properties.'),
+      InventoryGroupSpecialSchema.description('Specify properties for special groups.'),
+    ])
   ).description(`
   The definition of all available groups and which hosts belong to them.
   `),

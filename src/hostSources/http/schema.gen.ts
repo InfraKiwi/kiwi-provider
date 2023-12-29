@@ -1,12 +1,18 @@
-import type { DataSourceHTTPRawInterface } from '../../dataSources/http/schema.gen';
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
+
+import type { DataSourceHTTPRawInterface } from '../../dataSources/http/schema.gen';
 
 // [block HostSourceHTTPInterface begin]
 export interface HostSourceHTTPInterface {
   /**
    * Any default values to use for both `list` and `load` calls.
    */
-  default?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../../dataSources/http/schema.gen.ts:false
+  default?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../../dataSources/http/schema.gen.ts","isRegistryExport":false}
 
   /**
    * The HTTP call to make when loading the list of available entries.
@@ -21,7 +27,8 @@ export interface HostSourceHTTPInterface {
     /**
      * The configuration of the list HTTP call.
      */
-    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../../dataSources/http/schema.gen.ts:false
+    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../../dataSources/http/schema.gen.ts","isRegistryExport":false}
+
   };
 
   /**
@@ -34,15 +41,19 @@ export interface HostSourceHTTPInterface {
      * The tag to use in the HTTP call, which will be replaced by the entry id
      * obtained in the `list` call.
      */
-    idTag?: '{{ id }}' | string;
+    idTag?:
+      | '{{ id }}'
+      | string;
 
     /**
      * The configuration of the load HTTP call.
      */
-    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:../../dataSources/http/schema.gen.ts:false
+    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../../dataSources/http/schema.gen.ts","isRegistryExport":false}
+
   };
 }
 // [block HostSourceHTTPInterface end]
+//meta:HostSourceHTTPInterface:[{"className":"MultiDataSourceHTTPListArgsInterface"},{"className":"HostSourceHTTPInterface","entryNames":["http"]}]
 
 export type HostSourceHTTPInterfaceConfigKey = 'http';
 export const HostSourceHTTPInterfaceConfigKeyFirst = 'http';

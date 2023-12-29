@@ -1,3 +1,13 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { glob, globSync } from 'glob';
 import path from 'node:path';
 import { convertFromDirectory } from 'joi-to-typescript';
@@ -11,20 +21,29 @@ import { ESLint } from 'eslint';
 import type Joi from 'joi';
 import { newDebug } from '../src/util/debug';
 import * as prettier from 'prettier';
-import { indentString } from '../src/util/indent';
-import {
-  getRegistryEntriesSchemaBaseName,
-  getTypeRefString,
-  registryExportsSchemaFileName,
-} from '../src/util/schemaGenUtils';
+import { deIndentString, indentString } from '../src/util/indent';
+import { getTypeRefString } from '../src/util/schemaGenUtils';
 
 const debug = newDebug(__filename);
 
-const generatedHeader = '// Generated with: yarn gen -> cmd/schemaGen.ts';
+const generatedHeader = `/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
+// Generated with: yarn gen -> cmd/schemaGen.ts`;
 
 const rootDir = path.resolve(__dirname, '..');
 const srcDir = path.resolve(rootDir, 'src');
 const docsNavBasePath = path.join(rootDir, 'hack', 'docs');
+
+/*
+ *These are interfaces for which the docs will always point to a specific docs
+ *page instead than embedding them
+ */
+const hardcodedInterfaceDocsPaths: Record<string, string> = {
+  TaskInterface: '/core/recipes#taskinterface',
+};
 
 // const prismaPathGlob = path.resolve(rootDir, 'prisma', 'generated', 'schemas/**/*schema.ts').replaceAll(path.sep, '/');
 // debug(`Looking for Prisma schemas in ${prismaPathGlob}`);
@@ -32,18 +51,18 @@ const docsNavBasePath = path.join(rootDir, 'hack', 'docs');
 
 const schemaFileCache: Record<string, string> = {};
 
-async function findSchemaExports(schemaFile: string) {
+async function findRegistryExports(schemaFile: string) {
   const imported = await import(schemaFile);
   const contents =
     schemaFile in schemaFileCache
       ? schemaFileCache[schemaFile]
       : await (async () => {
-          const c = await fsPromiseReadFile(schemaFile, 'utf-8');
-          schemaFileCache[schemaFile] = c;
-          return c;
-        })();
+        const c = await fsPromiseReadFile(schemaFile, 'utf-8');
+        schemaFileCache[schemaFile] = c;
+        return c;
+      })();
 
-  const schemaExports: Record<
+  const registryExports: Record<
     string,
     {
       schema: Joi.Schema;
@@ -54,7 +73,7 @@ async function findSchemaExports(schemaFile: string) {
 
   const returnValue = {
     imported,
-    schemaExports,
+    registryExports,
   };
 
   /*
@@ -62,7 +81,7 @@ async function findSchemaExports(schemaFile: string) {
    * export const DataSourceFileRawSchema = dataSourceRegistryEntryFactory.createJoiEntrySchema(
    */
   const createJoiEntrySchemaCalls = contents.match(
-    /^export const (\w+) = (\w+)(?:[\n\r ]*)?\.createJoiEntrySchema\(/gm,
+    /^export const (\w+) = (\w+)(?:[\n\r ]*)?\.createJoiEntrySchema\(/gm
   );
   if (createJoiEntrySchemaCalls) {
     for (const line of new Set(createJoiEntrySchemaCalls)) {
@@ -81,7 +100,7 @@ async function findSchemaExports(schemaFile: string) {
         throw new Error(`entryNames is null for schema ${schema}`);
       }
       if (entryNames) {
-        schemaExports[className] = {
+        registryExports[className] = {
           schema,
           entryNames,
           exportedKey,
@@ -103,7 +122,7 @@ async function genRegistriesEntries() {
   const pathGlob = path.resolve(srcDir, '**/registry.ts').replaceAll(path.sep, '/');
   const globRaw = await asyncFilter(
     await glob(pathGlob),
-    async (p) => await fileContains(p, `new RegistryEntryFactory(`, `new Registry(`),
+    async (p) => await fileContains(p, 'new RegistryEntryFactory(', 'new Registry(')
   );
   const globList = Array.from(new Set(globRaw.map((el) => el.substring(0, el.lastIndexOf(path.sep) + 1))));
 
@@ -156,7 +175,7 @@ async function genRegistriesEntries() {
     // Generate docs navs
     await generateDocsNav(
       folder,
-      subFoldersWithoutHidden.map((p) => p.name),
+      subFoldersWithoutHidden.map((p) => p.name)
     );
 
     const exportedSchemas: Record<
@@ -164,49 +183,51 @@ async function genRegistriesEntries() {
       string,
       {
         importPath: string;
-        schemaExport: string;
+        registryExport: string;
       }
     > = {};
 
     for (const subFolder of subFoldersWithoutHidden.map((p) => p.name)) {
       const schemaFile = path.join(folder, subFolder, 'schema.ts');
-      const { schemaExports } = await findSchemaExports(schemaFile);
-      for (const className of Object.keys(schemaExports)) {
-        const { entryNames, exportedKey } = schemaExports[className];
+      const { registryExports } = await findRegistryExports(schemaFile);
+      for (const className of Object.keys(registryExports)) {
+        const { entryNames, exportedKey } = registryExports[className];
         for (const entryName of entryNames) {
           exportedSchemas[entryName] = {
             importPath: `./${subFolder}/schema`,
-            schemaExport: exportedKey,
+            registryExport: exportedKey,
           };
         }
       }
     }
 
-    {
-      const fileName = path.join(folder, registryExportsSchemaFileName);
-      const entries = exportedSchemas;
-      const contents = `
-import Joi from 'joi';
-${Object.keys(entries)
-  .reduce((acc: string[], el) => {
-    acc.push(`import { ${entries[el].schemaExport} } from '${entries[el].importPath}';`);
-    return acc;
-  }, [])
-  .join('\n')}
-
-export const ${getRegistryEntriesSchemaBaseName(folder)}Schema = Joi.object({
-${Object.keys(entries)
-  .reduce((acc: string[], el) => {
-    acc.push(`  ${el}: ${entries[el].schemaExport},`);
-    return acc;
-  }, [])
-  .join('\n')}
-}).meta({ className: '${getRegistryEntriesSchemaBaseName(folder)}Interface' });
-`;
-
-      // NOTE: flush is not supported until node 21
-      await fsPromiseWriteFile(fileName, contents, { flush: true });
-    }
+    /*
+     *     {
+     *       const fileName = path.join(folder, registryExportsSchemaFileName);
+     *       const entries = exportedSchemas;
+     *       const contents = `
+     * import Joi from 'joi';
+     * ${Object.keys(entries)
+     *       .reduce((acc: string[], el) => {
+     *         acc.push(`import { ${entries[el].registryExport} } from '${entries[el].importPath}';`);
+     *         return acc;
+     *       }, [])
+     *       .join('\n')}
+     *
+     * export const ${getRegistryEntriesSchemaBaseName(folder)}Schema = Joi.object({
+     * ${Object.keys(entries)
+     *       .reduce((acc: string[], el) => {
+     *         acc.push(`  ${el}: ${entries[el].registryExport},`);
+     *         return acc;
+     *       }, [])
+     *       .join('\n')}
+     * }).meta({ className: '${getRegistryEntriesSchemaBaseName(folder)}Interface' });
+     * `;
+     *
+     *       // NOTE: flush is not supported until node 21
+     *       await fsPromiseWriteFile(fileName, contents, { flush: true });
+     *     }
+     */
   }
 
   for (const key in loadAllGroups) {
@@ -217,11 +238,11 @@ ${Object.keys(entries)
       '..',
       'src',
       'util',
-      `loadAllRegistryEntries${fileSuffix}.gen.ts`,
+      `loadAllRegistryEntries${fileSuffix}.gen.ts`
     );
     const loadAllCentralImports = loadAllGroups[key]
-      .map((p) => path.relative(path.dirname(loadAllCentralFile), p).replaceAll(path.sep, '/'))
-      .map((p) => `import '${p}';`);
+    .map((p) => path.relative(path.dirname(loadAllCentralFile), p).replaceAll(path.sep, '/'))
+    .map((p) => `import '${p}';`);
     await fsPromiseWriteFile(loadAllCentralFile, generatedHeader + '\n\n' + loadAllCentralImports.join('\n'));
   }
 }
@@ -232,7 +253,7 @@ const genSchemaFolders = async () => {
   debug(`Looking for schemas in ${pathGlob}`);
   const globRaw = await glob(pathGlob);
   const globList = Array.from(new Set(globRaw.map((el) => el.substring(0, el.lastIndexOf(path.sep) + 1))));
-  debug(`GlobList`, {
+  debug('GlobList', {
     globRaw,
     globList,
   });
@@ -248,9 +269,19 @@ const genSchemaFolders = async () => {
    */
 };
 
+function addImportLines(content: string, importLines: string[]) {
+  if (importLines.length > 0) {
+    const generatedHeaderIdx = content.indexOf(generatedHeader);
+    content = generatedHeaderIdx >= 0 ? content.substring(0, generatedHeaderIdx) + content.substring(generatedHeaderIdx + generatedHeader.length + 1) : '';
+    content = importLines.join('\n') + '\n' + content;
+    content = generatedHeader + '\n\n' + content;
+  }
+  return content;
+}
+
 // https://regex101.com/r/2eJ7A2/1
 const newIntfRegex = () =>
-  /((?:^\s+(?:\/\*\*|\*(?: [^\n]+)?|\*\/)$\n)+)?^(?: *)(?:\||.+?[:=]).* (\w+Interface)\b(.*)$/gm;
+  /((?:^\s+(?:\/\*\*|\*(?: [^\n]+)?|\*\/)$\n)+)?^(?: +)(?:\||.+?[:=]).* (\w+Interface)\b(.*)$/gm;
 
 async function fixGenImports() {
   const files = globSync(path.resolve(srcDir, '**/*schema.gen.ts').replaceAll(path.sep, '/'));
@@ -329,13 +360,11 @@ async function fixGenImports() {
         const relPath = path.relative(path.dirname(file), definitionPath).replaceAll(path.sep, '/');
         const importLine = `import { ${intfName} } from '${(relPath.startsWith('.') ? relPath : './' + relPath).replace(
           /\.ts$/,
-          '',
+          ''
         )}';`;
         importLinesSet.add(importLine);
       }
-      if (importLinesSet.size > 0) {
-        newContents = Array.from(importLinesSet).join('\n') + `\n` + newContents;
-      }
+      newContents = addImportLines(newContents, Array.from(importLinesSet));
     }
 
     fileCache[file] = newContents;
@@ -346,18 +375,20 @@ async function fixGenImports() {
     const contents = fileCache[file];
     let newContents = contents;
     const schemaFile = file.replace('.gen.ts', '.ts');
-    const { imported, schemaExports } = await findSchemaExports(schemaFile);
+    const { imported, registryExports } = await findRegistryExports(schemaFile);
 
     {
       // Find all schemas
       const schemas = Object.fromEntries(
         Object.entries(imported)
-          .filter(([k]) => k.endsWith('Schema'))
-          .map(([k, v]) => {
-            const vCast = v as Joi.Schema;
-            return [k, vCast];
-          }),
+        .filter(([k]) => k.endsWith('Schema'))
+        .map(([k, v]) => {
+          const vCast = v as Joi.Schema;
+          return [k, vCast];
+        })
       );
+
+      const importLinesSet = new Set<string>();
 
       for (const key in schemas) {
         const schema = schemas[key];
@@ -376,18 +407,20 @@ async function fixGenImports() {
             absolutePath = importPath;
           }
 
-          debug(`Found external import`, {
+          debug('Found external import', {
             name,
             path: absolutePath,
           });
           const importLine = `import { ${name} } from '${absolutePath}';`;
-          newContents = importLine + `\n` + newContents;
+          importLinesSet.add(importLine);
         }
       }
+
+      newContents = addImportLines(newContents, Array.from(importLinesSet));
     }
 
-    for (const className of Object.keys(schemaExports)) {
-      const { entryNames } = schemaExports[className];
+    for (const className of Object.keys(registryExports)) {
+      const { entryNames } = registryExports[className];
       newContents += `
 export type ${className + 'ConfigKey'} = ${entryNames.map((e) => JSON.stringify(e)).join(' | ')};
 export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
@@ -407,7 +440,7 @@ export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
        * newContents = await prettier.format(newContents, { filepath: file });
        */
 
-      let isFirstMainExport = true;
+      let isFirstRegistryExport = true;
       let intfMatch: RegExpMatchArray | null;
       const re = newIntfRegex();
       while ((intfMatch = re.exec(newContents)) != null) {
@@ -421,6 +454,7 @@ export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
         }
 
         const relPath = path.relative(path.dirname(file), definitionPath).replaceAll(path.sep, '/');
+        const isSameFile = path.resolve(path.dirname(file), relPath) == file;
 
         // Add a docs reference to the beginning of the field definition and a doc annotation on the type
         let indexSkew = 0;
@@ -430,13 +464,13 @@ export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
         const originalText = intfMatch[0];
         // Find if this type is one of the main exports of the destination (relPath)
         const schemaFile = path.resolve(path.dirname(file), relPath).replace('.gen.ts', '.ts');
-        const { schemaExports } = await findSchemaExports(schemaFile);
-        const isMainExport = intfName in schemaExports;
+        const { registryExports } = await findRegistryExports(schemaFile);
+        const isRegistryExport = intfName in registryExports;
 
         let newText = originalText;
 
-        if (isMainExport && isFirstMainExport) {
-          isFirstMainExport = false;
+        if (isRegistryExport && isFirstRegistryExport) {
+          isFirstRegistryExport = false;
           // Mark the beginning of modules section
           newText =
             indentString(
@@ -448,21 +482,28 @@ export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
               // used at the same time. 
               //
               `,
-              2,
+              2
             ) +
             '\n' +
             newText;
         }
 
-        newText +=
-          ' ' +
-          getTypeRefString(intfName, relPath, isMainExport) +
+        newText += ' ';
 
-          /*
-           * NOTE: this newline is important because it introduces a break between the
-           * typeRef comment and any following block comment. DO NOT REMOVe
-           */
-          '\n';
+        if (!isSameFile && intfName in hardcodedInterfaceDocsPaths) {
+          newText += `//link#See the definition of \`${intfName}\`#${hardcodedInterfaceDocsPaths[intfName]}`;
+        } else {
+          newText += getTypeRefString(intfName, {
+            relPath: isSameFile ? 'self' : relPath,
+            isRegistryExport,
+          });
+        }
+
+        /*
+         * NOTE: this newline is important because it introduces a break between the
+         * typeRef comment and any following block comment. DO NOT REMOVE
+         */
+        newText += '\n';
 
         indexSkew += newText.length - originalText.length;
 
@@ -545,7 +586,7 @@ function findExternalImportsInJoiDescription(description: Joi.Description) {
 
   const externalImport: JoiMetaExternalImport = description.metas?.find((m) => joiMetaExternalImportKey in m)?.[
     joiMetaExternalImportKey
-  ];
+    ];
   if (externalImport) {
     importedItems[externalImport.name] = externalImport.importPath;
   }
@@ -579,7 +620,13 @@ async function genSchemaFolder(folderPath: string) {
     fileHeader: generatedHeader,
     sortPropertiesByName: false,
     tsContentHeader: (t) => `// [block ${t.interfaceOrTypeName} begin]`,
-    tsContentFooter: (t) => `// [block ${t.interfaceOrTypeName} end]`,
+    tsContentFooter: (t) => {
+      const metaJSON = JSON.stringify(t.schema.describe().metas);
+      return deIndentString(`
+      // [block ${t.interfaceOrTypeName} end]
+      //meta:${t.interfaceOrTypeName}:${metaJSON}
+      `.trim());
+    },
     unionNewLine: true,
     tupleNewLine: true,
   });
@@ -645,7 +692,7 @@ docs_dir: ../../src/${registryName}
 nav:
   ### REPLACE NAV BEGIN
   ### REPLACE NAV END    
-`,
+`
     );
   }
 
@@ -655,7 +702,7 @@ nav:
   const match = /^(\s+)### REPLACE NAV BEGIN\n(.*)### REPLACE NAV END/ms.exec(contents);
   if (match) {
     const [fullMatch, indent] = match;
-    debug(`Found nav replace match`, {
+    debug('Found nav replace match', {
       ymlFile,
       fullMatch,
     });
@@ -664,7 +711,7 @@ nav:
     contents = contents.replace(fullMatch, lines.map((line) => `${indent}${line}`).join('\n'));
   }
   if (originalContent != contents) {
-    debug(`Editing docs nav file`, { ymlFile });
+    debug('Editing docs nav file', { ymlFile });
     await fsPromiseWriteFile(ymlFile, contents);
   }
 }
@@ -686,7 +733,7 @@ async function genSystemInformationSchema(fnDescriptions?: Record<string, string
     let descStr = '';
     if (functionName in (fnDescriptions ?? {})) {
       const desc = fnDescriptions![functionName];
-      descStr = `.description(\`${desc.replaceAll(`\``, `\\\``)}\`)`;
+      descStr = `.description(\`${desc.replaceAll('`', '\\`')}\`)`;
     }
     if (argsString == null) {
       return `${functionName}: Joi.boolean()${descStr}`;
@@ -791,63 +838,63 @@ async function genSystemInformationReadme() {
 
   const blockBeginIdx = siReadmeContents.indexOf(blockBegin);
   if (blockBeginIdx == -1) {
-    throw new Error(`systeminformation block begin not found!`);
+    throw new Error('systeminformation block begin not found!');
   }
   const blockEndIdx = siReadmeContents.indexOf(blockEnd);
   if (blockEndIdx == -1) {
-    throw new Error(`systeminformation block end not found!`);
+    throw new Error('systeminformation block end not found!');
   }
 
   let headingCounter = 1;
   const fnDescriptions: Record<string, string> = {};
   const extracted = siReadmeContents
-    .substring(blockBeginIdx, blockEndIdx)
-    // Replace headings with proper count
-    .replaceAll(/^#### \d+\. (.+)$/gm, (m, title) => `#### ${headingCounter++}. ${title}`)
+  .substring(blockBeginIdx, blockEndIdx)
+  // Replace headings with proper count
+  .replaceAll(/^#### \d+\. (.+)$/gm, (m, title) => `#### ${headingCounter++}. ${title}`)
 
-    /*
-     * Who uses [][] as link in md D:
-     * https://github.github.com/gfm/#links
-     */
-    .replaceAll(/\[([^\]]+)]\[([^\]]+)]/g, '[$1]($2)')
+  /*
+   * Who uses [][] as link in md D:
+   * https://github.github.com/gfm/#links
+   */
+  .replaceAll(/\[([^\]]+)]\[([^\]]+)]/g, '[$1]($2)')
 
-    /*
-     * Fix all table's entries
-     * | si.system(cb)    | {...}         | X     | X   | X   | X   |     | hardware information             |
-     */
-    .replaceAll(
-      /^\| (?:si\.((\w+)\([^)]*\))|\s+)[^|]+\| (.+?)\s+\|(.*)\|([^|]*)\|$/gm,
-      (
-        str,
-        method: string | undefined,
-        methodName: string | undefined,
-        result: string,
-        rest: string,
-        description: string,
-      ) => {
-        const methodFixed = method ? '`' + method.replace(/\((.+), ?cb\)|\(cb\)$/, '($1)') + '`' : '';
-        description = description.trim();
-        if (methodName && description != '') {
-          fnDescriptions[methodName] = description.replaceAll(/<br[^>]*>/g, '\n');
-        }
-        return `| ${methodFixed} | \`${result}\` | ${rest} | ${description} |`;
-      },
-    )
+  /*
+   * Fix all table's entries
+   * | si.system(cb)    | {...}         | X     | X   | X   | X   |     | hardware information             |
+   */
+  .replaceAll(
+    /^\| (?:si\.((\w+)\([^)]*\))|\s+)[^|]+\| (.+?)\s+\|(.*)\|([^|]*)\|$/gm,
+    (
+      str,
+      method: string | undefined,
+      methodName: string | undefined,
+      result: string,
+      rest: string,
+      description: string
+    ) => {
+      const methodFixed = method ? '`' + method.replace(/\((.+), ?cb\)|\(cb\)$/, '($1)') + '`' : '';
+      description = description.trim();
+      if (methodName && description != '') {
+        fnDescriptions[methodName] = description.replaceAll(/<br[^>]*>/g, '\n');
+      }
+      return `| ${methodFixed} | \`${result}\` | ${rest} | ${description} |`;
+    }
+  )
 
-    /*
-     * Strip out non-supported columns
-     * | Function         | Result object | Linux | BSD | Mac | Win | Sun | Comments                         |
-     */
-    .replaceAll(/^\|(.+)\|$/gm, (match, contents: string) => {
-      return (
-        '|' +
-        contents
-          .split('|')
-          .filter((val, idx) => ![3, 6].includes(idx))
-          .join('|') +
-          '|'
-      );
-    });
+  /*
+   * Strip out non-supported columns
+   * | Function         | Result object | Linux | BSD | Mac | Win | Sun | Comments                         |
+   */
+  .replaceAll(/^\|(.+)\|$/gm, (match, contents: string) => {
+    return (
+      '|' +
+      contents
+      .split('|')
+      .filter((val, idx) => ![3, 6].includes(idx))
+      .join('|') +
+      '|'
+    );
+  });
 
   contents = contents.replace('REPLACE_README_HERE', extracted);
 

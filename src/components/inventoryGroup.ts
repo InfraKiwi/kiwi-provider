@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { InventoryEntry } from './inventoryEntry';
 
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
@@ -11,7 +16,7 @@ export class InventoryGroup extends InventoryEntry {
   readonly pattern: string[];
 
   constructor(id: string, config: InventoryGroupInterface) {
-    config = Joi.attempt(config, InventoryGroupSchema, `Error validating inventory group config: `);
+    config = Joi.attempt(config, InventoryGroupSchema, 'Error validating inventory group config: ');
     super(id, joiKeepOnlyKeysInJoiSchema(config, InventoryEntrySchema));
     this.pattern = config.pattern ? (Array.isArray(config.pattern) ? config.pattern : [config.pattern]) : [];
   }

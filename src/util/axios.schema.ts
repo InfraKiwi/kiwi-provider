@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { joiObjectWithPattern, joiValidateValidRegex } from './joi';
 
@@ -9,8 +14,8 @@ const validHTTPMethods = ['get', 'delete', 'head', 'options', 'post', 'put', 'pa
  */
 
 const AxiosBasicAuthenticationSchema = Joi.object({
-  username: Joi.string().required().description(`The username to use for the basic authentication request`),
-  password: Joi.string().required().description(`The password to use for the basic authentication request`),
+  username: Joi.string().required().description('The username to use for the basic authentication request'),
+  password: Joi.string().required().description('The password to use for the basic authentication request'),
 });
 
 const AxiosProxyConfigSchema = Joi.object({
@@ -21,9 +26,9 @@ const AxiosProxyConfigSchema = Joi.object({
 });
 
 const AxiosLoggingEntrySchema = Joi.object({
-  params: Joi.boolean().description(`If \`true\` log the params passed in the HTTP call`),
-  data: Joi.boolean().description(`If \`true\` log the data/body passed in the HTTP call`),
-  headers: Joi.boolean().description(`If \`true\` log the headers passed in the HTTP call`),
+  params: Joi.boolean().description('If `true` log the params passed in the HTTP call'),
+  data: Joi.boolean().description('If `true` log the data/body passed in the HTTP call'),
+  headers: Joi.boolean().description('If `true` log the headers passed in the HTTP call'),
 });
 
 const AxiosLoggingSchema = Joi.object({
@@ -34,13 +39,13 @@ const AxiosLoggingSchema = Joi.object({
 });
 
 export const AxiosRequestSchemaObject = {
-  url: Joi.string().description(`The URL that will be used for the request`),
+  url: Joi.string().description('The URL that will be used for the request'),
 
   method: Joi.string()
     .valid(...validHTTPMethods)
     .default('get')
     .optional()
-    .description(`The request method to be used when making the request`),
+    .description('The request method to be used when making the request'),
 
   baseURL: Joi.string().description(`
 \`baseURL\` will be prepended to \`url\` unless \`url\` is absolute.
@@ -48,7 +53,7 @@ It can be convenient to set \`baseURL\` for an instance of axios to pass
 relative URLs to methods of that instance.
 `),
 
-  headers: joiObjectWithPattern(Joi.any()).description(`Custom headers to be sent`),
+  headers: joiObjectWithPattern(Joi.any()).description('Custom headers to be sent'),
 
   params: joiObjectWithPattern(Joi.any()).description(`
 The URL parameters to be sent with the request.
@@ -129,5 +134,5 @@ If the proxy server uses HTTPS, then you must set the protocol to \`https\`.
 `),
 
   // --- Logging
-  log: AxiosLoggingSchema.description(`The logging configuration for the HTTP call`),
+  log: AxiosLoggingSchema.description('The logging configuration for the HTTP call'),
 };

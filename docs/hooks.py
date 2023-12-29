@@ -1,5 +1,8 @@
+import json
 import os.path
 import logging, re
+from pathlib import Path
+
 from mkdocs.plugins import event_priority
 
 # try:
@@ -28,53 +31,115 @@ def load_code_block(visited_types, is_root, base_path, type_name, code_path_expl
     if m_code is None:
         log.error(f'No code block found for {type_name} in {code_path}')
         return '!!! failure' + '\n\n' + f'    No code block found for {type_name} in {code_path}'
+    regex_type_meta = re.compile(r'^//meta:' + re.escape(type_name) + r':(.+)$', re.MULTILINE)
+    m_content_meta = re.search(regex_type_meta, content)
+    m_meta = []
+    if m_content_meta is not None:
+        m_meta = json.loads(m_content_meta.group(1))
+        # Reverse so that metas priority is correct
+        m_meta.reverse()
+
+    def find_meta(key):
+        for meta in m_meta:
+            if key in meta:
+                return meta[key]
+        return None
 
     code_to_embed = m_code.group(1).strip()
 
     # Extract all type references from the code to embed, and also load them
+    annotations_list = []
+
+    # Loads first the self ones, which are types in the same schema gen
+    types_to_load_self = []
     types_to_load = []
 
     def types_to_load_lambda(match_type_ref):
-        m_type_name = match_type_ref.group(1)
-        m_import_path = match_type_ref.group(2)
-        m_is_main_export = match_type_ref.group(3) == 'true'
-        # If already found, skip
-        m_existing_el = next((x for x in types_to_load if x[0] == m_type_name), None)
-        if m_existing_el is not None:
-            return f' // ({m_existing_el[3]})!'
-        m_annotation_idx = runtime_vars['annotation_counter']
-        runtime_vars['annotation_counter'] = m_annotation_idx + 1
-        types_to_load.append([m_type_name, m_import_path, m_is_main_export, m_annotation_idx])
-        return f' // ({m_annotation_idx})!'
+        m_comment_prefix = match_type_ref.group(1)
+        m_type_name = match_type_ref.group(2)
+        m_type_meta = json.loads(match_type_ref.group(3))
+
+        import_path = m_type_meta['relPath']
+        is_registry_export = m_type_meta.get('isRegistryExport', None) is True
+
+        is_self = import_path == 'self'
+        if is_self:
+            import_path = code_path
+        annotation_idx = runtime_vars['annotation_counter']
+        runtime_vars['annotation_counter'] = annotation_idx + 1
+        if is_self:
+            types_to_load_self.append([m_type_name, import_path, is_registry_export, annotation_idx])
+        else:
+            types_to_load.append([m_type_name, import_path, is_registry_export, annotation_idx])
+        if m_comment_prefix == '##':
+            return f'({annotation_idx})'
+        return f' // ({annotation_idx})!'
 
     # Strip away all typeRef comments, and gather info on other types to load
     code_to_embed = re.sub(
         re.compile(
-            r'\s*//\s*typeRef:([^:]+):(.+):(true|false)$', re.MULTILINE
+            r'\s*(//|##)\s*typeRef:([^:]+):(.+)$', re.MULTILINE
         ),
         types_to_load_lambda,
         code_to_embed,
     )
 
-    flags = {
-        'disable_shortie': False
-    }
+    docs_to_append = []
 
-    # Process all examples used as flags
-    def process_examples_as_flags(match):
-        flag_name = match.group(1)
-        flag_value = match.group(2) == 'true'
-        if flag_name == 'disableShortie' and flag_value:
-            flags['disable_shortie'] = True
-        return ''
+    for loop_type_name, loop_import_path, loop_is_registry_export, loop_annotation_idx in [*types_to_load_self,
+                                                                                       *types_to_load]:
+        # typeRefs are defined from the current code page, so from the resolved code_path dir
+        code_path_dir = os.path.dirname(code_path)
+        loop_import_path_resolved = os.path.join(code_path_dir, loop_import_path)
+        loop_import_path_dir = os.path.dirname(loop_import_path_resolved)
+        loop_import_path_file = os.path.basename(loop_import_path)
 
+        # Check if the import path is the main export of a registry entry, in which case link
+        # to it but do not import the whole chain
+        if loop_is_registry_export:
+            loop_registry_folder = os.path.basename(Path(loop_import_path_dir, '..').resolve())
+            loop_registry_entry = os.path.basename(loop_import_path_dir)
+            href = f'/{loop_registry_folder}/{loop_registry_entry}#{loop_type_name.lower()}'
+            annotations_list.append(
+                f'{loop_annotation_idx}. [See the definition of `{loop_type_name}`]({href})')
+            continue
+
+        log.info(f'importing {loop_type_name} from {loop_import_path_dir} with file {loop_import_path_file}')
+        # log.info(f'Context: code_path_dir={code_path_dir},loop_import_path={loop_import_path}')
+        annotations_list.append(
+            f'{loop_annotation_idx}. [See the definition of `{loop_type_name}`](#{loop_type_name.lower()})')
+
+        # Check if the type has been visited in a parent or sibling loop
+        loop_type_already_loaded = next((x for x in visited_types if x == loop_type_name), None)
+        if loop_type_already_loaded is None:
+            visited_types.append(loop_type_name)
+            docs_to_append.append(
+                load_code_block(visited_types, False, loop_import_path_dir, loop_type_name, loop_import_path_file))
+
+    def links_lambda(match):
+        m_comment_prefix = match.group(1)
+        m_link_text = match.group(2)
+        m_url = match.group(3)
+        annotation_idx = runtime_vars['annotation_counter']
+        runtime_vars['annotation_counter'] = annotation_idx + 1
+        annotations_list.append(
+            f'{annotation_idx}. [{m_link_text}]({m_url})')
+        if m_comment_prefix == '##':
+            return f'({annotation_idx})'
+        return f' // ({annotation_idx})!'
+
+    # Replace all hard links
     code_to_embed = re.sub(
         re.compile(
-            r' \* @example //(\w+):(true|false)$\n', re.MULTILINE
+            r'\s*(//|##)\s*link#([^#]+)#(.*)$', re.MULTILINE
         ),
-        process_examples_as_flags,
+        links_lambda,
         code_to_embed,
     )
+
+    flags = {
+        'disable_shortie': find_meta('disableShortie') is True
+    }
 
     # Fix all trailing JsDoc empty lines
     code_to_embed = re.sub(
@@ -84,33 +149,6 @@ def load_code_block(visited_types, is_root, base_path, type_name, code_path_expl
         ' */',
         code_to_embed,
     )
-
-    docs_to_append = []
-    annotations_list = []
-
-    for loop_type_name, loop_import_path, loop_is_main_export, annotation_idx in types_to_load:
-        # typeRefs are defined from the current code page, so from the resolved code_path dir
-        code_path_dir = os.path.dirname(code_path)
-        loop_import_path_dir = os.path.dirname(os.path.join(code_path_dir, loop_import_path))
-        loop_import_path_file = os.path.basename(loop_import_path)
-        # Check if the import path is the main export of a registry entry, in which case link
-        # to it but do not import the whole chain
-        if loop_is_main_export:
-            loop_link_to = os.path.dirname(loop_import_path)
-            annotations_list.append(
-                f'{annotation_idx}. [See definition of `{loop_type_name}`](/{loop_link_to})')
-            continue
-
-        log.info(f'importing {loop_type_name} from {loop_import_path_dir} with file {loop_import_path_file}')
-        # log.info(f'Context: code_path_dir={code_path_dir},loop_import_path={loop_import_path}')
-        annotations_list.append(f'{annotation_idx}. [See definition of `{loop_type_name}`](#{loop_type_name.lower()})')
-
-        # Check if the type has been visited in a parent or sibling loop
-        loop_type_already_loaded = next((x for x in visited_types if x == loop_type_name), None)
-        if loop_type_already_loaded is None:
-            visited_types.append(loop_type_name)
-            docs_to_append.append(
-                load_code_block(visited_types, False, loop_import_path_dir, loop_type_name, loop_import_path_file))
 
     docs_blocks = []
 

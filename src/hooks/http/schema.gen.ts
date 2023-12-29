@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 // [block HookHTTPInterface begin]
@@ -13,7 +18,10 @@ export interface HookHTTPInterface {
   /**
    * Indicates the type of data that the server will respond with.
    */
-  responseType?: 'json' | 'text';
+  responseType?:
+    | 'json'
+
+    | 'text';
 
   /**
    * The URL that will be used for the request
@@ -23,7 +31,18 @@ export interface HookHTTPInterface {
   /**
    * The request method to be used when making the request
    */
-  method?: 'get' | 'delete' | 'head' | 'options' | 'post' | 'put' | 'patch' | 'purge' | 'link' | 'unlink';
+  method?:
+    | 'get'
+
+    | 'delete'
+    | 'head'
+    | 'options'
+    | 'post'
+    | 'put'
+    | 'patch'
+    | 'purge'
+    | 'link'
+    | 'unlink';
 
   /**
    * `baseURL` will be prepended to `url` unless `url` is absolute.
@@ -88,7 +107,9 @@ export interface HookHTTPInterface {
    * Indicates the encoding to use for decoding responses.
    * Default: `utf8`.
    */
-  responseEncoding?: 'utf8' | string;
+  responseEncoding?:
+    | 'utf8'
+    | string;
 
   /**
    * Defines the max size of the http response content in bytes allowed.
@@ -104,14 +125,18 @@ export interface HookHTTPInterface {
    * Defines a list of status codes that will cause the request to be marked as
    * successful, or in alternative a RegExp to perform the same validation.
    */
-  validStatus?: number[] | string;
+  validStatus?:
+    | number[]
+    | string;
 
   /**
    * Defines the maximum number of redirects to follow.
    * If set to 0, no redirects will be followed.
    * Default: `5`.
    */
-  maxRedirects?: 5 | number;
+  maxRedirects?:
+    | 5
+    | number;
 
   /**
    * Defines a UNIX Socket to be used.
@@ -153,7 +178,10 @@ export interface HookHTTPInterface {
          */
         password: string;
       };
-      protocol?: 'http' | 'https';
+      protocol?:
+        | 'http'
+
+        | 'https';
     };
 
   /**
@@ -227,6 +255,7 @@ export interface HookHTTPInterface {
   };
 }
 // [block HookHTTPInterface end]
+//meta:HookHTTPInterface:[{"className":"DataSourceHTTPRawInterface"},{"className":"HookHTTPInterface","entryNames":["http"]}]
 
 export type HookHTTPInterfaceConfigKey = 'http';
 export const HookHTTPInterfaceConfigKeyFirst = 'http';

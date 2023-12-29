@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunContext } from '../../util/runContext';
 import { ModuleRecipeSchema } from './schema';
 import type { ModuleRecipeFullInterface, ModuleRecipeInterface } from './schema.gen';
@@ -11,7 +16,7 @@ import { getErrorPrintfClass } from '../../util/error';
 
 export const ModuleRecipeErrorRecipeSourcesNotDefined = getErrorPrintfClass(
   'ModuleRecipeErrorRecipeSourcesNotDefined',
-  'No recipe sources defined',
+  'No recipe sources defined'
 );
 
 export class ModuleRecipe extends AbstractModuleBase<ModuleRecipeInterface, VarsInterface> {

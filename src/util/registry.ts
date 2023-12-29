@@ -1,9 +1,14 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { toPascalCase } from 'js-convert-case';
 import { shortieToArray, shortieToObject } from './shortie';
 import { joiSchemaAcceptsString } from './joi';
 
-export const joiExampleDisableShortie = '//disableShortie:true';
+export const joiMetaDisableShortieKey = 'disableShortie';
 
 export abstract class AbstractRegistryEntry<ConfigType> {
   readonly config: ConfigType;
@@ -48,11 +53,11 @@ export abstract class AbstractRegistryEntryWrappedConfig<
   protected constructor(
     registry: Registry,
     wrapperSchema: Joi.ObjectSchema,
-    config: WrapperInterfaceWithConfigKey<WrapperConfigType, ConfigType, ConfigKey> | string,
+    config: WrapperInterfaceWithConfigKey<WrapperConfigType, ConfigType, ConfigKey> | string
   ) {
     if (typeof config == 'string') {
       if (config.length && config.startsWith('[')) {
-        throw new Error(`Invalid shortie config for RecipeSourceWrapperInterface`);
+        throw new Error('Invalid shortie config for RecipeSourceWrapperInterface');
       } else {
         config = shortieToObject(config) as WrapperInterfaceWithConfigKey<WrapperConfigType, ConfigType, ConfigKey>;
       }
@@ -75,7 +80,7 @@ export abstract class AbstractRegistryEntryWrappedConfig<
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RegistryEntryClazz<ConfigType, T extends typeof AbstractRegistryEntry<ConfigType>> = new (
-  config: ConfigType,
+  config: ConfigType
 ) => InstanceType<T>;
 
 export interface RegistryEntry {
@@ -157,7 +162,7 @@ export class Registry {
   findRegistryEntryFromIndexedConfig(
     config: RegistryEntryGenericConfig,
     baseSchema: Joi.ObjectSchema,
-    label?: string,
+    label?: string
   ): RegistryEntry {
     label ??= this.#entryLabel;
     const describe = baseSchema.describe();
@@ -176,7 +181,7 @@ export class Registry {
       throw new Error(
         `Only one ${label} key can be defined, found ${
           remainingSchemaKeysArray.length
-        }: ${remainingSchemaKeysArray.join(', ')}`,
+        }: ${remainingSchemaKeysArray.join(', ')}`
       );
     }
     const moduleKey = remainingSchemaKeysArray[0];
@@ -187,7 +192,7 @@ export class Registry {
   getRegistryEntryInstanceFromIndexedConfig<ReturnType extends InstanceType<typeof AbstractRegistryEntry>>(
     config: RegistryEntryGenericConfig,
     outerSchema: Joi.ObjectSchema,
-    label?: string,
+    label?: string
   ): ReturnType {
     const registryEntry = this.findRegistryEntryFromIndexedConfig(config, outerSchema, label);
 
@@ -200,7 +205,7 @@ export class Registry {
   getRegistryEntryInstanceFromWrappedIndexedConfig<ReturnType extends InstanceType<typeof AbstractRegistryEntry>>(
     config: RegistryEntryGenericConfig,
     baseSchema: Joi.ObjectSchema,
-    label?: string,
+    label?: string
   ): ReturnType {
     const registryEntry = this.findRegistryEntryFromIndexedConfig(config, baseSchema, label);
 
@@ -260,7 +265,7 @@ export class RegistryEntryFactory {
     });
     const disableShortie = joiSchemaAcceptsString(schema);
     if (disableShortie) {
-      schema = schema.example(joiExampleDisableShortie);
+      schema = schema.meta({ [joiMetaDisableShortieKey]: true });
     }
     return schema;
   }
@@ -268,11 +273,11 @@ export class RegistryEntryFactory {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   register<EntryClzType extends RegistryEntryClazz<any, typeof AbstractRegistryEntry<any>>>(
     schema: Joi.Schema,
-    clazz: EntryClzType,
+    clazz: EntryClzType
   ) {
     const entryNames = registryGetEntryNamesFromJoiSchema(schema);
     if (entryNames == null) {
-      throw new Error(`Error registering entry, entryNames not found in Schema meta`);
+      throw new Error('Error registering entry, entryNames not found in Schema meta');
     }
 
     for (const entryName of entryNames) {

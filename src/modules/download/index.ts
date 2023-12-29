@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunContext } from '../../util/runContext';
 import { ModuleDownloadSchema } from './schema';
 import { moduleRegistryEntryFactory } from '../registry';
@@ -47,7 +52,7 @@ export class ModuleDownload extends AbstractModuleBase<ModuleDownloadInterface, 
       if (await fsPromiseExists(dest)) {
         if (!(await fsPromiseIsDir(dest))) {
           throw new Error(
-            `Invalid download destination provided. When the \`extract\` options is enabled, the destination path must be a directory.`,
+            'Invalid download destination provided. When the `extract` options is enabled, the destination path must be a directory.'
           );
         }
       } else {
@@ -59,7 +64,7 @@ export class ModuleDownload extends AbstractModuleBase<ModuleDownloadInterface, 
       });
     } else if (await fsPromiseIsDir(dest)) {
       // If the destination exists, and it is a directory, bad, we need a filename
-      throw new Error(`Invalid download destination provided. The provided path is a directory.`);
+      throw new Error('Invalid download destination provided. The provided path is a directory.');
     } else {
       downloadPath = dest;
     }
@@ -80,7 +85,7 @@ export class ModuleDownload extends AbstractModuleBase<ModuleDownloadInterface, 
         await unarchiveFile(downloadPath, dest, UnarchiveArchiveType[extract]);
       } finally {
         await fsPromiseRm(downloadPath).catch((err) =>
-          context.logger.error(`Failed to delete temporary file`, { err }),);
+          context.logger.error('Failed to delete temporary file', { err }));
       }
     }
 

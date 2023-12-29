@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import util from 'node:util';
 
 interface ErrorPrintfClass {
@@ -37,7 +42,7 @@ export function getErrorPrintfClass(name: string, message: string): ErrorPrintfC
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function instanceOfNodeError<T extends new (...args: any) => Error>(
   value: Error,
-  errorType: T,
+  errorType: T
 ): value is InstanceType<T> & NodeJS.ErrnoException {
   return value instanceof errorType;
 }

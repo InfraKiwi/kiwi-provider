@@ -1,5 +1,11 @@
-import type { VarsInterface } from '../components/varsContainer.schema.gen';
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 // Generated with: yarn gen -> cmd/schemaGen.ts
+
+import type { VarsInterface } from '../components/varsContainer.schema.gen';
 
 // [block ModuleRunResultInterface begin]
 export interface ModuleRunResultInterface {
@@ -21,7 +27,7 @@ export interface ModuleRunResultInterface {
    * will be accessible, depending on the task configuration, in the outer
    * context.
    */
-  vars?: VarsInterface; //typeRef:VarsInterface:../components/varsContainer.schema.gen.ts:false
+  vars?: VarsInterface; //typeRef:VarsInterface:{"relPath":"../components/varsContainer.schema.gen.ts","isRegistryExport":false}
 
   /**
    * When a module sets the `changed` variable to `true`, the task is
@@ -30,3 +36,4 @@ export interface ModuleRunResultInterface {
   changed?: boolean;
 }
 // [block ModuleRunResultInterface end]
+//meta:ModuleRunResultInterface:[{"className":"ModuleRunResultInterface"}]

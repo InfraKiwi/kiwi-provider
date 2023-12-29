@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { describe, expect, test } from '@jest/globals';
 import { Inventory } from './inventory';
 import type { HostSourceRawInterface } from '../hostSources/raw/schema.gen';
@@ -39,7 +44,7 @@ const sourceListTest = new RecipeSourceList(context, [{ dir: { path: testDir } }
 
 describe('recipe', () => {
   test('recipe sources chain', async () => {
-    const rsl = new RecipeSourceList(context, [{ dir: { path: path.join(testDir, 'recipeSourceChainTest', 'source1') } },]);
+    const rsl = new RecipeSourceList(context, [{ dir: { path: path.join(testDir, 'recipeSourceChainTest', 'source1') } }]);
     const recipe = await rsl.findAndLoadRecipe(context, 'recipe1', {});
     await testRecipe(context, recipe);
   });
@@ -75,7 +80,7 @@ describe('recipe', () => {
       const recipe = await sourceListTest.findAndLoadRecipe(context, 'mocks', {});
       await testRecipe(context, recipe);
     },
-    testTimeoutLong,
+    testTimeoutLong
   );
 });
 
@@ -124,7 +129,7 @@ describe('recipe aggregateHostVars', () => {
         ['test-4.hello.io']: { varRecipeHost4: varCounter++ },
       },
     },
-    { fileName: '/myfakerecipe.yaml' },
+    { fileName: '/myfakerecipe.yaml' }
   );
 
   const tests: AggregateHostVarsTest[] = [

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { afterAll, describe, test } from '@jest/globals';
 import type { RunnerDocker } from './index';
 import type { ContextLogger } from '../../util/context';
@@ -43,6 +48,6 @@ describe('docker runner', () => {
       expect(testResult.tests['my_test'].processedTasksCount).toEqual(1);
       expect(testResult.tests['my_test'].totalTasksCount).toEqual(1);
     },
-    testTimeoutLong,
+    testTimeoutLong
   );
 });

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { IfTemplate } from './tpl';
 import semver from 'semver/preload';
@@ -58,7 +63,7 @@ export function joiMetaExternalImport(i: JoiMetaExternalImport) {
 export function joiObjectAddPattern(
   schema: Joi.ObjectSchema,
   value: Joi.Schema,
-  keyPattern: RegExp | Joi.Schema = Joi.string(),
+  keyPattern: RegExp | Joi.Schema = Joi.string()
 ): Joi.ObjectSchema {
   return (
     schema
@@ -71,16 +76,16 @@ export function joiObjectAddPattern(
 export function joiObjectAddRegistrySchemaObject(
   obj: Joi.ObjectSchema,
   registrySchema: object,
-  unknownDescription: string,
+  unknownDescription: string
 ): Joi.ObjectSchema {
   return joiObjectAddPattern(obj.append(registrySchema), Joi.any().description(unknownDescription)).meta(
-    joiMetaRegistrySchemaObject(registrySchema),
+    joiMetaRegistrySchemaObject(registrySchema)
   );
 }
 
 export function joiObjectWithPattern(
   value: Joi.Schema,
-  keyPattern: RegExp | Joi.Schema = Joi.string(),
+  keyPattern: RegExp | Joi.Schema = Joi.string()
 ): Joi.ObjectSchema {
   return joiObjectAddPattern(Joi.object(), value, keyPattern);
 }
@@ -98,7 +103,7 @@ export function joiObjectFromInstanceOf(constructorName: string, importPath: str
       joiMetaExternalImport({
         importPath,
         name: constructorName,
-      }),
+      })
     )
     .meta(joiMetaClassName(constructorName));
 }
@@ -133,7 +138,7 @@ export function getJoiValidateInstanceOfConstructorName(constructorName: string)
 
 export function joiValidateValidJoiSchema(
   val: unknown,
-  helpers: Joi.CustomHelpers<unknown>,
+  helpers: Joi.CustomHelpers<unknown>
 ): Joi.ErrorReport | Joi.Schema {
   if (!Joi.isSchema(val)) {
     return joiCustomErrorMessage(helpers, 'The value must be a valid Joi schema');
@@ -175,7 +180,7 @@ export function joiValidateShortieObject(val: string, helpers: Joi.CustomHelpers
 
 export function joiValidateSyncFSExists(
   val: string | undefined,
-  helpers: Joi.CustomHelpers<string>,
+  helpers: Joi.CustomHelpers<string>
 ): Joi.ErrorReport | string | undefined {
   // Make sure this function is always ever only called from a cli script main entrypoint
   {
@@ -201,7 +206,7 @@ export function joiValidateSyncFSExists(
       firstFound = false;
     }
     if (!firstFound) {
-      throw new Error(`joiValidateSyncFSExists invoked not from main/Joi.attempt function`);
+      throw new Error('joiValidateSyncFSExists invoked not from main/Joi.attempt function');
     }
   }
 
@@ -229,7 +234,7 @@ export function joiObjectSchemaKeys(schema: Joi.ObjectSchema) {
 export function joiKeepOnlyKeysInJoiSchema<T>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   val: any,
-  joiObject: Joi.ObjectSchema,
+  joiObject: Joi.ObjectSchema
 ): T {
   const keys = joiObjectSchemaKeys(joiObject);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -247,7 +252,7 @@ export function joiKeepOnlyKeysNotInJoiObjectDiff(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   val: any,
   joiObject: Joi.ObjectSchema,
-  joiObjectExtended: Joi.ObjectSchema,
+  joiObjectExtended: Joi.ObjectSchema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
   const keys = new Set(joiObjectSchemaKeys(joiObject));
@@ -276,7 +281,7 @@ export function getJoiEnumValues<TEnumValue extends string | number>(e: { [key i
       ...Object.values(e).filter((el) => typeof el == 'string'),
       ...Object.values(e)
         .filter((el) => typeof el == 'number')
-        .map((el) => (el as number).toString(10)),
+        .map((el) => (el as number).toString(10))
     ),
   ]);
 }

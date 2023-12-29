@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { joiMetaClassName } from '../util/joi';
 
@@ -6,7 +11,7 @@ export const AbstractAssetsDistributionGetDownloadUrlRoutePath = '/downloadUrl';
 export const AbstractAssetsDistributionGetDownloadUrlRequestSchema = Joi.object({
   assetFile: Joi.string().required(),
   plain: Joi.boolean().description(
-    `If true, returns the plain URL as string and does not encapsulate the result as a JSON object`,
+    'If true, returns the plain URL as string and does not encapsulate the result as a JSON object'
   ),
 }).meta(joiMetaClassName('AbstractAssetsDistributionGetDownloadUrlRequestInterface'));
 

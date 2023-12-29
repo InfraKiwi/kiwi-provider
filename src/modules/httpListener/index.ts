@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunContext } from '../../util/runContext';
 import { ModuleHTTPListenerSchema } from './schema';
 import { moduleRegistryEntryFactory } from '../registry';
@@ -36,7 +41,7 @@ export class ModuleHTTPListener extends AbstractModuleBase<ModuleHTTPListenerInt
     const server = await new Promise<Server>((resolve, reject) => {
       const server = app.listen(this.config.port ?? 0, this.config.addr ?? localhost127, () => {
         const address = server.address();
-        context.logger.info(`Server listening`, { address });
+        context.logger.info('Server listening', { address });
         context.registerShutdownHook({
           label: `ModuleHTTPListener server on ${JSON.stringify(address)}`,
           fn: () => ModuleHTTPListener.#shutdownServer(context, server),
@@ -62,12 +67,12 @@ export class ModuleHTTPListener extends AbstractModuleBase<ModuleHTTPListenerInt
     await new Promise<void>((resolve, reject) => {
       server.close((err) => {
         if (err) {
-          context.logger.error(`Failed to shutdown HTTP listener`, {
+          context.logger.error('Failed to shutdown HTTP listener', {
             err,
             address,
           });
         } else {
-          context.logger.debug(`ModuleHTTPListener server shut down`, { address });
+          context.logger.debug('ModuleHTTPListener server shut down', { address });
         }
         resolve();
       });

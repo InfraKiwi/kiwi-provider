@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunContext } from '../../util/runContext';
 import { ModuleTestSchema, ModuleTestSilentSchema } from './schema';
 import type { ModuleTestInterface } from './schema.gen';
@@ -51,7 +56,7 @@ export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTe
             failed.push(this.key!);
           }
           result.tests[this.key!] = testResult;
-        })(),
+        })()
       );
     });
 

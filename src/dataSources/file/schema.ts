@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import Joi from 'joi';
 import { dataSourceRegistryEntryFactory } from '../registry';
 
@@ -22,8 +27,8 @@ const supportedFileTypesText =
  * which needs to enforce a non-raw processing of the file
  */
 export const DataSourceFileBaseSchemaObject = {
-  path: Joi.string().required().description(`The path of the file to load`),
-  workDir: Joi.string().description(`The working directory to use`),
+  path: Joi.string().required().description('The path of the file to load'),
+  workDir: Joi.string().description('The working directory to use'),
 };
 
 const DataSourceFileFullSchema = Joi.object({
@@ -36,7 +41,7 @@ The loaded content will be wrapped by a \`content\` variable.
 
 export const DataSourceFileSchema = dataSourceRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
-  DataSourceFileFullSchema,
+  DataSourceFileFullSchema
 ).description(`
 Loads a local file's contents and parses it using a loader, chosen based on the file's extension. 
 
@@ -45,7 +50,7 @@ ${supportedFileTypesText}
 
 export const DataSourceFileRawSchema = dataSourceRegistryEntryFactory.createJoiEntrySchema(
   'fileRaw',
-  Joi.object(DataSourceFileBaseSchemaObject),
+  Joi.object(DataSourceFileBaseSchemaObject)
 ).description(`
 Loads a local file's contents.
 `);

@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { ModuleExecSchema } from './schema';
 import type { RunContext } from '../../util/runContext';
 import type { ModuleExecInterface, ModuleExecResultInterface } from './schema.gen';
@@ -8,7 +13,7 @@ import type { ExecCmdOptions } from '../../util/exec';
 import { execCmd } from '../../util/exec';
 import { getErrorPrintfClass } from '../../util/error';
 
-const ModuleExecErrorBadExitCode = getErrorPrintfClass('ModuleExecErrorBadExitCode', `Bad exit code: %d`);
+const ModuleExecErrorBadExitCode = getErrorPrintfClass('ModuleExecErrorBadExitCode', 'Bad exit code: %d');
 
 export class ModuleExec extends AbstractModuleBase<ModuleExecInterface, ModuleExecResultInterface> {
   get label(): string | undefined {

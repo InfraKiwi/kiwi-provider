@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import { HookHTTPSchema } from './schema';
 import { hookRegistryEntryFactory } from '../registry';
 import type { HookHTTPInterface } from './schema.gen';
@@ -10,7 +15,7 @@ export class HookHTTP extends AbstractHook<HookHTTPInterface> {
 
   async notify(context: DataSourceContext): Promise<void> {
     const result = await this.#dataSource.load(context);
-    context.logger.info(`HTTP notification sent`, { result });
+    context.logger.info('HTTP notification sent', { result });
   }
 }
 

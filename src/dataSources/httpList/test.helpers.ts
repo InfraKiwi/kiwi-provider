@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type http from 'node:http';
 import express from 'express';
 import { promisify } from 'node:util';
@@ -26,8 +31,8 @@ function dataSourceHTTPListGetTestHTTPServer(callback: (err: unknown, server: ht
             ...dataSourceHTTPListTestEntriesStr[id],
           });
           return acc;
-        }, []),
-    ),);
+        }, [])
+    ));
   app.get('/listArrayWithObjectIds', (req, res) =>
     res.send(
       Object.keys(dataSourceHTTPListTestEntriesStr)
@@ -35,11 +40,11 @@ function dataSourceHTTPListGetTestHTTPServer(callback: (err: unknown, server: ht
         .reduce((acc: any[], id) => {
           acc.push({ id });
           return acc;
-        }, []),
-    ),);
+        }, [])
+    ));
   app.get('/listNum', (req, res) => res.send(Array.from(dataSourceHTTPListTestEntriesNum.keys())));
   app.get('/loadNum', (req, res) =>
-    res.send(dataSourceHTTPListTestEntriesNum.get(parseInt(req.query['id'] as string))),);
+    res.send(dataSourceHTTPListTestEntriesNum.get(parseInt(req.query['id'] as string))));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('error', (err) => callback(err, undefined as any));
@@ -50,7 +55,7 @@ function dataSourceHTTPListGetTestHTTPServer(callback: (err: unknown, server: ht
     },
     () => {
       callback(undefined, server);
-    },
+    }
   );
 }
 

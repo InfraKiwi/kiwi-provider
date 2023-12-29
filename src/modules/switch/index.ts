@@ -1,3 +1,8 @@
+/*
+ * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+ */
+
 import type { RunContext } from '../../util/runContext';
 import { ModuleSwitchSchema } from './schema';
 import type { ModuleSwitchCaseFullInterface, ModuleSwitchInterface } from './schema.gen';
@@ -59,7 +64,7 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
 
     if (!found && this.config.default) {
       tasksToExecute.push(
-        ...(Array.isArray(this.config.default) ? this.config.default : [this.config.default]).map((t) => new Task(t)),
+        ...(Array.isArray(this.config.default) ? this.config.default : [this.config.default]).map((t) => new Task(t))
       );
     }
 
