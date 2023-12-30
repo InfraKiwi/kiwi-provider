@@ -39,7 +39,7 @@ describe('test module', () => {
       },
     },
     {
-      args: ['num == 123', 'hello == \'world\''],
+      args: ['num == 123', `hello == 'world'`],
       expect: {
         vars: {
           tests: {
@@ -101,6 +101,13 @@ describe('test module', () => {
         changed: false,
       },
       useModuleSilent: true,
+    },
+    {
+      args: { numTest: (c) => c.vars.num == 123 },
+      expect: {
+        vars: { tests: { numTest: true } },
+        changed: false,
+      },
     },
   ];
 

@@ -1,0 +1,39 @@
+#!/bin/busybox sh
+#
+# (c) 2023 Alberto Marchetti (info@cmaster11.me)
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+
+set -e
+
+log() { echo "$*" 1>&2; }
+fail() { log "$*"; exit 1; }
+
+log "=== args ==="
+log "$*"
+log "=== env ==="
+/bin/busybox env 1>&2
+
+log "Mount system fs"
+mkdir -p /dev /proc /sys /tmp
+mount -t devtmpfs  devtmpfs  /dev
+mount -t proc      proc      /proc
+mount -t sysfs     sysfs     /sys
+mount -t tmpfs     tmpfs     /tmp
+
+ls -al /dev
+cat /proc/partitions
+
+ROOTFS="/rootfs"
+mkdir -p "$ROOTFS"
+mount /dev/sda "$ROOTFS"
+
+log "Move system mounts"
+mkdir -p "${ROOTFS}/dev" "${ROOTFS}/proc" "${ROOTFS}/sys" "${ROOTFS}/tmp"
+mount --move /dev "${ROOTFS}/dev"
+mount --move /proc "${ROOTFS}/proc"
+mount --move /sys "${ROOTFS}/sys"
+mount --move /tmp "${ROOTFS}/tmp"
+
+log "Switch root"
+exec switch_root "$ROOTFS" /lib/systemd/systemd

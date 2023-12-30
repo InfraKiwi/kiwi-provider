@@ -1,0 +1,7 @@
+tasks:
+  - lookPath: tar
+    out: lookPath
+
+  - label: Make sure the tar binary exists
+    test: lookPath.path != null
+  - debug: The tar binary path is ${{ lookPath.path }}

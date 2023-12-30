@@ -42,6 +42,14 @@ describe('recipe source dir', () => {
     },
     {
       dir,
+      id: 'ts1',
+    },
+    {
+      dir,
+      id: 'js1',
+    },
+    {
+      dir,
       id: 'standalone.yaml',
     },
     {

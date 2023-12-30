@@ -13,7 +13,7 @@ import {
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import type { AppConfigSchemaInterface } from '../src/app/common/server';
-import { getAppConfigSchemaObject, newServer } from '../src/app/common/server';
+import { appListen, getAppConfigSchemaObject, newServer } from '../src/app/common/server';
 import { Agent } from '../src/app/agent/agent';
 import { loadConfig, parseArgsAppBaseJoiObject, parseArgsAppBaseOptions } from '../src/util/parseArgs';
 import '../src/util/loadAllRegistryEntries.gen';
@@ -21,15 +21,15 @@ import type { AgentConfigInterface } from '../src/app/agent/agent.schema.gen';
 import { AgentConfigSchema, AgentListenerDefaultPort } from '../src/app/agent/agent.schema';
 import { setupUncaughtHandler } from '../src/util/uncaught';
 import { checkVersionCommand } from '../src/util/args';
-import { localhost127 } from '../src/util/constants';
-import Joi from 'joi';
 import { agentBootstrapConfig } from '../src/app/agent/agent.bootstrap';
 import {
   AgentBootstrapConfigParseArgsOptions,
   AgentBootstrapConfigSchema,
 } from '../src/app/agent/agent.bootstrap.schema';
-import { joiKeepOnlyKeysInJoiSchema } from '../src/util/joi';
+import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema } from '../src/util/joi';
 import type { AgentBootstrapConfigInterface } from '../src/app/agent/agent.bootstrap.schema.gen';
+import { RecipePhase } from '../src/components/recipe.schema';
+import { set10InfraInfo } from '../src/util/10infra';
 
 const agentAppConfigSchema = getAppConfigSchemaObject(AgentConfigSchema, { port: AgentListenerDefaultPort });
 
@@ -37,6 +37,8 @@ enum MainCommand {
   bootstrap = 'bootstrap',
   serve = 'serve',
 }
+
+const appName = '10infra-agent';
 
 async function main() {
   checkVersionCommand();
@@ -71,7 +73,7 @@ async function commandBootstrap(args: string[]) {
     values,
   } = parseArgs(argsConfig);
 
-  const allArgs = Joi.attempt(
+  const allArgs = joiAttemptRequired(
     values,
     AgentBootstrapConfigSchema.append(joiParseArgsLogOptions),
     'Error evaluating command args:'
@@ -83,25 +85,16 @@ async function commandBootstrap(args: string[]) {
   const boostrapConfig = joiKeepOnlyKeysInJoiSchema<AgentBootstrapConfigInterface>(allArgs, AgentBootstrapConfigSchema);
   const configPath = await agentBootstrapConfig({ logger }, boostrapConfig);
 
+  set10InfraInfo({
+    appName,
+    configPath,
+  });
+
   const config = await loadConfig<AppConfigSchemaInterface<AgentConfigInterface>>(configPath, agentAppConfigSchema);
   const agent = new Agent(logger, config.app);
 
-  const reloadResult = await agent.reloadRelease(true);
+  const reloadResult = await agent.reloadRelease(RecipePhase.bootstrap, true);
   logger.info('Processed first release', { result: reloadResult });
-
-  /*
-   * TODO
-   * TODO
-   * TODO
-   * TODO configure the cron on the release side?
-   * TODO
-   * TODO
-   */
-
-  /*
-   * Spawn the agent and detach
-   * spawnDetached(process.execPath, [MainCommand.serve, `--${parseArgsConfigOptionsConfigPathKey}`, configPath]);
-   */
 }
 
 async function commandServe(args: string[]) {
@@ -117,23 +110,27 @@ async function commandServe(args: string[]) {
     values,
   } = parseArgs(argsConfig);
 
-  const { configPath, ...otherArgs } = Joi.attempt(values, parseArgsAppBaseJoiObject, 'Error evaluating command args:');
+  const { configPath, ...otherArgs } = joiAttemptRequired(
+    values,
+    parseArgsAppBaseJoiObject,
+    'Error evaluating command args:'
+  );
   const logger = newLoggerFromParseArgs(otherArgs);
   setupUncaughtHandler(logger);
 
   const config = await loadConfig<AppConfigSchemaInterface<AgentConfigInterface>>(configPath, agentAppConfigSchema);
+
+  set10InfraInfo({
+    appName,
+    configPath,
+  });
+
   const agent = new Agent(logger, config.app);
 
   const app = newServer({ logger }, {});
 
   agent.mountRoutes(app);
-
-  const server = app.listen(config.listener.port, config.listener.addr ?? localhost127, () => {
-    logger.info('Server listening', {
-      address: server.address(),
-      config,
-    });
-  });
+  appListen({ logger }, app, config.listener);
 }
 
 void main();

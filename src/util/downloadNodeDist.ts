@@ -16,13 +16,18 @@ import { defaultCacheDir } from './constants';
 const unsignedNodeDistBaseUrl = 'https://github.com/10infra/node-unsigned/releases/download';
 const unsignedNodeDistCacheDirDefault = path.join(defaultCacheDir, '.nodeBinCache');
 
+/*
+ * These constants are inline with Node.js binaries naming.
+ * They should ONLY be used to deal with the Node.js executable.
+ */
+
 export enum NodeJSExecutablePlatform {
   win = 'win',
   linux = 'linux',
   darwin = 'darwin',
 }
 
-export function getCurrentNodeJSPlatform(): NodeJSExecutablePlatform {
+export function getCurrentNodeJSExecutablePlatform(): NodeJSExecutablePlatform {
   switch (process.platform) {
     case 'win32':
       return NodeJSExecutablePlatform.win;
@@ -40,7 +45,7 @@ export enum NodeJSExecutableArch {
   armv7l = 'armv7l',
 }
 
-export function getCurrentNodeJSArch(): NodeJSExecutableArch {
+export function getCurrentNodeJSExecutableArch(): NodeJSExecutableArch {
   switch (process.arch) {
     case 'x64':
       return NodeJSExecutableArch.x64;

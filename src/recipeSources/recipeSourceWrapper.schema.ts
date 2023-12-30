@@ -4,6 +4,7 @@
  */
 
 import Joi from 'joi';
+import { joiMetaClassName, joiMetaUnknownType } from '../util/joi';
 
 export const RecipeSourceWrapperSchema = Joi.object({
   // If true, will preserve loaded recipe group/host variables
@@ -22,4 +23,12 @@ export const RecipeSourceWrapperSchema = Joi.object({
   workDir: Joi.string(),
 })
   .unknown(true)
-  .meta({ className: 'RecipeSourceWrapperInterface' });
+  .meta(joiMetaClassName('RecipeSourceWrapperInterface'))
+  .meta(
+    joiMetaUnknownType(
+      Joi.any().description(`
+  The recipe source config.
+  You can check the available recipe sources here: ##link#See all available recipe sources#/recipeSources
+`)
+    )
+  );

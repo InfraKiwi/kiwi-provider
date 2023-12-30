@@ -85,7 +85,8 @@ export class ModuleDownload extends AbstractModuleBase<ModuleDownloadInterface, 
         await unarchiveFile(downloadPath, dest, UnarchiveArchiveType[extract]);
       } finally {
         await fsPromiseRm(downloadPath).catch((err) =>
-          context.logger.error('Failed to delete temporary file', { err }));
+          context.logger.error('Failed to delete temporary file', { err })
+        );
       }
     }
 

@@ -1,0 +1,9 @@
+vars:
+  hello: world
+
+tasks:
+  - set:
+      hello: Mario
+    failedIf:
+      if: __result.vars.hello != "Mario"
+      message: Bad hello ${{ __result.vars.hello }}

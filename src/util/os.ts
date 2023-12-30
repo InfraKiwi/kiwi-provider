@@ -4,7 +4,8 @@
  */
 
 import * as os from 'node:os';
-import type { OSInfoInterface } from './os.schema.gen';
+import type { OSInfoInterface, ProcessInfoInterface } from './os.schema.gen';
+import process from 'node:process';
 
 export function getOSInfo(): OSInfoInterface {
   return {
@@ -26,5 +27,18 @@ export function getOSInfo(): OSInfoInterface {
     type: os.type(),
     uptime: os.uptime(),
     version: os.version(),
+  };
+}
+
+export function getProcessInfo(): ProcessInfoInterface {
+  return {
+    env: { ...process.env },
+    argv: [...process.argv],
+    execPath: process.execPath,
+    uid: process.getuid?.(),
+    gid: process.getegid?.(),
+    groups: process.getgroups?.(),
+    pid: process.pid,
+    ppid: process.ppid,
   };
 }

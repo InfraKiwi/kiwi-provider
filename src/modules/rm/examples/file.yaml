@@ -1,0 +1,20 @@
+tasks:
+  - label: Create a temporary file
+    temp: {}
+    out: temp
+
+    # This step is normally unnecessary. Here it is shown
+    # to create a contrast in the example
+  - label: Verify the file exists
+    stat:
+      path: ${{ temp.path }}
+    failedIf: __result.vars.exists != true
+
+  # Delete it
+  - rm:
+      path: ${{ temp.path }}
+
+  - label: Verify the file doesn't exist anymore
+    stat:
+      path: ${{ temp.path }}
+    failedIf: __result.vars.exists == true

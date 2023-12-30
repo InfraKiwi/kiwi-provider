@@ -40,7 +40,7 @@ declare namespace jest {
     message?: string,
     options?: ExpectCustomMessageOptions
   ) => import('expect').Matchers<void, T> & expect.Inverse<Matchers<void, T>> & expect.PromiseMatchers<T>) &
-  BaseExpect &
-  AsymmetricMatchers &
-  expect.Inverse<Omit<AsymmetricMatchers, 'any' | 'anything'>>;
+    BaseExpect &
+    AsymmetricMatchers &
+    expect.Inverse<Omit<AsymmetricMatchers, 'any' | 'anything'>>;
 }

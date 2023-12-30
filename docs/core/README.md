@@ -2,8 +2,8 @@
 
 `10infra-config` is a pull-based task execution system, which works in 3 phases:
 
-1. **Local development**: users create [recipes] and [test] them, assigning to them the [hosts](./inventory.md) they're supposed to run on.
-2. **Compilation**: recipes are packed together and "compiled" e.g. through a CI process, creating a finished and complete archive of [assets] that can be released.
+1. **Local development**: users create [recipes](./recipes.md) and [test](./testing.md) them, assigning to each recipe the [hosts](./inventory.md) it is supposed to run on.
+2. **Compilation**: recipes are packed together and "compiled" e.g. through a CI process, creating a finished package of [assets] that can be released.
 3. **Runtime**: a central distributor (the [config provider]) offers the archive to the various [agents], who are installed on every destination machine.
 
 ## Chart

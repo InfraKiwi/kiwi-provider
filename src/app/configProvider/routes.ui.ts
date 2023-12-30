@@ -10,6 +10,7 @@ import path from 'node:path';
 import type { Logger } from 'winston';
 import type { HostLogs, PrismaClient } from '@prisma/client';
 import { nunjucksApplyCustomFunctions } from '../../util/tpl';
+import { getNewDefaultRouter } from '../../util/expressRoutes';
 
 interface RoutesUIContext {
   logger: Logger;
@@ -25,7 +26,7 @@ interface ReportGroup {
 }
 
 export function mountRoutesUI(context: RoutesUIContext, app: IRouter) {
-  const ui = express.Router();
+  const ui = getNewDefaultRouter();
   ui.use('/static', express.static(path.join(__dirname, 'static')));
 
   const nj = new nunjucks.Environment(new nunjucks.FileSystemLoader(path.join(__dirname, 'views'), { watch: true }), {
@@ -34,7 +35,7 @@ export function mountRoutesUI(context: RoutesUIContext, app: IRouter) {
   nunjucksApplyCustomFunctions(nj);
 
   ui.get('/', (req, res) => {
-    res.send(nj.render('index.html'));
+    res.send(nj.render('index.njk'));
   });
 
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -69,7 +70,7 @@ export function mountRoutesUI(context: RoutesUIContext, app: IRouter) {
     }
 
     res.send(
-      nj.render('report.html', {
+      nj.render('report.njk', {
         groups,
         groupsOrder,
       })

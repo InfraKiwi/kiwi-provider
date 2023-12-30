@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -17,7 +17,6 @@ export interface ModuleDownloadHTTPRequestInterface {
    */
   method?:
     | 'get'
-
     | 'delete'
     | 'head'
     | 'options'
@@ -58,8 +57,8 @@ export interface ModuleDownloadHTTPRequestInterface {
   data?:
     | any[]
     | {
-      [x: string]: any;
-    };
+    [x: string]: any;
+  };
 
   /**
    * The number of milliseconds before the request times out.
@@ -148,7 +147,7 @@ export interface ModuleDownloadHTTPRequestInterface {
    */
   proxy?:
     | false
-    | {
+    | ({
       host: string;
       port: number;
       auth?: {
@@ -164,9 +163,8 @@ export interface ModuleDownloadHTTPRequestInterface {
       };
       protocol?:
         | 'http'
-
         | 'https';
-    };
+    });
 
   /**
    * The logging configuration for the HTTP call

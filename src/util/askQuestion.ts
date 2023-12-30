@@ -15,5 +15,6 @@ export function askQuestion(query: string) {
     rl.question(query, (ans) => {
       rl.close();
       resolve(ans);
-    }));
+    })
+  );
 }

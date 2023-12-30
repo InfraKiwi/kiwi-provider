@@ -6,22 +6,22 @@
 import { IfTemplate } from '../util/tpl';
 
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
-import Joi from 'joi';
 import type { ConditionSetInterface, TestMockBaseInterface } from './testingCommon.schema.gen';
 import { ConditionSetSchema, TestMockBaseSchema } from './testingCommon.schema';
 import type { AbstractModuleBaseInstance } from '../modules/abstractModuleBase';
 import type { ModuleRunResultInterface } from '../modules/abstractModuleBase.schema.gen';
+import { joiAttemptRequired } from '../util/joi';
 
 export abstract class TestMock {
   config: TestMockBaseInterface;
   ifTemplates: IfTemplate[] = [];
 
   protected constructor(config: TestMockBaseInterface, conditions?: ConditionSetInterface) {
-    this.config = Joi.attempt(config, TestMockBaseSchema);
+    this.config = joiAttemptRequired(config, TestMockBaseSchema);
 
     const ifTemplates: IfTemplate[] = [];
     if (conditions) {
-      conditions = Joi.attempt(conditions, ConditionSetSchema, 'Failed to validate test mock conditions: ');
+      conditions = joiAttemptRequired(conditions, ConditionSetSchema, 'Failed to validate test mock conditions: ');
 
       if (Array.isArray(conditions)) {
         ifTemplates.push(...conditions.map((s) => new IfTemplate(s)));

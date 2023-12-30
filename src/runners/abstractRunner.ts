@@ -4,7 +4,7 @@
  */
 
 import { AbstractRegistryEntry } from '../util/registry';
-import type { ContextLogger } from '../util/context';
+import type { ContextLogger, ContextWorkDir } from '../util/context';
 import type { RunStatistics } from '../util/runContext';
 import process from 'node:process';
 import type { LogEntry } from 'winston';
@@ -14,6 +14,8 @@ import path from 'node:path';
 export interface RunnerContext extends ContextLogger {
   testingMode?: boolean;
 }
+
+export interface RunnerContextSetup extends ContextLogger, ContextWorkDir {}
 
 export interface RunnerRunRecipesResult {
   statistics: Record<string, RunStatistics>;
@@ -25,7 +27,7 @@ export interface RunnerRunRecipesResult {
  */
 export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<ConfigType> {
   // Used to execute commands before the test run
-  async setUp(context: ContextLogger): Promise<void> {}
+  async setUp(context: RunnerContextSetup): Promise<void> {}
 
   // Used to execute commands after the test run
   async tearDown(context: ContextLogger): Promise<void> {}

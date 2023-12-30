@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+#
+# (c) 2024 Alberto Marchetti (info@cmaster11.me)
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+
+# Multiline shell. "One is none" for line breaks, to avoid messy backslash-fests in long commands, like QEMU has
+# as well as end-of-line comments without even messier hacks
+
+oneliner=$(cat $1 | sed "s/#.*//" | sed "/^[[:space:]]*$/d" | tr "\n" " ")
+echo "$oneliner"
+eval "$oneliner"

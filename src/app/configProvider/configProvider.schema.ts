@@ -5,17 +5,39 @@
 
 import Joi from 'joi';
 import { CompileArchiveForHostResultSchema } from '../../commands/compileArchiveForHost.schema';
-import { getJoiEnumValues, joiMetaClassName, joiObjectSchemaKeys } from '../../util/joi';
+import { getJoiEnumValues, joiMetaClassName, joiMetaUnknownType, joiObjectSchemaKeys } from '../../util/joi';
 import { ServerHookWithArraySchema } from '../common/server.schema';
 import { NodeJSExecutableArch, NodeJSExecutablePlatform } from '../../util/downloadNodeDist';
 
 export const ConfigProviderListenerDefaultPort = 13900;
 
 export const ConfigProviderHeaderHostname = 'X-10INFRA-HOSTNAME';
+export const ConfigProviderRoutesHostPath = '/host';
+export const ConfigProviderRoutesAdminPath = '/admin';
 export const ConfigProviderRoutesBootstrapPath = '/bootstrap';
 
-export const AssetsDistributionSchema = Joi.object().unknown(true).meta({ className: 'AssetsDistributionInterface' });
-export const LogsStorageSchema = Joi.object().unknown(true).meta({ className: 'LogsStorageInterface' });
+export const AssetsDistributionSchema = Joi.object()
+  .unknown(true)
+  .meta(joiMetaClassName('AssetsDistributionInterface'))
+  .meta(
+    joiMetaUnknownType(
+      Joi.any().description(`
+The assets distribution config.
+You can check the available assets distribution methods here: ##link#See all available assets distribution methods#/assetsDistribution
+`)
+    )
+  );
+export const LogsStorageSchema = Joi.object()
+  .unknown(true)
+  .meta(joiMetaClassName('LogsStorageInterface'))
+  .meta(
+    joiMetaUnknownType(
+      Joi.any().description(`
+The logs storage config.
+You can check the available logs storage methods here: ##link#See all available logs storage methods#/logsStorage
+`)
+    )
+  );
 
 export const ConfigProviderHooksSchema = Joi.object({
   report: ServerHookWithArraySchema.description(
@@ -24,25 +46,34 @@ export const ConfigProviderHooksSchema = Joi.object({
 }).meta(joiMetaClassName('ConfigProviderHooksInterface'));
 
 export const ConfigProviderHooksKeysSchema = Joi.string()
-  .allow(...joiObjectSchemaKeys(ConfigProviderHooksSchema))
+  .valid(...joiObjectSchemaKeys(ConfigProviderHooksSchema))
   .meta(joiMetaClassName('ConfigProviderHooksKeysInterface'));
 
 export const ConfigProviderConfigSchema = Joi.object({
-  inventoryPath: Joi.string().required(),
-  archiveDir: Joi.string().required(),
+  inventoryPath: Joi.string().required().description(`
+  The path of the inventory file.
+  `),
+
+  archiveDir: Joi.string().required().description(`
+  The path of the archive directory.
+  `),
+
   assetsDistribution: AssetsDistributionSchema.required().description(`
-The distribution config for recipes assets.
+The assets distribution config for recipes' assets.
 `),
   agentDistribution: AssetsDistributionSchema.required().description(`
-The distribution config for agent binaries.
+The assets distribution config for agent binaries.
 `),
+
   logsStorage: LogsStorageSchema.required(),
 
-  // If defined, will be used for all internal operations requiring a static files root, like logs storage
-  workDir: Joi.string(),
+  workDir: Joi.string().description(`
+  If defined, will be used for all internal operations requiring a static files root, like logs storage.
+  `),
 
-  // All possible hooks definitions
-  hooks: ConfigProviderHooksSchema,
+  hooks: ConfigProviderHooksSchema.description(`
+  All hooks definitions.
+  `),
 }).meta(joiMetaClassName('ConfigProviderConfigInterface'));
 
 export const ConfigProviderRouteGetConfigForHostnameResultSchema = Joi.object({

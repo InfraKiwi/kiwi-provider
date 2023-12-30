@@ -2,6 +2,10 @@
 
 The `dataSources` folder defines a list of sources that you can use when loading generic data or variables.
 
+## Available data sources
+
+![listModules]
+
 ## Vars sources
 
 One of the main purposes of a data source is loading variables into a recipe's context.
@@ -38,7 +42,3 @@ There are two types of variables sources:
 ### Reference (`varsSources` and [`load`](../task-modules/load))
 
 ![type VarsSourceInterface ../components/varsSource.schema.gen.ts]
-
-## Available data sources
-
-![listModules]

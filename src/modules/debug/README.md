@@ -8,4 +8,6 @@ The `debug` module prints a debug message.
 
 ## Reference
 
+Key: `debug`
+
 ![type ModuleDebugInterface]

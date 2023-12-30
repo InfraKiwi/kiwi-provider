@@ -1,6 +1,8 @@
 recipeSources:
   - dir: path=..
+  - dir: path=../..
 
 tasks:
   - debug: recipe 1
   - recipe: recipe2
+  - recipe: source-2/recipe-3

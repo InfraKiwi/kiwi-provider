@@ -13,6 +13,8 @@ import type { HostSourceContext } from '../hostSources/abstractHostSource';
 import { glob } from 'glob';
 import { fsPromiseTmpDir } from '../util/fs';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
+import { runRecipesFromArchive } from '../commands/runRecipeFromArchive';
+import { tryExpectResolves } from '../util/testUtils';
 
 const testDir = path.resolve(__dirname, 'test', 'archive');
 
@@ -22,7 +24,7 @@ const context: HostSourceContext = {
   workDir: __dirname,
 };
 
-export const archiveTestRecipeKeyDebug = 'test_archive_rb_debug_yaml';
+export const archiveTestRecipeKeyDebug = 'test/archive/debug.yaml';
 
 export async function getTestArchive(): Promise<Archive> {
   const recipeCtorContext: RecipeCtorContext = {
@@ -36,7 +38,7 @@ export async function getTestArchive(): Promise<Archive> {
   };
 
   const archiveDir = await fsPromiseTmpDir({ keep: false });
-  const recipePaths = await glob('rb-*.yaml', { cwd: testDir });
+  const recipePaths = await glob('*.yaml', { cwd: testDir });
   const recipes = await Promise.all(recipePaths.map((p) => Recipe.fromPath(recipeCtorContext, path.join(testDir, p))));
   const archive = await Archive.create(recipeCtorContext, {
     archiveDir,
@@ -50,5 +52,14 @@ describe('archive', () => {
   test('can create an archive', async () => {
     const archive = await getTestArchive();
     expect(Object.keys(archive.config.rootRecipes)).toContain(archiveTestRecipeKeyDebug);
+
+    // Make sure this archive can run
+    await tryExpectResolves(
+      runRecipesFromArchive(context, {
+        archive,
+        recipeIds: [archiveTestRecipeKeyDebug],
+        throwOnRecipeFailure: true,
+      })
+    ).not.toBeUndefined();
   });
 });

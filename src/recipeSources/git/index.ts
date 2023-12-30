@@ -15,7 +15,7 @@ import { execCmd, ExecCmdErrorThrow } from '../../util/exec';
 import path from 'node:path';
 import { sha256Hex } from '../../util/crypto';
 import { RecipeSourceDir } from '../dir';
-import { getErrorPrintfClass } from '../../util/error';
+import { getErrorCauseChain, getErrorPrintfClass } from '../../util/error';
 import { lookpath } from 'lookpath';
 import type { DataSourceContext } from '../../dataSources/abstractDataSource';
 
@@ -83,12 +83,12 @@ export class RecipeSourceGit extends AbstractRecipeSource<RecipeSourceGitInterfa
       await execGitCmd('pull', 'origin', this.config.ref);
     } catch (ex) {
       /*
-       *The failure behavior depends on the git binary itself, it can fail with an error message, or it can
-       *succeed and just not pull any file if it just does not exist.
+       * The failure behavior depends on the git binary itself, it can fail with an error message, or it can
+       * succeed and just not pull any file if it just does not exist.
        */
       if (
         ex instanceof ExecCmdErrorThrow &&
-        (ex.cause as Error)?.message?.includes('Sparse checkout leaves no entry on working directory')
+        getErrorCauseChain(ex).includes('Sparse checkout leaves no entry on working directory')
       ) {
         throw new RecipeSourceGitRecipeNotFoundOnCheckout(id);
       }

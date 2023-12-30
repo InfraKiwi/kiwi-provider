@@ -11,9 +11,9 @@ export interface ContextLogger {
 }
 
 export interface ContextWorkDir {
-  workDir: string | undefined;
+  workDir?: string;
 }
 
 export interface ContextRecipeSourceList {
-  recipeSources: RecipeSourceList | undefined;
+  recipeSources?: RecipeSourceList;
 }

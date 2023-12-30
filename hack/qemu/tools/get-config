@@ -1,0 +1,62 @@
+#!/usr/bin/env sh
+
+#
+# (c) 2024 Alberto Marchetti (info@cmaster11.me)
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+#
+
+# import guard
+# if [ "$already_sourced" = true -a "$debug" = false ] ; then
+if [ "${already_sourced:-}" = true ] ; then
+	return
+else
+	export already_sourced=true
+fi
+
+# Default config
+rootfs_path=./rootfs
+ram_size=128M
+bridge=vmbr1
+debug=false
+overwrite=false
+
+# Load user config
+if [ -f ./vm.env ]; then
+	. ./vm.env
+fi
+
+# Derive/generate values
+#id=${id:-minivm_$(tr -dc a-z0-9 < /dev/random | head -c 6)} # ID generation is kind of badly supported
+vm_id=${vm_id:-vm_$id}
+vm_label=${vm_label:-MicroVM $vm_id}
+# Max length for tap names is 15 characters
+tap=$(echo ${tap:-tap-$vm_id} | head -c 15)
+service_id=${service_id:-$vm_id}
+
+
+if [ -z "$mac_address"  ] ; then
+	mac_address=$(echo '52 54 00'$(od -An -N3 -t xC /dev/urandom) | sed -e 's/ /:/g')
+	echo "Warning: mac_address has not been set, giving you a random one: $mac_address"
+	echo "This will cause you problems down the line if you use DHCP. "
+fi
+
+debug=true
+if [ $debug = true ] ; then
+	echo "VM ID: $vm_id"
+	echo "VM label: $vm_label"
+	echo "Network bridge: $bridge"
+	echo "Tap device: $tap"
+	echo "Root FS path: $rootfs_path"
+	echo "RAM size: $ram_size"
+	echo "Service ID: $service_id"
+	echo "Mac address: $mac_address"
+	echo "Overwrite: $overwrite"
+fi
+
+export vm_id
+export tap
+export rootfs_paths
+export ram_size
+export bridge
+export debug
+export overwrite

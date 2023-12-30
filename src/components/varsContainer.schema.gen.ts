@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -18,7 +18,6 @@ export interface VarsContainerInterface {
    * Compile-time vars sources for the entry
    */
   varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"self","isRegistryExport":false}
-
 }
 // [block VarsContainerInterface end]
 //meta:VarsContainerInterface:[{"className":"VarsContainerInterface"}]
@@ -37,6 +36,7 @@ export interface VarsInterface {
 /**
  * An array of vars sources.
  */
-export type VarsSourcesInterface = VarsSourceInterface[];
+export type VarsSourcesInterface = VarsSourceInterface[]; //typeRef:VarsSourceInterface:{"relPath":"varsSource.schema.gen.ts","isRegistryExport":false}
+
 // [block VarsSourcesInterface end]
 //meta:VarsSourcesInterface:[{"className":"VarsSourcesInterface"}]

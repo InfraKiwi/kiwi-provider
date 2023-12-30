@@ -4,14 +4,14 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 #
 
-set -euxo pipefail
+set -euo pipefail
 DIR="$(dirname -- "$( readlink -f -- "$0"; )")"
 
 GUEST_HOSTNAME="${GUEST_HOSTNAME:-"debian-$(echo $RANDOM | md5sum | head -c 20)"}"
 
 # https://github.com/firecracker-microvm/firecracker/releases
 # go install github.com/firecracker-microvm/firectl@latest
-FIRECRACKER_BINARY="$DIR/tool/release-v1.4.1-x86_64/firecracker-v1.4.1-x86_64"
+FIRECRACKER_BINARY="$DIR/tool/release-v1.6.0-x86_64/firecracker-v1.6.0-x86_64"
 
 INITRD="$DIR/initrd/build/initrd.cpio"
 KERNEL="$DIR/kernel/build/vmlinux"

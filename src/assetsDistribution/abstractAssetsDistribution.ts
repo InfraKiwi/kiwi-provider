@@ -10,41 +10,53 @@ import type {
   AbstractAssetsDistributionGetDownloadUrlRequestInterface,
   AbstractAssetsDistributionGetDownloadUrlResponseInterface,
 } from './abstractAssetsDistribution.schema.gen';
-import Joi from 'joi';
 import {
   AbstractAssetsDistributionGetDownloadUrlRequestSchema,
   AbstractAssetsDistributionGetDownloadUrlRoutePath,
 } from './abstractAssetsDistribution.schema';
-
-export interface AssetsDistributionContext extends ContextLogger {}
+import { joiAttemptRequired } from '../util/joi';
+import { normalizePathToUnix } from '../util/path';
 
 export abstract class AbstractAssetsDistribution<ConfigType> extends AbstractRegistryEntry<ConfigType> {
-  // Provides the client an url that can be used to download the desired archive file
-  abstract getDownloadUrl(context: AssetsDistributionContext, assetsFile: string): Promise<string>;
+  /*
+   * Provides the client an url that can be used to download the desired archive file.
+   * If the returned path starts with `.`, then it will be treated as relative to the
+   * router mount point.
+   */
+  abstract getDownloadUrl(context: ContextLogger, assetsFile: string): Promise<string>;
 
   /*
    * Mount any routes that may be needed to download the provided file
-   * These routes will be exposed under the /assetsDistribution router.
    */
-  abstract mountRoutes(context: AssetsDistributionContext, app: IRouter): void;
+  abstract mountRoutes(context: ContextLogger, app: IRouter): void;
 
   static mountStaticRoutes(
-    context: AssetsDistributionContext,
+    context: ContextLogger,
     app: IRouter,
     assetsDistribution: AbstractAssetsDistributionInstance
   ) {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     app.get(AbstractAssetsDistributionGetDownloadUrlRoutePath, async (req, res) => {
-      const reqData = Joi.attempt(
+      const reqData = joiAttemptRequired(
         req.query,
         AbstractAssetsDistributionGetDownloadUrlRequestSchema
       ) as AbstractAssetsDistributionGetDownloadUrlRequestInterface;
-      const url = await assetsDistribution.getDownloadUrl(context, reqData.assetFile);
-      if (reqData.plain) {
-        res.send(url);
+      let downloadUrl = await assetsDistribution.getDownloadUrl(context, reqData.assetFile);
+
+      if (downloadUrl.startsWith('.')) {
+        downloadUrl = './' + normalizePathToUnix(downloadUrl);
+      }
+
+      if (reqData.redirect) {
+        res.redirect(downloadUrl);
         return;
       }
-      const resData: AbstractAssetsDistributionGetDownloadUrlResponseInterface = { downloadUrl: url };
+
+      if (reqData.plain) {
+        res.send(downloadUrl);
+        return;
+      }
+      const resData: AbstractAssetsDistributionGetDownloadUrlResponseInterface = { downloadUrl };
       res.send(resData);
     });
   }

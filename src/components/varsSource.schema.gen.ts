@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -33,8 +33,9 @@ export interface VarsSourceInterface {
 
   /**
    * The data source you want to use.
+   * You can check the available data sources here: ##link#See all available data sources#/dataSources
    */
   [x: string]: any;
 }
 // [block VarsSourceInterface end]
-//meta:VarsSourceInterface:[{"className":"VarsSourceInterface","unknownType":{"type":"any","flags":{"description":"The data source you want to use."}}}]
+//meta:VarsSourceInterface:[{"className":"VarsSourceInterface","unknownType":{"type":"any","flags":{"description":"\n    The data source you want to use.\n    You can check the available data sources here: ##link#See all available data sources#/dataSources\n    "}}}]

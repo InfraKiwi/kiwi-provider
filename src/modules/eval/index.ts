@@ -5,40 +5,54 @@
 
 import type { RunContext } from '../../util/runContext';
 import { ModuleEvalSchema } from './schema';
-import type { ModuleEvalInterface } from './schema.gen';
+import type {
+  EvalContextFileInterface,
+  EvalFunctionInterface,
+  EvalContextInterface,
+  ModuleEvalInterface,
+} from './schema.gen';
 import { moduleRegistryEntryFactory } from '../registry';
 import { evalCodeWithBuiltins } from '../../util/eval';
 import { fsPromiseReadFile } from '../../util/fs';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
+import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ModuleEvalResult = any;
+export type ModuleEvalResult = VarsInterface;
 
 export class ModuleEval extends AbstractModuleBase<ModuleEvalInterface, ModuleEvalResult> {
   async run(context: RunContext): Promise<ModuleRunResult<ModuleEvalResult>> {
-    let code: string;
-    if (this.config.code) {
-      code = this.config.code;
-    } else if (this.config.file) {
-      code = await fsPromiseReadFile(this.config.file, { encoding: 'utf-8' });
-    } else {
-      throw new Error('eval module config did not provide a source of code');
-    }
-
     const result: ModuleRunResult<ModuleEvalResult> = {
       changed: false,
       vars: {},
     };
 
-    const evalContext = {
-      context,
-      result,
-      __filename: this.config.file ? this.config.file : undefined,
-    };
+    let code: string | EvalFunctionInterface;
+    let evalContext;
+    if (this.config.code) {
+      code = this.config.code;
+      evalContext = {
+        context,
+        result,
+      } as EvalContextInterface;
+    } else if (this.config.file) {
+      code = await fsPromiseReadFile(this.config.file, { encoding: 'utf-8' });
+      evalContext = {
+        context,
+        result,
+        __filename: this.config.file,
+      } as EvalContextFileInterface;
+    } else {
+      throw new Error('eval module config did not provide a source of code');
+    }
 
     try {
-      await evalCodeWithBuiltins(code, evalContext);
+      if (typeof code === 'string') {
+        await evalCodeWithBuiltins(code, evalContext);
+      } else {
+        await code(evalContext);
+      }
     } catch (ex) {
       result.failed = (ex as Error).toString();
     }

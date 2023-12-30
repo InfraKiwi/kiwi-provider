@@ -3,12 +3,14 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
+import type { Schema, ValidationOptions } from 'joi';
 import Joi from 'joi';
 import { IfTemplate } from './tpl';
 import semver from 'semver/preload';
 import { setDifference } from './set';
 import { shortieToObject } from './shortie';
 import { existsSync } from 'node:fs';
+import { getEnumValuesArray } from './enum';
 
 export const joiMetaExternalImportKey = 'externalImport';
 export const joiMetaRegistrySchemaObjectKey = 'registrySchemaObject';
@@ -108,13 +110,35 @@ export function joiObjectFromInstanceOf(constructorName: string, importPath: str
     .meta(joiMetaClassName(constructorName));
 }
 
+/**
+ * Supports recursively looking through schema descriptions to find if one of the
+ * entries can be a string
+ */
+function joiSchemaAlternativesAcceptsString(desc: Joi.Description): boolean {
+  if (!('matches' in desc)) {
+    return false;
+  }
+  let found = false;
+  for (const match of desc.matches) {
+    if (match.schema?.type == 'alternatives') {
+      found = joiSchemaAlternativesAcceptsString(match.schema);
+    } else if (match.schema?.type == 'string') {
+      found = true;
+    }
+    if (found) {
+      break;
+    }
+  }
+
+  return found;
+}
+
 export function joiSchemaAcceptsString(schema: Joi.Schema): boolean {
   const desc = schema.describe();
   return (
     desc.type == 'any' ||
     desc.type == 'string' ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (desc.type == 'alternatives' && desc.matches?.find((m: any) => m.schema?.type == 'string') != null)
+    (desc.type == 'alternatives' && joiSchemaAlternativesAcceptsString(desc))
   );
 }
 
@@ -194,11 +218,15 @@ export function joiValidateSyncFSExists(
     const lines = targetObject.stack.split('\n');
     let firstFound = false;
     for (const line of lines) {
-      if (line.startsWith('    at Object.attempt')) {
+      if (line.startsWith('    at joiAttemptRequired')) {
         firstFound = true;
         continue;
       }
       if (firstFound) {
+        // Support sub-commands
+        if (/^ {4}at command\w+ /.test(line)) {
+          continue;
+        }
         if (line.startsWith('    at main')) {
           break;
         }
@@ -206,7 +234,7 @@ export function joiValidateSyncFSExists(
       firstFound = false;
     }
     if (!firstFound) {
-      throw new Error('joiValidateSyncFSExists invoked not from main/Joi.attempt function');
+      throw new Error('joiValidateSyncFSExists invoked not from main/joiAttemptRequired function');
     }
   }
 
@@ -275,13 +303,37 @@ export function joiKeepOnlyKeysNotInJoiObjectDiff(
 }
 
 // https://github.com/microsoft/TypeScript/issues/30611
+
 export function getJoiEnumValues<TEnumValue extends string | number>(e: { [key in string]: TEnumValue }): Joi.Schema {
-  return Joi.alternatives([
-    Joi.string().valid(
-      ...Object.values(e).filter((el) => typeof el == 'string'),
-      ...Object.values(e)
-        .filter((el) => typeof el == 'number')
-        .map((el) => (el as number).toString(10))
-    ),
-  ]);
+  return Joi.string().valid(...getEnumValuesArray(e));
+}
+
+export function getJoiEnumValuesAsAlternatives<TEnumValue extends string | number>(
+  e: { [key in string]: TEnumValue },
+  getDescription: (value: TEnumValue) => string
+): Joi.Schema {
+  const entries: Joi.StringSchema[] = [];
+  const enumValues = getEnumValuesArray(e);
+  for (const enumValue of enumValues) {
+    const description = getDescription(enumValue as TEnumValue);
+    if (description == null) {
+      throw new Error(`Missing description for enum value ${enumValue}`);
+    }
+    entries.push(Joi.string().valid(enumValue).description(description));
+  }
+  return Joi.alternatives(entries);
+}
+
+export function joiAttemptRequired<TSchema extends Schema>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any,
+  schema: TSchema,
+  message?: string | Error,
+  options?: ValidationOptions
+): TSchema extends Schema<infer Value> ? Value : never {
+  return Joi.attempt(value, schema.required(), message ?? 'Validation failed:', options);
+}
+
+export function joiSchemaDump(schema: Joi.Schema): string {
+  return JSON.stringify(schema.describe());
 }

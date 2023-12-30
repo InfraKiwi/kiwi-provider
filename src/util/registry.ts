@@ -6,7 +6,7 @@
 import Joi from 'joi';
 import { toPascalCase } from 'js-convert-case';
 import { shortieToArray, shortieToObject } from './shortie';
-import { joiSchemaAcceptsString } from './joi';
+import { joiAttemptRequired, joiSchemaAcceptsString } from './joi';
 
 export const joiMetaDisableShortieKey = 'disableShortie';
 
@@ -25,7 +25,11 @@ export abstract class AbstractRegistryEntry<ConfigType> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.config = Joi.attempt(config, this.registryEntry.schema, `Error validating ${this.registryEntry.entryName}:`);
+    this.config = joiAttemptRequired(
+      config,
+      this.registryEntry.schema,
+      `Error validating ${this.registryEntry.entryName}:`
+    );
   }
 
   get registryEntry(): RegistryEntry {
@@ -63,7 +67,7 @@ export abstract class AbstractRegistryEntryWrappedConfig<
       }
     }
 
-    config = Joi.attempt(config, wrapperSchema) as WrapperInterfaceWithConfigKey<
+    config = joiAttemptRequired(config, wrapperSchema) as WrapperInterfaceWithConfigKey<
       WrapperConfigType,
       ConfigType,
       ConfigKey
@@ -168,7 +172,7 @@ export class Registry {
     const describe = baseSchema.describe();
     const rawSchemaKeys = describe.keys ? new Set(Object.keys(describe.keys)) : [];
     const schema = this.getAggregatedObjectSchemaWeak(baseSchema);
-    config = Joi.attempt(config, schema, `Error validating ${label}:`) as RegistryEntryGenericConfig;
+    config = joiAttemptRequired(config, schema, `Error validating ${label}:`) as RegistryEntryGenericConfig;
     const remainingSchemaKeys = new Set(Object.keys(config));
     for (const rawSchemaKey of rawSchemaKeys) {
       remainingSchemaKeys.delete(rawSchemaKey);

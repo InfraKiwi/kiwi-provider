@@ -25,14 +25,7 @@ export interface CreateCJSRunnerBundleArgs {
 export async function createCJSRunnerBundle(context: ContextLogger, args: CreateCJSRunnerBundleArgs): Promise<string> {
   if (isPartOfESBuildBundle) {
     /*
-     * TODO
-     * TODO
-     * TODO download a prebuilt CJS
-     * TODO download a prebuilt CJS
-     * TODO download a prebuilt CJS
-     * TODO download a prebuilt CJS
-     * TODO
-     * TODO
+     * TODO download a prebuilt CJS bundle?
      */
     throw new Error('Not yet implemented');
   }

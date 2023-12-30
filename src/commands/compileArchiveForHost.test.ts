@@ -34,7 +34,7 @@ describe('compileArchiveForHost', () => {
       vars: { inventoryVar: 1 },
       hostSources: [{ raw: { 'debug-1': { hello: 'world' } } }],
     });
-    await inventory.loadGroupsAndStubs(context);
+    await inventory.loadHostStubsAndGroups(context);
 
     const compiledArchive = await compileArchiveForHost(context, {
       inventory,

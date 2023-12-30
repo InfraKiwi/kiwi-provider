@@ -13,6 +13,9 @@ export const AbstractAssetsDistributionGetDownloadUrlRequestSchema = Joi.object(
   plain: Joi.boolean().description(
     'If true, returns the plain URL as string and does not encapsulate the result as a JSON object'
   ),
+  redirect: Joi.boolean().description(`
+    If true, directly redirects to the download url instead of returning it. 
+  `),
 }).meta(joiMetaClassName('AbstractAssetsDistributionGetDownloadUrlRequestInterface'));
 
 export const AbstractAssetsDistributionGetDownloadUrlResponseSchema = Joi.object({

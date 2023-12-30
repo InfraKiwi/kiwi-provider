@@ -16,18 +16,19 @@ import { DataSourceFile } from '../file';
 import type { DataSourceContext } from '../abstractDataSource';
 import { AbstractMultiDataSource } from '../abstractDataSource';
 import type { ContextWorkDir } from '../../util/context';
+import { omit } from '../../util/object';
 
 const debug = newDebug(__dirname);
 
 export class MultiDataSourceGlob<DataType> extends AbstractMultiDataSource<MultiDataSourceGlobInterface, DataType> {
   readonly globPath: string | string[];
-  readonly options: GlobOptions | undefined = undefined;
+  readonly options: GlobOptions;
 
   constructor(config: MultiDataSourceGlobInterface) {
     super(config);
 
     this.globPath = this.config.pattern;
-    this.options = this.config.options;
+    this.options = omit(this.config, ['pattern', 'workDir']);
   }
 
   #getWorkDir(context: ContextWorkDir): string | undefined {
@@ -35,7 +36,7 @@ export class MultiDataSourceGlob<DataType> extends AbstractMultiDataSource<Multi
   }
 
   async #listEntriesRaw(context: DataSourceContext): Promise<string[]> {
-    const options = this.options ?? {};
+    const options = { ...this.options };
 
     options.withFileTypes = true;
     options.nodir = true;

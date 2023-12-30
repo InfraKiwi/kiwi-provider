@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -50,7 +50,6 @@ export interface ModuleLoopInterface {
      * An array of tasks to be executed.
      */
     | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
 }
 // [block ModuleLoopInterface end]
 //meta:ModuleLoopInterface:[{"className":"ModuleLoopInterface","entryNames":["loop"]}]

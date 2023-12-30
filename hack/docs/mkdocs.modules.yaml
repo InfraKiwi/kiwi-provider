@@ -4,6 +4,7 @@ docs_dir: ../../src/modules
 nav:
   - README.md
   ### REPLACE NAV BEGIN
+  - "copy": ./copy/README.md
   - "debug": ./debug/README.md
   - "download": ./download/README.md
   - "eval": ./eval/README.md
@@ -16,12 +17,14 @@ nav:
   - "load": ./load/README.md
   - "lookPath": ./lookPath/README.md
   - "loop": ./loop/README.md
+  - "mkdir": ./mkdir/README.md
   - "recipe": ./recipe/README.md
+  - "rm": ./rm/README.md
   - "set": ./set/README.md
   - "shell": ./shell/README.md
   - "stat": ./stat/README.md
-  - "store": ./store/README.md
   - "switch": ./switch/README.md
   - "temp": ./temp/README.md
   - "test": ./test/README.md
+  - "write": ./write/README.md
   ### REPLACE NAV END

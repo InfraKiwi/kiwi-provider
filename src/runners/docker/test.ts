@@ -9,8 +9,8 @@ import type { ContextLogger } from '../../util/context';
 import { newLogger } from '../../util/logger';
 import type { TestSuiteInterface } from '../../components/testSuite.schema.gen';
 import { TestSuite } from '../../components/testSuite';
-import { testTimeoutLong } from '../../util/constants';
-import { testExamples } from '../../util/testUtils';
+import { testTimeoutLong, testTimeoutVeryLong } from '../../util/constants';
+import { testSuitesExamples } from '../../util/testUtils';
 
 const logger = newLogger();
 const context: ContextLogger = { logger };
@@ -23,13 +23,13 @@ afterAll(async () => {
 }, testTimeoutLong);
 
 describe('docker runner', () => {
-  testExamples(__dirname);
+  testSuitesExamples(__dirname, testTimeoutVeryLong);
 
   test(
     'it runs a simple test suite',
     async () => {
       const testSuiteConfig: TestSuiteInterface = {
-        runner: { docker: { image: 'debian:bullseye' } },
+        runner: { docker: { image: 'debian:bookworm' } },
         tests: [
           {
             label: 'my_test',
@@ -48,6 +48,6 @@ describe('docker runner', () => {
       expect(testResult.tests['my_test'].processedTasksCount).toEqual(1);
       expect(testResult.tests['my_test'].totalTasksCount).toEqual(1);
     },
-    testTimeoutLong
+    testTimeoutVeryLong
   );
 });

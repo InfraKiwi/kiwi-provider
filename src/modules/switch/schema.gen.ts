@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -33,7 +33,6 @@ export interface ModuleSwitchCaseFullInterface {
      * An array of tasks to be executed.
      */
     | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
 }
 // [block ModuleSwitchCaseFullInterface end]
 //meta:ModuleSwitchCaseFullInterface:[{"className":"ModuleSwitchCaseFullInterface"}]
@@ -53,28 +52,27 @@ export interface ModuleSwitchInterface {
     /**
      * An object, where each key represents a case match and the value the task config.
      */
-    | {
+    | ({
     /**
      * The task configuration
      */
-      [x: string]:
+    [x: string]:
 
       /**
        * The task to be executed.
        */
-        | TaskInterface //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
+      | TaskInterface //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
 
       /**
        * An array of tasks to be executed.
        */
-        | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
-    }
+      | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
+  })
 
     /**
      * An array of conditions to evaluate.
      */
-    | ModuleSwitchCaseFullInterface[]; //typeRef:ModuleSwitchCaseFullInterface:{"relPath":"self","isRegistryExport":false}
+  | ModuleSwitchCaseFullInterface[]; //typeRef:ModuleSwitchCaseFullInterface:{"relPath":"self","isRegistryExport":false}
 
   /**
    * The default case, which is executed if no other cases match successfully.
@@ -90,7 +88,6 @@ export interface ModuleSwitchInterface {
      * An array of tasks to be executed.
      */
     | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
 }
 // [block ModuleSwitchInterface end]
 //meta:ModuleSwitchInterface:[{"className":"ModuleSwitchInterface","entryNames":["switch"]}]

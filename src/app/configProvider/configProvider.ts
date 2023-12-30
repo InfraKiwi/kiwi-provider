@@ -4,7 +4,6 @@
  */
 
 import type { Express, Request } from 'express';
-import express from 'express';
 import { compileArchiveForHost } from '../../commands/compileArchiveForHost';
 import type { Logger } from 'winston';
 import { tryOrThrow, tryOrThrowAsync } from '../../util/try';
@@ -25,8 +24,9 @@ import {
   ConfigProviderHeaderHostname,
   ConfigProviderHooksKeysSchema,
   ConfigProviderRoutesBootstrapPath,
+  ConfigProviderRoutesHostPath,
+  ConfigProviderRoutesAdminPath,
 } from './configProvider.schema';
-import Joi from 'joi';
 import { PrismaClient } from '@prisma/client';
 import { HostReportRequestSchema } from '../common/models.schema';
 import type { HostReportRequestInterface } from '../common/models.schema.gen';
@@ -48,6 +48,8 @@ import { ServerHookSchema } from '../common/server.schema';
 import { mountRoutesAgentDistribution } from './routes.agentDistribution';
 
 import { loadYAMLFromFile } from '../../util/yaml';
+import { joiAttemptRequired } from '../../util/joi';
+import { getNewDefaultRouter } from '../../util/expressRoutes';
 
 interface PreloadedHooks {
   config: ServerHookInterface;
@@ -66,7 +68,7 @@ export class ConfigProvider {
   readonly #hooks: { [key in keyof ConfigProviderHooksInterface]: PreloadedHooks[] } = {};
 
   constructor(logger: Logger, config: ConfigProviderConfigInterface, externalUrl: string) {
-    this.#config = Joi.attempt(config, ConfigProviderConfigSchema, 'Failed to validate configProvider config: ');
+    this.#config = joiAttemptRequired(config, ConfigProviderConfigSchema, 'Failed to validate configProvider config: ');
     this.#externalUrl = externalUrl;
     this.#logger = logger.child({ server: 'config' });
     this.#client = new PrismaClient();
@@ -107,7 +109,10 @@ export class ConfigProvider {
         () => new Inventory(data as InventoryInterface),
         `Failed to load inventory ${this.#config.inventoryPath}`
       );
-      await tryOrThrowAsync(() => inventory.loadGroupsAndStubs(this.#context), 'Failed to load inventory host stubs');
+      await tryOrThrowAsync(
+        () => inventory.loadHostStubsAndGroups(this.#context),
+        'Failed to load inventory host stubs'
+      );
       this.#inventory = inventory;
     }
 
@@ -115,7 +120,7 @@ export class ConfigProvider {
   }
 
   mountRoutes(app: Express) {
-    const routesForAdminGroup = express.Router();
+    const routesForAdminGroup = getNewDefaultRouter();
     {
       // TODO auth?
 
@@ -127,23 +132,11 @@ export class ConfigProvider {
         routesForAdminGroup
       );
 
-      /*
-       * routesForAdminGroup.get('/report', async (req, res) => {
-       *   // Dump all reports
-       *   const reports = await this.#client.hostReport.findMany({
-       *     orderBy: {
-       *       timestamp: 'desc',
-       *     },
-       *     include: {
-       *       logs: true,
-       *     },
-       *   });
-       *   res.send(reports);
-       * });
-       */
+      // Just redirect to the UI
+      routesForAdminGroup.get('/', (req, res) => res.redirect('./ui/'));
     }
 
-    const routesForBootstrapGroup = express.Router();
+    const routesForBootstrapGroup = getNewDefaultRouter();
     {
       mountRoutesAgentDistribution(this.#context, routesForBootstrapGroup, {
         assetDistributionInstance: this.#agentDistribution,
@@ -152,7 +145,7 @@ export class ConfigProvider {
       });
     }
 
-    const routesForHostGroup = express.Router();
+    const routesForHostGroup = getNewDefaultRouter();
     {
       // Auth
       routesForHostGroup.use((req, res, next) => {
@@ -169,7 +162,7 @@ export class ConfigProvider {
       });
 
       {
-        const assetsDistributionRouter = express.Router();
+        const assetsDistributionRouter = getNewDefaultRouter();
         AbstractAssetsDistribution.mountStaticRoutes(this.#context, assetsDistributionRouter, this.#assetsDistribution);
         this.#assetsDistribution.mountRoutes(this.#context, assetsDistributionRouter);
         routesForHostGroup.use('/assetsDistribution', assetsDistributionRouter);
@@ -197,7 +190,7 @@ export class ConfigProvider {
 
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       routesForHostGroup.post('/report', async (req, res) => {
-        const data = Joi.attempt(req.body, HostReportRequestSchema) as HostReportRequestInterface;
+        const data = joiAttemptRequired(req.body, HostReportRequestSchema) as HostReportRequestInterface;
         if (data.hostname != req.clientHostname) {
           throw new Error('Mismatching hostname');
         }
@@ -232,8 +225,8 @@ export class ConfigProvider {
         ...this.#context,
         client: this.#client,
       };
-      const logsStorageRouterForHost = express.Router();
-      const logsStorageRouterForAdmin = express.Router();
+      const logsStorageRouterForHost = getNewDefaultRouter();
+      const logsStorageRouterForAdmin = getNewDefaultRouter();
       AbstractLogsStorage.mountStaticRoutes(
         logsStorageContext,
         this.#logsStorage,
@@ -246,12 +239,12 @@ export class ConfigProvider {
     }
 
     app.use(ConfigProviderRoutesBootstrapPath, routesForBootstrapGroup);
-    app.use('/host', routesForHostGroup);
-    app.use('/admin', routesForAdminGroup);
+    app.use(ConfigProviderRoutesHostPath, routesForHostGroup);
+    app.use(ConfigProviderRoutesAdminPath, routesForAdminGroup);
   }
 
   async #processHook(context: DataSourceContext, hookKey: ConfigProviderHooksKeysInterface, payload: object) {
-    const key = Joi.attempt(
+    const key = joiAttemptRequired(
       hookKey,
       ConfigProviderHooksKeysSchema,
       `Invalid hook key ${hookKey}: `

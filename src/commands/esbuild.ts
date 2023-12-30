@@ -4,13 +4,21 @@
  */
 
 import type { OnLoadArgs, Plugin, PluginBuild } from 'esbuild';
-import { build } from 'esbuild';
+import * as esbuild from 'esbuild';
 import path from 'node:path';
 import { fsPromiseReadFile } from '../util/fs';
-import { isPartOfESBuildBundleValue, version10InfraConfig } from '../util/build';
+import { isPartOfESBuildBundleValue, version10InfraConfig, versionESBuild } from '../util/build';
 import { getPackageVersion } from '../util/package';
 
 const nodeModules = new RegExp(/^(?:.*[\\/])?node_modules$/);
+
+/**
+ *
+ * This cmd can be used to bundle whichever entrypoint to a single cjs file.
+ *
+ * NOTE: we cannot bundle esbuild itself, so for other cases we use src/util/esbuild.ts
+ *
+ */
 
 function getESBuildLoader(args: OnLoadArgs) {
   const resolvedExtName = path.extname(args.path);
@@ -73,6 +81,10 @@ function getInjectorPlugin(pluginArgs: InjectorPluginArgs): Plugin {
           const version = pluginArgs.version ?? new Date().toISOString();
           contents = contents.replaceAll(version10InfraConfig, version);
         }
+        if (contents.includes(versionESBuild)) {
+          const version = esbuild.version;
+          contents = contents.replaceAll(versionESBuild, version);
+        }
         if (contents.includes(isPartOfESBuildBundleValue)) {
           contents = contents.replaceAll(isPartOfESBuildBundleValue, 'true');
         }
@@ -87,7 +99,7 @@ function getInjectorPlugin(pluginArgs: InjectorPluginArgs): Plugin {
 }
 
 export async function runESBuild(entryPoint: string, outFile: string) {
-  await build({
+  await esbuild.build({
     entryPoints: [entryPoint],
     bundle: true,
     minifyWhitespace: true,

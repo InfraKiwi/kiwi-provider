@@ -126,7 +126,8 @@ export class RecipeSourceDir extends AbstractRecipeSource<RecipeSourceDirInterfa
       throw new RecipeSourceDirRecipeNotFound(id);
     }
 
-    const data = await new DataSourceFile({ path: file }).loadVars(context);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = (await new DataSourceFile({ path: file }).loadVars(context)) as any;
     if (data == null) {
       throw new Error(`Empty recipe found at ${file}`);
     }

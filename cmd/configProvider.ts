@@ -16,10 +16,13 @@ import {
 } from '../src/app/configProvider/configProvider.schema';
 import type { ConfigProviderConfigInterface } from '../src/app/configProvider/configProvider.schema.gen';
 import type { AppConfigSchemaInterface } from '../src/app/common/server';
+import { appListen } from '../src/app/common/server';
 import { getAppConfigSchemaObject, newServer } from '../src/app/common/server';
 import { setupUncaughtHandler } from '../src/util/uncaught';
 import { localhost127 } from '../src/util/constants';
 import Joi from 'joi';
+import { joiAttemptRequired } from '../src/util/joi';
+import { set10InfraInfo } from '../src/util/10infra';
 
 const argsConfig: ParseArgsConfig = {
   allowPositionals: false,
@@ -27,22 +30,33 @@ const argsConfig: ParseArgsConfig = {
   options: { ...parseArgsAppBaseOptions },
 };
 
+const appName = '10infra-configProvider';
+
 async function main() {
   const {
     // positionals,
     values,
   } = parseArgs(argsConfig);
 
-  const { configPath, ...otherArgs } = Joi.attempt(values, parseArgsAppBaseJoiObject, 'Error evaluating command args:');
+  const { configPath, ...otherArgs } = joiAttemptRequired(
+    values,
+    parseArgsAppBaseJoiObject,
+    'Error evaluating command args:'
+  );
   const logger = newLoggerFromParseArgs(otherArgs);
   setupUncaughtHandler(logger);
+
+  set10InfraInfo({
+    appName,
+    configPath,
+  });
 
   const schema = getAppConfigSchemaObject(ConfigProviderConfigSchema, {
     addr: localhost127,
     port: ConfigProviderListenerDefaultPort,
   });
   const config = await loadConfig<AppConfigSchemaInterface<ConfigProviderConfigInterface>>(configPath, schema);
-  const externalUrl = Joi.attempt(
+  const externalUrl = joiAttemptRequired(
     config.listener.externalUrl,
     Joi.string().uri(),
     'The externalUrl config option must be defined'
@@ -54,9 +68,7 @@ async function main() {
   await configProvider.initialize();
   configProvider.mountRoutes(app);
 
-  const server = app.listen(config.listener.port, config.listener.addr ?? localhost127, () => {
-    logger.info('Server listening', { address: server.address() });
-  });
+  appListen({ logger }, app, config.listener);
 }
 
 void main();

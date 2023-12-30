@@ -1,0 +1,68 @@
+#!tools/msh
+set -euo pipefail;
+
+. ./tools/get-config;
+
+ROOTFS_PATH="$ROOTFS_PATH"
+
+# Create VM
+if [ "$overwrite" = true ]; then
+	rm -r $rootfs_path;
+fi;
+
+if [ "$(ls -A $rootfs_path)" ]; then
+	echo "Keeping old root file system";
+
+else
+	echo "Making a new file system";
+
+	mkdir -p $rootfs_path;
+	echo "Extracting original_rootfs.tar to $rootfs_path";
+	tar -xf original-rootfs.tar -C $rootfs_path;
+
+	echo "Running provisioning script";
+	chroot $rootfs_path /bin/sh < provision.sh;
+fi;
+
+### Boot VM
+
+echo "Booting VM";
+
+root_socket=$(mktemp);
+
+./tools/virtiofsd
+--shared-dir $rootfs_path
+--socket-path=$root_socket
+--announce-submounts
+--inode-file-handles=mandatory
+--log-level warn &
+
+qemu-system-x86_64
+-enable-kvm
+-cpu host
+-nodefaults # Don't add default devices
+-display none # nographic would also add a serial device, which conflicts with ours
+-no-reboot # Exit when the guest initiates a reboot. This is our only real way to exit
+-no-acpi
+-device virtio-rng-device
+
+# microVM stuff
+-M microvm,x-option-roms=off,isa-serial=off,rtc=off
+-device virtio-serial-device
+-device virtconsole,chardev=virtiocon0
+-chardev stdio,id=virtiocon0,signal=on # Signal=off lets ctrl+c through to the VM instead of terminating
+
+# Kernel
+-kernel ./tools/kernel
+# root=/dev/root seems to be hardcoded due to a bug
+-append "console=hvc0 reboot=t rootfstype=virtiofs root=/dev/root rw quiet" # ro quiet debug
+
+# Virtiofs (root)
+-chardev socket,id=char0,path=$root_socket
+-device vhost-user-fs-device,queue-size=1024,chardev=char0,tag=/dev/root
+-m $ram_size -object memory-backend-file,id=mem,size=$ram_size,mem-path=/dev/shm,share=on
+-numa node,memdev=mem
+
+# Network (todo: add mac address, maybe)
+-netdev tap,id=net0,ifname=$tap,script=./tools/setup-tap
+-device virtio-net-device,netdev=net0,mac=$mac_address

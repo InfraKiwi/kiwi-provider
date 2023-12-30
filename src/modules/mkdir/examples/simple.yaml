@@ -1,0 +1,26 @@
+tasks:
+  - label: Create a temporary directory
+    tempDir: {}
+    out: tempDir
+
+  - mkdir:
+      path: ${{ tempDir.path }}/my/folder/structure
+    outRaw: mkdir
+
+  - test: mkdir.changed == true
+
+  # Verify we can write to the new folder
+  - write:
+      path: ${{ mkdir.vars.path }}/hello.txt
+      content: Hello world!
+      raw: true
+
+  - label: Read back the text
+    load:
+      fileRaw:
+        path: ${{ mkdir.vars.path }}/hello.txt
+    out: loadedVars
+
+    # Prints "Hello world!"
+  - debug: ${{ loadedVars.content }}
+  - test: loadedVars.content == "Hello world!"

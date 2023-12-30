@@ -1,0 +1,22 @@
+tasks:
+  - label: Load variables from a YAML file
+    load:
+      file:
+        path: ${{ __assetsDir }}/vars.yaml
+    out: myVars
+
+  # Prints "Hello world!"
+  - debug: Hello ${{ myVars.hello }}!
+  - test: myVars.hello == "world"
+
+  # ----
+
+  - label: Load a whole file's contents
+    load:
+      fileRaw:
+        path: ${{ __assetsDir }}/random.txt
+    out: myFile
+
+  # Prints "This is some random text!"
+  - debug: ${{ myFile.content }}
+  - test: myFile.content == "This is some random text!"

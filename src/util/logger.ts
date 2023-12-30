@@ -20,6 +20,7 @@ import { fsPromiseTmpFile } from './fs';
 import type { FileTransportInstance } from 'winston/lib/winston/transports';
 import { envIsProduction } from './env';
 import type * as logform from 'logform';
+import { dumpYAML } from './yaml';
 
 Error.stackTraceLimit = 100;
 
@@ -102,41 +103,52 @@ const maskSecrets = format(
   }
 );
 
-const compact = format.printf(
-  ({
-    level,
-    hostname,
-    label,
-    message,
-    timestamp,
-    statistics,
-    [LEVEL]: symLevel,
-    [MESSAGE]: symMessage,
-    [SPLAT]: symSplat,
-    ...rest
-  }) => {
-    const s = statistics as RunStatistics | undefined;
-    const ts = typeof timestamp == 'number' ? new Date(timestamp).toISOString() : timestamp;
-    const parts: string[] = [
-      ...(s?.startTime ? ['[' + secondsToHMS(new Date().getTime() - s.startTime) + ']'] : []),
-      `[${level}]`,
-      ...(showHostname && hostname ? [`[${hostname}]`] : []),
-      ...(s ? [`[${s.processedTasksCount}/${s.totalTasksCount}]`] : []),
-      ...(label ? [`[${label}]`] : []),
-    ];
-    const errors: Error[] = [];
-    traverse(rest).forEach(function (val) {
-      if (val instanceof Error) {
-        errors.push(val);
-        this.remove();
+const getCompactFormat = (toYAML: boolean) =>
+  format.printf(
+    ({
+      level,
+      hostname,
+      label,
+      message,
+      timestamp,
+      statistics,
+      [LEVEL]: symLevel,
+      [MESSAGE]: symMessage,
+      [SPLAT]: symSplat,
+      ...rest
+    }) => {
+      const s = statistics as RunStatistics | undefined;
+      const ts = typeof timestamp == 'number' ? new Date(timestamp).toISOString() : timestamp;
+      const parts: string[] = [
+        ...(s?.startTime ? ['[' + secondsToHMS((new Date().getTime() - s.startTime) / 1000) + ']'] : []),
+        `[${level}]`,
+        ...(showHostname && hostname ? [`[${hostname}]`] : []),
+        ...(s ? [`[${s.processedTasksCount}/${s.totalTasksCount}]`] : []),
+        ...(label ? [`[${label}]`] : []),
+      ];
+      const errors: Error[] = [];
+      traverse(rest).forEach(function (val) {
+        if (val instanceof Error) {
+          errors.push(val);
+          this.remove();
+        }
+      });
+
+      let other = '';
+
+      if (Object.keys(rest).length > 0) {
+        if (toYAML) {
+          other = '\n' + dumpYAML(rest);
+        } else {
+          other = ' ' + JSON.stringify(rest);
+        }
       }
-    });
-    const other = Object.keys(rest).length > 0 ? ' ' + JSON.stringify(rest) : '';
-    return `${ts} ${parts.join('')} ${message}${other}${
-      errors.length > 0 ? ', Errors: ' + util.inspect(errors, false, 5) : ''
-    }`;
-  }
-);
+
+      return `${ts} ${parts.join('')} ${message}${other}${
+        errors.length > 0 ? `, Errors (count ${errors.length}): ${util.inspect(errors, false, 5)}` : ''
+      }`;
+    }
+  );
 
 export interface NewLoggerArgs {
   logLevel?: LogLevels;
@@ -145,6 +157,8 @@ export interface NewLoggerArgs {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultMeta?: any;
   transports?: Transport[];
+  logStyle?: CustomFormatStyle;
+  logStackTraceDepth?: number;
 }
 
 export function newLoggerFromParseArgs(args: NewLoggerArgs) {
@@ -163,22 +177,32 @@ function jsonReplacer(key: string, val: unknown) {
   return val;
 }
 
-function getStandardFormat(json?: boolean): logform.Format {
+export enum CustomFormatStyle {
+  json = 'json',
+  compactJSON = 'compactJSON',
+  compactYAML = 'compactYAML',
+}
+
+function getCustomFormat(style: CustomFormatStyle = CustomFormatStyle.compactJSON): logform.Format {
   return format.combine(
     format.timestamp(),
     format.errors({ stack: true }),
     maskSecrets(),
-    json
+    style == CustomFormatStyle.json
       ? format.json({
           circularValue: null,
           replacer: jsonReplacer,
         })
-      : compact
+      : getCompactFormat(style == CustomFormatStyle.compactYAML)
   );
 }
 
 export function newLogger(args?: NewLoggerArgs) {
-  const { logLevel, logFile, logNoConsole, defaultMeta } = args ?? {};
+  const { logLevel, logFile, logStyle, logNoConsole, logStackTraceDepth, defaultMeta } = args ?? {};
+
+  if (logStackTraceDepth != null) {
+    Error.stackTraceLimit = logStackTraceDepth;
+  }
 
   const transports = args?.transports ?? [];
 
@@ -188,13 +212,13 @@ export function newLogger(args?: NewLoggerArgs) {
 
   if (logFile) {
     const logTransport = new winston.transports.File({ filename: logFile });
-    logTransport.format = getStandardFormat(true);
+    logTransport.format = getCustomFormat(CustomFormatStyle.json);
     transports.push(logTransport);
   }
 
   const logger = winston.createLogger({
     level: logLevel ?? globalLogLevel ?? (envIsProduction ? LogLevels.info : LogLevels.debug),
-    format: getStandardFormat(),
+    format: getCustomFormat(logStyle),
     transports,
     defaultMeta,
   });
@@ -222,12 +246,21 @@ export const parseArgsLogOptions: ParseArgsOptionsConfig = {
     type: 'boolean',
     default: false,
   },
+  logStyle: {
+    type: 'string',
+    default: CustomFormatStyle.compactYAML,
+  },
+  logStackTraceDepth: {
+    type: 'string',
+  },
 };
 
 export const joiParseArgsLogOptions: SchemaMap = {
   logLevel: getJoiEnumValues(LogLevels).default(getArgDefaultFromOptions(parseArgsLogOptions, 'logLevel')),
   logFile: Joi.string(),
   logNoConsole: Joi.boolean(),
+  logStackTraceDepth: Joi.number(),
+  logStyle: getJoiEnumValues(CustomFormatStyle).default(getArgDefaultFromOptions(parseArgsLogOptions, 'logStyle')),
 };
 
 export const joiParseArgsLogOptionsSchema = Joi.object(joiParseArgsLogOptions);

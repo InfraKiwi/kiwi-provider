@@ -18,3 +18,17 @@ export class TemplateJoi extends AbstractTemplateSync {
     return result;
   }
 }
+
+export function joiSchemaBuildFromString(data: string) {
+  let schema: Joi.Schema;
+  try {
+    const val = JSON.parse(data);
+    schema = Joi.build(val);
+  } catch (ex) {
+    schema = new TemplateJoi(data).render({});
+  }
+  if (!Joi.isSchema(schema)) {
+    throw new Error(`Invalid Joi schema`);
+  }
+  return schema;
+}

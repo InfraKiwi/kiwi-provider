@@ -13,8 +13,8 @@ import type { ContextLogger, ContextWorkDir } from '../util/context';
 import { getErrorPrintfClass } from '../util/error';
 import type { RecipeDependencyInterface } from '../components/recipe.schema.gen';
 import type { RecipeSourceWrapperInterface } from './recipeSourceWrapper.schema.gen';
-import Joi from 'joi';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
+import { joiAttemptRequired } from '../util/joi';
 
 export const RecipeSourceListErrorSourceNotFound = getErrorPrintfClass(
   'RecipeSourceListErrorSourceNotFound',
@@ -48,7 +48,7 @@ export class RecipeSourceList {
     rawEntries?: AbstractRecipeSourceInstance[]
   ) {
     // Make sure there are no sources with duplicate ids
-    this.#config = Joi.attempt(config, RecipeSourceListSchema);
+    this.#config = joiAttemptRequired(config, RecipeSourceListSchema);
 
     this.#sourcesById = {};
     this.#sourcesByUniqueId = {};

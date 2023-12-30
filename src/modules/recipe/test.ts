@@ -56,7 +56,7 @@ describe('recipe module', () => {
 
     const module = new ModuleRecipe(t.args);
 
-    const vars = await module.run(runContext);
-    expect(vars).toEqual(t.expect);
+    const result = await module.run(runContext);
+    expect(result).toEqual(t.expect);
   });
 });

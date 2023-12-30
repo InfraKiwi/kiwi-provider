@@ -16,7 +16,6 @@ import { RunContext } from '../util/runContext';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import path from 'node:path';
 import { testRecipe } from '../util/testUtils';
-import { testTimeoutLong } from '../util/constants';
 import { newDebug } from '../util/debug';
 
 const debug = newDebug(__filename);
@@ -73,15 +72,6 @@ describe('recipe', () => {
       }
     });
   });
-
-  test(
-    'it support testMocks',
-    async () => {
-      const recipe = await sourceListTest.findAndLoadRecipe(context, 'mocks', {});
-      await testRecipe(context, recipe);
-    },
-    testTimeoutLong
-  );
 });
 
 describe('recipe aggregateHostVars', () => {
@@ -245,7 +235,7 @@ describe('recipe aggregateHostVars', () => {
       vars: { varInventory: varCounter++ },
     });
     inventory.throwOnHostNotMatched = true;
-    await inventory.loadGroupsAndStubs(context);
+    await inventory.loadHostStubsAndGroups(context);
 
     const hosts = inventory.getHostsByPattern(context, t.hostPattern);
     expect(Object.keys(hosts).length).toBeGreaterThan(0);

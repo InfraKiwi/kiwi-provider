@@ -13,7 +13,7 @@ import type {
   RecipeMinimalInterface,
   RecipeTestMockInterface,
 } from './recipe.schema.gen';
-import { extractAllTemplates } from '../util/tpl';
+import { extractAllTemplates, Template } from '../util/tpl';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import type { TaskRunTasksInContextResult } from './task';
 import { Task } from './task';
@@ -26,7 +26,7 @@ import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import type { AbstractRecipeSourceInstance } from '../recipeSources/abstractRecipeSource';
 import type { ContextLogger, ContextRecipeSourceList, ContextWorkDir } from '../util/context';
-import { joiKeepOnlyKeysInJoiSchema, joiKeepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
+import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema, joiKeepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
 import Joi from 'joi';
 import { getErrorPrintfClass } from '../util/error';
 import type { RegistryEntry } from '../util/registry';
@@ -37,6 +37,8 @@ import { TestMock } from './testingCommon';
 import type { ConditionSetInterface } from './testingCommon.schema.gen';
 import { VarsContainer } from './varsContainer';
 import { VarsContainerSchema } from './varsContainer.schema';
+import { normalizePathToUnix } from '../util/path';
+import traverse from 'traverse';
 
 export interface RecipeCtorContext extends ContextLogger, ContextRecipeSourceList, ContextWorkDir {}
 
@@ -55,6 +57,7 @@ export interface RecipeMetadata {
   fileName?: string;
   assetsDir?: string;
   recipeSource?: AbstractRecipeSourceInstance;
+  testMocks?: TestMock[];
 }
 
 export interface RecipeGetConfigForArchiveArgs {
@@ -66,7 +69,7 @@ export class RecipeTestMock extends TestMock {
   #module: RegistryEntry;
 
   constructor(config: RecipeTestMockInterface) {
-    config = Joi.attempt(config, RecipeTestMockSchema);
+    config = joiAttemptRequired(config, RecipeTestMockSchema);
     const module = moduleRegistry.findRegistryEntryFromIndexedConfig(config, RecipeTestMockSchema);
 
     const conditions = config[module.entryName] as ConditionSetInterface;
@@ -86,24 +89,28 @@ export class Recipe extends VarsContainer {
   readonly config: RecipeInterface;
   readonly meta?: RecipeMetadata;
 
+  readonly #hostVars?: VarsInterface;
+  readonly #groupVars?: VarsInterface;
   readonly #tasks: Task[] = [];
-  readonly #testMocks: RecipeTestMock[] = [];
+
   readonly #recipeSources?: RecipeSourceList;
   readonly #recipeSourcesCombinedWithMinimal?: RecipeSourceList;
 
   constructor(context: RecipeCtorContext, config: RecipeInterface, meta?: RecipeMetadata) {
-    config = Joi.attempt(config, RecipeSchema, 'validate recipe config');
+    // Support nested recipe configs (e.g. for js files)
+    if ('recipe' in config) {
+      config = config.recipe as RecipeInterface;
+    }
+
+    config = joiAttemptRequired(config, RecipeSchema, 'validate recipe config');
     super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
     this.config = config;
 
     this.meta = meta;
 
-    this.config.hostVars = extractAllTemplates(this.config.hostVars);
-    this.config.groupVars = extractAllTemplates(this.config.groupVars);
+    this.#hostVars = extractAllTemplates(this.config.hostVars);
+    this.#groupVars = extractAllTemplates(this.config.groupVars);
     this.#tasks = this.config.tasks.map((taskInterface) => new Task(extractAllTemplates(taskInterface)));
-
-    // TODO template this?
-    this.#testMocks = (this.config.testMocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
 
     const recipeSourceContext: RecipeCtorContext = {
       ...context,
@@ -159,8 +166,16 @@ export class Recipe extends VarsContainer {
       cleanedConfig.hostVars = undefined;
     }
 
+    // Revert all templates in config to plain strings
+    traverse(cleanedConfig).forEach(function (val) {
+      if (val instanceof Template) {
+        this.update(val.toString());
+      }
+    });
+
     return {
       targets: args.isDependency ? undefined : this.config.targets,
+      phase: args.isDependency ? undefined : this.config.phase,
       otherHosts: args.isDependency ? undefined : this.config.otherHosts,
       config: cleanedConfig,
     };
@@ -240,7 +255,8 @@ export class Recipe extends VarsContainer {
     if (baseId == undefined) {
       return;
     }
-    return Recipe.cleanId(baseId);
+    return normalizePathToUnix(baseId);
+    // Recipe.cleanId(baseId);
   }
 
   get fullId(): string | null {
@@ -260,7 +276,7 @@ export class Recipe extends VarsContainer {
     /*
      *1. Local dir
      *2. Local sources
-     *3. Ctx sources
+     *3. Context sources
      */
 
     const minimalRecipeSources = this.#getMinimalRecipeSources(context);
@@ -279,7 +295,7 @@ export class Recipe extends VarsContainer {
   }
 
   get recipeSources(): RecipeSourceList | undefined {
-    return this.#recipeSources;
+    return this.#recipeSourcesCombinedWithMinimal;
   }
 
   async getAssetsDir(): Promise<string | undefined> {
@@ -339,7 +355,7 @@ export class Recipe extends VarsContainer {
         shutdownHooks: [],
       })
       .withLoggerFields({ statistics: context.statistics })
-      .prependTestMocks(this.#testMocks);
+      .prependTestMocks(this.meta?.testMocks ?? []);
 
     // Store the original vars
     const oldVars = context.vars;
@@ -377,7 +393,7 @@ export class Recipe extends VarsContainer {
   _aggregateGroupVarsForHost(host: InventoryHost): VarsInterface {
     const vars: VarsInterface = {};
     for (const groupName of host.groupNames) {
-      const groupVars = this.config.groupVars?.[groupName] ?? {};
+      const groupVars = this.#groupVars?.[groupName] ?? {};
       Object.assign(vars, groupVars);
     }
     return vars;
@@ -428,7 +444,7 @@ export class Recipe extends VarsContainer {
     Object.assign(vars, await host.loadVars(context));
 
     // playbook host_vars/*
-    Object.assign(vars, this.config.hostVars?.[host.id]);
+    Object.assign(vars, this.#hostVars?.[host.id]);
 
     /*
      * [TODO] host facts / cached set_facts

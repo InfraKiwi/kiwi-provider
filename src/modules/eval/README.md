@@ -4,26 +4,30 @@ You can use the `eval` module to execute generic JS code.
 
 ## Usage
 
-You can directly run JS code:
+### You can directly run JS code
+
+Inline:
 
 ![embed examples/simple.yaml]
 
-Or you can execute a whole file:
+As a whole JS/TS recipe:
+
+![embed examples/fn.ts]
+
+### You can execute a whole file:
 
 ![embed examples/assets/file.js]
 ![embed examples/file.yaml]
 
-## `context`
+## Execution context
 
-The executed code will have the following context available under the `context` variable:
+The executed code will have the following context available:
 
-![type RunContextPublicVarsInterface ../../util/runContext.schema.gen.ts]
+![type EvalContextInterface]
 
-## `result`
+Or, if the code source is a file:
 
-The executed code can set the result of the task by altering the `result` variable, which has the following structure:
-
-![type ModuleRunResultInterface ../abstractModuleBase.schema.gen.ts]
+![type EvalFileContextInterface]
 
 ### Builtins
 
@@ -36,5 +40,7 @@ The executed code has the following builtins available:
 | [`require`](https://nodejs.org/api/modules.html#requireid)                  | Used to import modules, JSON, and local files.                                                                           |
 
 ## Reference
+
+Key: `eval`
 
 ![type ModuleEvalInterface]

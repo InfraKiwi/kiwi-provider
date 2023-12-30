@@ -19,23 +19,17 @@ import {
 } from '../util/fs';
 import { inject } from 'postject';
 import process from 'node:process';
-import type { NodeJSExecutableArch } from '../util/downloadNodeDist';
 import { downloadNodeDist, NodeJSExecutablePlatform } from '../util/downloadNodeDist';
 import { createCJSRunnerBundle } from '../util/createCJSRunnerBundle';
 import path from 'node:path';
 import { getNodeJSBundleFileName } from './createNodeJSBundle.helpers';
+import type { CommandCreateNodeJSBundleArgs, fnSignatureCreateNodeJSBundle } from './createNodeJSBundle.schema';
 
-export interface CommandPkgArgs {
-  outDir: string;
-  entryPoint: string;
-  nodePlatform: NodeJSExecutablePlatform;
-  nodeArch: NodeJSExecutableArch;
-}
-
-export async function createNodeJSBundle(
+// NOTE: check for requireOnDemand usaged before changing this fn name!
+export const createNodeJSBundle: fnSignatureCreateNodeJSBundle = async (
   context: ContextLogger,
-  { nodeArch, nodePlatform, outDir, entryPoint }: CommandPkgArgs
-): Promise<string> {
+  { nodeArch, nodePlatform, outDir, bundleFileName, entryPoint }: CommandCreateNodeJSBundleArgs
+): Promise<string> => {
   // Generate blob
   const cjsBundle = await createCJSRunnerBundle(context, { entryPoint });
 
@@ -69,7 +63,7 @@ export async function createNodeJSBundle(
 
   // Generate bin package
   const entryPointName = path.basename(entryPoint, path.extname(entryPoint));
-  const bundleFileName = await getNodeJSBundleFileName(entryPointName, nodePlatform, nodeArch);
+  bundleFileName ??= await getNodeJSBundleFileName(entryPointName, nodePlatform, nodeArch);
   const bundleFile = path.join(outDir, bundleFileName);
   context.logger.info(`Generating binary at ${bundleFile}`);
 
@@ -109,7 +103,7 @@ export async function createNodeJSBundle(
    */
 
   return bundleFile;
-}
+};
 
 export async function signBinary(context: ContextLogger, binaryPath: string) {
   /*

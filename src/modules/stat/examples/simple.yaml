@@ -1,0 +1,40 @@
+tasks:
+  ## File
+  - label: Create a temporary file
+    temp: {}
+    out: temp
+
+  - stat:
+      path: ${{ temp.path }}
+    out: stat
+
+  - test: stat.exists == true
+  - test: stat.stat.isFile == true
+
+  ## Directory
+  - label: Create a temporary directory
+    tempDir: {}
+    out: tempDir
+
+  - stat:
+      path: ${{ tempDir.path }}
+    out: stat
+
+  - test: stat.exists == true
+  - test: stat.stat.isDirectory == true
+
+  ## Non existing dir
+  - label: Create a temporary directory
+    tempDir: {}
+    out: tempDir
+
+  - label: Delete it
+    rm:
+      path: ${{ tempDir.path }}
+      recursive: true
+
+  - stat:
+      path: ${{ tempDir.path }}
+    out: stat
+
+  - test: stat.exists == false

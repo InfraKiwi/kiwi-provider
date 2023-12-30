@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -8,22 +8,22 @@
 // [block ServerHookInterface begin]
 export interface ServerHookInterface {
   /**
-   * The condition that will trigger the hook
+   * The condition that will trigger the hook.
    */
   if?: string;
 
   /**
-   * Unknown Property
+   * The hook function config.
+   * You can check the available hook functions here: ##link#See all available hook functions#/hooks
    */
-  [x: string]: unknown;
+  [x: string]: any;
 }
 // [block ServerHookInterface end]
-//meta:ServerHookInterface:[{"className":"ServerHookInterface"}]
+//meta:ServerHookInterface:[{"className":"ServerHookInterface"},{"unknownType":{"type":"any","flags":{"description":"\n  The hook function config.\n  You can check the available hook functions here: ##link#See all available hook functions#/hooks\n  "}}}]
 
 // [block ServerHookWithArrayInterface begin]
 export type ServerHookWithArrayInterface =
   | ServerHookInterface //typeRef:ServerHookInterface:{"relPath":"self","isRegistryExport":false}
-
   | ServerHookInterface[]; //typeRef:ServerHookInterface:{"relPath":"self","isRegistryExport":false}
 
 // [block ServerHookWithArrayInterface end]
@@ -50,7 +50,6 @@ export interface ServerListenerInterface {
 // [block ServerListenerWrapperInterface begin]
 export interface ServerListenerWrapperInterface {
   listener: ServerListenerInterface; //typeRef:ServerListenerInterface:{"relPath":"self","isRegistryExport":false}
-
 }
 // [block ServerListenerWrapperInterface end]
 //meta:ServerListenerWrapperInterface:[{"className":"ServerListenerWrapperInterface"}]

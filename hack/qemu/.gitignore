@@ -1,0 +1,6 @@
+rootfs/build
+tool
+download
+*.ext4
+*.btrfs
+*.img

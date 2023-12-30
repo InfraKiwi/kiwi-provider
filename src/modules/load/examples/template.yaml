@@ -1,0 +1,15 @@
+vars:
+  # Define a var that will be used in the template
+  hello: world
+
+tasks:
+  - label: Loads a text file that contains templates
+    load:
+      template: true
+      fileRaw:
+        path: ${{ __assetsDir }}/textWithTemplates.txt
+    out: myFile
+
+  # Prints "Hello world!"
+  - debug: ${{ myFile.content }}
+  - test: myFile.content == "Hello world!"

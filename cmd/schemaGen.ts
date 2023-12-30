@@ -3,11 +3,6 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-/*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
- * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
- */
-
 import { glob, globSync } from 'glob';
 import path from 'node:path';
 import { convertFromDirectory } from 'joi-to-typescript';
@@ -27,7 +22,7 @@ import { getTypeRefString } from '../src/util/schemaGenUtils';
 const debug = newDebug(__filename);
 
 const generatedHeader = `/*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -57,10 +52,10 @@ async function findRegistryExports(schemaFile: string) {
     schemaFile in schemaFileCache
       ? schemaFileCache[schemaFile]
       : await (async () => {
-        const c = await fsPromiseReadFile(schemaFile, 'utf-8');
-        schemaFileCache[schemaFile] = c;
-        return c;
-      })();
+          const c = await fsPromiseReadFile(schemaFile, 'utf-8');
+          schemaFileCache[schemaFile] = c;
+          return c;
+        })();
 
   const registryExports: Record<
     string,
@@ -161,14 +156,14 @@ async function genRegistriesEntries() {
       }
 
       const loadAllFile = path.join(folder, `loadAll${importGroup.genFileSuffix}.gen.ts`);
-      await fsPromiseWriteFile(loadAllFile, generatedHeader + '\n\n' + imports.join('\n'));
+      await fsPromiseWriteFile(loadAllFile, generatedHeader + '\n\n' + imports.join('\n') + '\n');
       loadAllGroups[checkFile] ??= [];
       loadAllGroups[checkFile].push(loadAllFile.replace(/\.ts$/, ''));
     }
 
     if (!excludeFromAll) {
       const loadAllFile = path.join(folder, 'loadAll.gen.ts');
-      await fsPromiseWriteFile(loadAllFile, generatedHeader + '\n\n' + imports.join('\n'));
+      await fsPromiseWriteFile(loadAllFile, generatedHeader + '\n\n' + imports.join('\n') + '\n');
       loadAllGroups.all.push(loadAllFile.replace(/\.ts$/, ''));
     }
 
@@ -241,9 +236,9 @@ async function genRegistriesEntries() {
       `loadAllRegistryEntries${fileSuffix}.gen.ts`
     );
     const loadAllCentralImports = loadAllGroups[key]
-    .map((p) => path.relative(path.dirname(loadAllCentralFile), p).replaceAll(path.sep, '/'))
-    .map((p) => `import '${p}';`);
-    await fsPromiseWriteFile(loadAllCentralFile, generatedHeader + '\n\n' + loadAllCentralImports.join('\n'));
+      .map((p) => path.relative(path.dirname(loadAllCentralFile), p).replaceAll(path.sep, '/'))
+      .map((p) => `import '${p}';`);
+    await fsPromiseWriteFile(loadAllCentralFile, generatedHeader + '\n\n' + loadAllCentralImports.join('\n') + '\n');
   }
 }
 
@@ -272,16 +267,19 @@ const genSchemaFolders = async () => {
 function addImportLines(content: string, importLines: string[]) {
   if (importLines.length > 0) {
     const generatedHeaderIdx = content.indexOf(generatedHeader);
-    content = generatedHeaderIdx >= 0 ? content.substring(0, generatedHeaderIdx) + content.substring(generatedHeaderIdx + generatedHeader.length + 1) : '';
+    content =
+      generatedHeaderIdx >= 0
+        ? content.substring(0, generatedHeaderIdx) + content.substring(generatedHeaderIdx + generatedHeader.length + 1)
+        : '';
     content = importLines.join('\n') + '\n' + content;
     content = generatedHeader + '\n\n' + content;
   }
   return content;
 }
 
-// https://regex101.com/r/2eJ7A2/1
+// https://regex101.com/r/xzw6zY/1
 const newIntfRegex = () =>
-  /((?:^\s+(?:\/\*\*|\*(?: [^\n]+)?|\*\/)$\n)+)?^(?: +)(?:\||.+?[:=]).* (\w+Interface)\b(.*)$/gm;
+  /((?:^\s+(?:\/\*\*|\*(?: [^\n]+)?|\*\/)$\n)+)?^(?!\/\/)(?: *)(?:\||.+?[:=]).* (\w+Interface)\b(.*)$/gm;
 
 async function fixGenImports() {
   const files = globSync(path.resolve(srcDir, '**/*schema.gen.ts').replaceAll(path.sep, '/'));
@@ -381,11 +379,11 @@ async function fixGenImports() {
       // Find all schemas
       const schemas = Object.fromEntries(
         Object.entries(imported)
-        .filter(([k]) => k.endsWith('Schema'))
-        .map(([k, v]) => {
-          const vCast = v as Joi.Schema;
-          return [k, vCast];
-        })
+          .filter(([k]) => k.endsWith('Schema'))
+          .map(([k, v]) => {
+            const vCast = v as Joi.Schema;
+            return [k, vCast];
+          })
       );
 
       const importLinesSet = new Set<string>();
@@ -578,7 +576,16 @@ async function formatTSCode(filePath: string, source: string): Promise<string> {
   }
 
   // If no output exists, it means there is nothing to fix
-  return results[0].output ?? source;
+  source = results[0].output ?? source;
+
+  // Remove newlines before unions
+  source = source.replaceAll(/\n\n+(\s+\|)/gm, '\n$1');
+  // Remove too many newlines before new comment blocks in objects
+  source = source.replaceAll(/:\n\n\n+(\s+\/*)/gm, ':\n\n$1');
+  // Remove too many newlines before end of blocks
+  source = source.replaceAll(/\n\n+(\s*})/gm, '\n$1');
+
+  return source;
 }
 
 function findExternalImportsInJoiDescription(description: Joi.Description) {
@@ -586,7 +593,7 @@ function findExternalImportsInJoiDescription(description: Joi.Description) {
 
   const externalImport: JoiMetaExternalImport = description.metas?.find((m) => joiMetaExternalImportKey in m)?.[
     joiMetaExternalImportKey
-    ];
+  ];
   if (externalImport) {
     importedItems[externalImport.name] = externalImport.importPath;
   }
@@ -622,10 +629,12 @@ async function genSchemaFolder(folderPath: string) {
     tsContentHeader: (t) => `// [block ${t.interfaceOrTypeName} begin]`,
     tsContentFooter: (t) => {
       const metaJSON = JSON.stringify(t.schema.describe().metas);
-      return deIndentString(`
+      return deIndentString(
+        `
       // [block ${t.interfaceOrTypeName} end]
       //meta:${t.interfaceOrTypeName}:${metaJSON}
-      `.trim());
+      `
+      ).trim();
     },
     unionNewLine: true,
     tupleNewLine: true,
@@ -848,53 +857,53 @@ async function genSystemInformationReadme() {
   let headingCounter = 1;
   const fnDescriptions: Record<string, string> = {};
   const extracted = siReadmeContents
-  .substring(blockBeginIdx, blockEndIdx)
-  // Replace headings with proper count
-  .replaceAll(/^#### \d+\. (.+)$/gm, (m, title) => `#### ${headingCounter++}. ${title}`)
+    .substring(blockBeginIdx, blockEndIdx)
+    // Replace headings with proper count
+    .replaceAll(/^#### \d+\. (.+)$/gm, (m, title) => `#### ${headingCounter++}. ${title}`)
 
-  /*
-   * Who uses [][] as link in md D:
-   * https://github.github.com/gfm/#links
-   */
-  .replaceAll(/\[([^\]]+)]\[([^\]]+)]/g, '[$1]($2)')
+    /*
+     * Who uses [][] as link in md D:
+     * https://github.github.com/gfm/#links
+     */
+    .replaceAll(/\[([^\]]+)]\[([^\]]+)]/g, '[$1]($2)')
 
-  /*
-   * Fix all table's entries
-   * | si.system(cb)    | {...}         | X     | X   | X   | X   |     | hardware information             |
-   */
-  .replaceAll(
-    /^\| (?:si\.((\w+)\([^)]*\))|\s+)[^|]+\| (.+?)\s+\|(.*)\|([^|]*)\|$/gm,
-    (
-      str,
-      method: string | undefined,
-      methodName: string | undefined,
-      result: string,
-      rest: string,
-      description: string
-    ) => {
-      const methodFixed = method ? '`' + method.replace(/\((.+), ?cb\)|\(cb\)$/, '($1)') + '`' : '';
-      description = description.trim();
-      if (methodName && description != '') {
-        fnDescriptions[methodName] = description.replaceAll(/<br[^>]*>/g, '\n');
+    /*
+     * Fix all table's entries
+     * | si.system(cb)    | {...}         | X     | X   | X   | X   |     | hardware information             |
+     */
+    .replaceAll(
+      /^\| (?:si\.((\w+)\([^)]*\))|\s+)[^|]+\| (.+?)\s+\|(.*)\|([^|]*)\|$/gm,
+      (
+        str,
+        method: string | undefined,
+        methodName: string | undefined,
+        result: string,
+        rest: string,
+        description: string
+      ) => {
+        const methodFixed = method ? '`' + method.replace(/\((.+), ?cb\)|\(cb\)$/, '($1)') + '`' : '';
+        description = description.trim();
+        if (methodName && description != '') {
+          fnDescriptions[methodName] = description.replaceAll(/<br[^>]*>/g, '\n');
+        }
+        return `| ${methodFixed} | \`${result}\` | ${rest} | ${description} |`;
       }
-      return `| ${methodFixed} | \`${result}\` | ${rest} | ${description} |`;
-    }
-  )
+    )
 
-  /*
-   * Strip out non-supported columns
-   * | Function         | Result object | Linux | BSD | Mac | Win | Sun | Comments                         |
-   */
-  .replaceAll(/^\|(.+)\|$/gm, (match, contents: string) => {
-    return (
-      '|' +
-      contents
-      .split('|')
-      .filter((val, idx) => ![3, 6].includes(idx))
-      .join('|') +
-      '|'
-    );
-  });
+    /*
+     * Strip out non-supported columns
+     * | Function         | Result object | Linux | BSD | Mac | Win | Sun | Comments                         |
+     */
+    .replaceAll(/^\|(.+)\|$/gm, (match, contents: string) => {
+      return (
+        '|' +
+        contents
+          .split('|')
+          .filter((val, idx) => ![3, 6].includes(idx))
+          .join('|') +
+        '|'
+      );
+    });
 
   contents = contents.replace('REPLACE_README_HERE', extracted);
 

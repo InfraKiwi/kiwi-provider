@@ -7,7 +7,7 @@
 import { moduleRegistry } from '../modules/registry';
 import type { RunContext } from '../util/runContext';
 import { extractAllTemplates, IfTemplate, objectContainsTemplates, resolveTemplates } from '../util/tpl';
-import { TaskSchema, TaskTestMockSchema } from './task.schema';
+import { postChecksContextResultKey, TaskSchema, TaskTestMockSchema } from './task.schema';
 import type { TaskInterface, TaskTestMockInterface } from './task.schema.gen';
 import traverse from 'traverse';
 import { maskSensitiveValue } from '../util/logger';
@@ -16,7 +16,7 @@ import type {
   ModuleRunResult,
   ModuleRunResultBaseType,
 } from '../modules/abstractModuleBase';
-import { joiKeepOnlyKeysInJoiSchema, joiKeepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
+import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema, joiKeepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
 import { tryOrThrowAsync } from '../util/try';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import { getErrorPrintfClass } from '../util/error';
@@ -25,16 +25,17 @@ import { ModuleFailFullSchema } from '../modules/fail/schema';
 import { ModuleExit } from '../modules/exit';
 import { ModuleExitFullSchema } from '../modules/exit/schema';
 import { TestMock } from './testingCommon';
-import Joi from 'joi';
 import { TestMockBaseSchema } from './testingCommon.schema';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import { findAsync } from '../util/findAsync';
+import { lookupTaskFailureHint } from './taskFailures';
 
 export interface TaskRunResult<ResultType extends ModuleRunResultBaseType> {
   moduleRunResult?: ModuleRunResult<ResultType>;
   skipped: boolean;
   exit?: boolean;
   out?: string;
+  outRaw?: string;
   global?: boolean;
 }
 
@@ -56,7 +57,7 @@ export const TaskErrorFailedWithExecutionError = getErrorPrintfClass(
 
 export class TaskTestMock extends TestMock {
   constructor(config: TaskTestMockInterface) {
-    config = Joi.attempt(config, TaskTestMockSchema);
+    config = joiAttemptRequired(config, TaskTestMockSchema);
     super(joiKeepOnlyKeysInJoiSchema(config, TestMockBaseSchema), config.if);
   }
 
@@ -83,12 +84,29 @@ export class Task {
     if (config.if) {
       this.ifTemplate = new IfTemplate(config.if);
     }
-    if (typeof config.failedIf == 'string' || config.failedIf?.if) {
-      this.failedIfTemplate = new IfTemplate(typeof config.failedIf == 'string' ? config.failedIf : config.failedIf.if);
+
+    if (config.failedIf != null) {
+      switch (typeof config.failedIf) {
+        case 'boolean':
+          this.failedIfTemplate = new IfTemplate(`${config.failedIf}`);
+          break;
+        default:
+          this.failedIfTemplate = new IfTemplate(
+            typeof config.failedIf == 'string' ? config.failedIf : config.failedIf.if
+          );
+      }
     }
-    if (typeof config.exitIf == 'string' || config.exitIf?.if) {
-      this.exitIfTemplate = new IfTemplate(typeof config.exitIf == 'string' ? config.exitIf : config.exitIf.if);
+
+    if (config.exitIf != null) {
+      switch (typeof config.exitIf) {
+        case 'boolean':
+          this.exitIfTemplate = new IfTemplate(`${config.exitIf}`);
+          break;
+        default:
+          this.exitIfTemplate = new IfTemplate(typeof config.exitIf == 'string' ? config.exitIf : config.exitIf.if);
+      }
     }
+
     if (config.testMocks) {
       this.#testMocks = config.testMocks.map((mockConfig) => new TaskTestMock(mockConfig));
     }
@@ -98,6 +116,11 @@ export class Task {
     // Strip out unnecessary items
     const cleanedConfig: TaskInterface = { ...joiKeepOnlyKeysNotInJoiObjectDiff(this.config, TaskSchema, TaskSchema) };
     return cleanedConfig;
+  }
+
+  #resolvedModule?: AbstractModuleBaseInstance;
+  get resolvedModule() {
+    return this.#resolvedModule;
   }
 
   async run(context: RunContext): Promise<TaskRunResult<ModuleRunResultBaseType>> {
@@ -119,6 +142,7 @@ export class Task {
       taskConfig,
       TaskSchema
     );
+    this.#resolvedModule = module;
 
     let label: string | undefined;
     if (taskConfig.label) {
@@ -181,32 +205,56 @@ export class Task {
       });
     }
 
-    const postRunChecksContext = {
-      vars: context.vars,
-      result,
-    };
+    const postRunChecksContext = context.withVars({
+      [postChecksContextResultKey]: result,
+    });
+
+    if (this.failedIfTemplate != null || this.exitIfTemplate != null) {
+      context.logger.info(
+        `Task executed (pre ${[
+          ...(this.failedIfTemplate != null ? ['failedIf'] : []),
+          ...(this.exitIfTemplate != null ? ['exitIf'] : []),
+        ].join('/')})`,
+        {
+          result,
+        }
+      );
+    }
 
     if (this.failedIfTemplate) {
-      if (await this.failedIfTemplate.isTrue(postRunChecksContext)) {
+      if (await this.failedIfTemplate.isTrue(postRunChecksContext.varsForTemplate)) {
+        const failedIfConfigResolved = await resolveTemplates(
+          this.config.failedIf,
+          postRunChecksContext.varsForTemplate
+        );
         const failResult = await new ModuleFail(
-          typeof this.config.failedIf == 'string'
+          typeof failedIfConfigResolved == 'string'
             ? 'failedIf condition was true'
-            : joiKeepOnlyKeysInJoiSchema(this.config.failedIf, ModuleFailFullSchema)
-        ).run(context);
+            : joiKeepOnlyKeysInJoiSchema(failedIfConfigResolved, ModuleFailFullSchema)
+        ).run(postRunChecksContext);
+        postRunChecksContext.logger.error('Task failed (failedIf condition)', {
+          result,
+        });
         throw new TaskErrorFailedWithIfCondition(failResult.failed);
+      } else {
+        result.failed = undefined;
       }
     } else if (result.failed != undefined) {
+      context.logger.error('Task failed', {
+        result,
+      });
       throw new TaskErrorFailedWithExecutionError(result.failed);
     }
 
     let forceExit = false;
     if (this.exitIfTemplate) {
-      if (await this.exitIfTemplate.isTrue(postRunChecksContext)) {
+      if (await this.exitIfTemplate.isTrue(postRunChecksContext.varsForTemplate)) {
+        const exitIfConfigResolved = await resolveTemplates(this.config.exitIf, postRunChecksContext.varsForTemplate);
         const exitResult = await new ModuleExit(
-          typeof this.config.exitIf == 'string'
+          typeof exitIfConfigResolved == 'string'
             ? 'exitIf condition was true'
-            : joiKeepOnlyKeysInJoiSchema(this.config.exitIf, ModuleExitFullSchema)
-        ).run(context);
+            : joiKeepOnlyKeysInJoiSchema(exitIfConfigResolved, ModuleExitFullSchema)
+        ).run(postRunChecksContext);
         forceExit = exitResult.exit == true;
 
         result.vars ??= {};
@@ -224,6 +272,7 @@ export class Task {
       exit: forceExit || result.exit,
       skipped: false,
       out: taskConfig.out,
+      outRaw: taskConfig.outRaw,
       global: taskConfig.global,
     };
   }
@@ -240,7 +289,15 @@ export class Task {
       const task = tasks[i];
       const taskResult = await tryOrThrowAsync(
         async () => await task.run(context),
-        `Failed to run task with index ${i}`
+        (err) => {
+          const hint = lookupTaskFailureHint(err);
+          const hintSuffix = hint ? '\n\n' + hint : '';
+          const taskLabel = [
+            ...(task.config.label ? ['"' + task.config.label + '"'] : []),
+            ...(task.resolvedModule ? ['[' + task.resolvedModule.registryEntry.entryName + ']'] : []),
+          ].join(' ');
+          return `Failed to run task${taskLabel != '' ? ' ' + taskLabel : ''} with index ${i}` + hintSuffix;
+        }
       );
 
       context.statistics.processedTasksCount++;
@@ -264,6 +321,11 @@ export class Task {
 
       if (task.config.keepPreviousTaskResult != true) {
         context.previousTaskResult = resultVars;
+      }
+
+      if (taskResult.outRaw) {
+        accumulatedVars[taskResult.outRaw] = taskResult.moduleRunResult;
+        context.vars[taskResult.outRaw] = taskResult.moduleRunResult;
       }
 
       if (taskResult.moduleRunResult?.changed) {

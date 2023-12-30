@@ -7,7 +7,16 @@ import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
 import { joiMetaClassName, joiObjectWithPattern, joiValidateValidIfTemplate } from '../../util/joi';
 
-const ModuleTestSchemaCondition = Joi.string().custom(joiValidateValidIfTemplate);
+export const TestFunctionSchema = Joi.function()
+  .meta({
+    baseType: '((context: RunContextPublicVarsInterface) => boolean | Promise<boolean>)',
+  })
+  .meta(joiMetaClassName('TestFunctionInterface'));
+
+const ModuleTestSchemaCondition = Joi.alternatives([
+  Joi.string().custom(joiValidateValidIfTemplate),
+  TestFunctionSchema,
+]);
 
 export const ModuleTestAllConditionsSchema = Joi.alternatives([
   ModuleTestSchemaCondition,

@@ -12,6 +12,8 @@ You can use the `exec` module to directly execute another program, **without pas
 
 ## Reference
 
+Key: `exec`
+
 ![type ModuleExecInterface]
 
 ### Output

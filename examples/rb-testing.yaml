@@ -7,9 +7,10 @@ otherHosts:
 tasks:
   - info: {}
   - debug: ${{ getVars() | dump }}
-  - debug: ${{ ctx.inventory.getHostsByPattern(context,"docker-*") | dump }}
+  - debug: ${{ context.inventory.getHostsByPattern(context,"docker-*") | dump }}
   - load:
       file: path="${{ pathJoin(__assetsDir, "helo") }}" raw=true
     out: myFile
   - debug:
       content: ${{ myFile.content }}
+  - fail: heee

@@ -83,13 +83,15 @@ export class DataSourceFile<DataType> extends AbstractDataSource<DataSourceFileI
 
   async load(context: DataSourceContext): Promise<DataType> {
     await this.valid(context);
-    const extension = path.extname(this.#validFilePathCache!);
-    const data = await DataSourceFile.readFile(this.#validFilePathCache!);
+
     if (this.raw) {
+      const data = await DataSourceFile.readFile(this.#validFilePathCache!);
       return data as DataType;
     }
+
+    const extension = path.extname(this.#validFilePathCache!);
     const loader = fileLoadersMap[extension];
-    return (await loader(data)) as DataType;
+    return (await loader(context, this.#validFilePathCache!)) as DataType;
   }
 }
 

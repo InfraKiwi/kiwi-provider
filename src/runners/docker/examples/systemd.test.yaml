@@ -1,0 +1,30 @@
+# This example shows how to start a Docker container initialized with systemd
+runner:
+  docker:
+    dockerfile:
+      args:
+        - -f
+        - files/systemd.Dockerfile
+
+    runArgs:
+      - --stop-signal=SIGRTMIN+3
+      - --tmpfs
+      - /run
+      - --tmpfs
+      - /run/lock
+      # Needed by systemd
+      - -v
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+
+    # The container already comes with systemd,
+    # a process that never stops
+    sleepCommand: false
+
+tests:
+  - label: Test systemd existence
+    tasks:
+
+      - label: Check if the system was booted using systemd
+        exec:
+          - systemd-notify
+          - --booted

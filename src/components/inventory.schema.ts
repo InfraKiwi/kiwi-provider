@@ -4,7 +4,7 @@
  */
 
 import Joi from 'joi';
-import { joiMetaClassName, joiObjectWithPattern } from '../util/joi';
+import { joiMetaClassName, joiMetaUnknownType, joiObjectWithPattern } from '../util/joi';
 import { InventoryEntrySchemaObject } from './inventoryEntry.schema';
 import { VarsContainerSchemaObject } from './varsContainer.schema';
 
@@ -24,7 +24,17 @@ export const specialGroupsDescriptions: Record<(typeof specialGroupNames)[number
 
 export const specialGroupNamesSet = new Set(specialGroupNames);
 
-export const InventoryHostSourceSchema = Joi.object().unknown(true).meta({ className: 'InventoryHostSourceInterface' });
+export const InventoryHostSourceSchema = Joi.object()
+  .unknown(true)
+  .meta({
+    className: 'InventoryHostSourceInterface',
+    ...joiMetaUnknownType(
+      Joi.any().description(`
+    The host source config.
+    You can check the available host sources here: ##link#See all available host sources#/hostSources
+    `)
+    ),
+  });
 
 export const InventoryGroupStringEntriesSchema = Joi.alternatives([
   Joi.string().description('A single pattern.').example(`
@@ -62,6 +72,14 @@ export const InventoryGroupSpecialSchema = Joi.object({ ...InventoryEntrySchemaO
 `);
 
 export const InventorySchema = Joi.object({
+  hosts: joiObjectWithPattern(InventoryHostSchema).description(`
+  A raw map of hosts (hostname -> host data).
+  `).example(`
+  hosts:
+    my-host:
+      vars:
+        ip: 192.168.1.2
+  `),
   hostSources: Joi.array().items(InventoryHostSourceSchema).description(`
   A list of host sources to load hosts definitions from.
   `),

@@ -5,7 +5,7 @@
 
 import Joi from 'joi';
 import { joiParseArgsLogOptions, parseArgsLogOptions } from './logger';
-import { joiValidateSyncFSExists } from './joi';
+import { joiAttemptRequired, joiValidateSyncFSExists } from './joi';
 
 import { loadYAMLFromFile } from './yaml';
 
@@ -21,7 +21,7 @@ export const parseArgsConfigOptions: ParseArgsOptionsConfig = {
 
 export async function loadConfig<T>(configPath: string | undefined, schema: Joi.Schema): Promise<T> {
   const configObject = (configPath ? await loadYAMLFromFile(configPath) : {}) ?? {};
-  return Joi.attempt(configObject, schema);
+  return joiAttemptRequired(configObject, schema);
 }
 
 export const parseArgsAppBaseOptions: ParseArgsOptionsConfig = {

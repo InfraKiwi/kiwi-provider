@@ -69,6 +69,20 @@ function initNunjucksEnvFor10infraConfig() {
   return nunjucksEnv;
 }
 
+export class TemplateRenderingError extends Error {
+  readonly templateIsIfTemplate: boolean;
+  readonly templateString: string;
+
+  constructor(template: Template, cause: Error) {
+    const templateString = template.toString();
+    super(`${cause.name}: ${cause.message}\nTemplate: ${templateString}`);
+    this.templateIsIfTemplate = template instanceof IfTemplate;
+    this.templateString = templateString;
+    this.cause = cause.cause;
+    this.stack = cause.stack;
+  }
+}
+
 // ---
 export class Template extends AbstractTemplate {
   static #nunjucksEnv: nunjucks.Environment;
@@ -93,7 +107,7 @@ export class Template extends AbstractTemplate {
     const result = await new Promise<string>((res, rej) => {
       this.#tpl.render(context, (err: Error | null, val: string | null) => {
         if (err != null) {
-          rej(new Error(`Template rendering error: ${err}\nTemplate: ${this.toString()}`, { cause: err }));
+          rej(new TemplateRenderingError(this, err));
           return;
         }
         res(val!);
@@ -207,24 +221,12 @@ export async function resolveTemplates(el: any, tplArgs: any): Promise<any> {
   return el;
 }
 
-export class IfTemplate {
-  readonly src: string;
-  readonly jsonTpl: Template;
-
+export class IfTemplate extends Template {
   constructor(condition: string) {
-    this.src = condition;
-    this.jsonTpl = new Template(`{% if ${condition} %}true{% else %}false{% endif %}`, true);
+    super(`{% if ${condition} %}true{% else %}false{% endif %}`, true);
   }
 
   async isTrue(context?: any): Promise<boolean> {
-    return (await this.jsonTpl.render(context)) == true;
-  }
-
-  toString(): string {
-    return this.src.toString();
-  }
-
-  toJSON(): string {
-    return this.src;
+    return (await this.render(context)) == true;
   }
 }

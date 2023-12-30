@@ -9,6 +9,8 @@ theme:
     - toc.integrate
     - content.code.annotate
     - content.code.copy
+    - search.suggest
+    - search.highlight
 
 dev_addr: 127.0.0.1:8000
 
@@ -16,17 +18,22 @@ extra_css:
   - stylesheets/extra.css
 
 plugins:
+  - search
   - monorepo
   - mkdocs-simple-hooks:
       hooks:
-        on_page_read_source: 'docs.hooks:on_page_read_source'
+        on_page_read_source: 'hack.docs.hooks.hooks:on_page_read_source'
 
 nav:
   - Core docs: '!include ./hack/docs/mkdocs.core.yaml'
   - Task modules: '!include ./hack/docs/mkdocs.modules.yaml'
   - Data Sources: '!include ./hack/docs/mkdocs.dataSources.yaml'
   - Host Sources: '!include ./hack/docs/mkdocs.hostSources.yaml'
+  - Recipe Sources: '!include ./hack/docs/mkdocs.recipeSources.yaml'
+  - Hooks: '!include ./hack/docs/mkdocs.hooks.yaml'
   - Runners: '!include ./hack/docs/mkdocs.runners.yaml'
+  - Assets distribution: '!include ./hack/docs/mkdocs.assetsDistribution.yaml'
+  - Logs storage: '!include ./hack/docs/mkdocs.logsStorage.yaml'
 
 markdown_extensions:
   - attr_list
@@ -42,6 +49,8 @@ markdown_extensions:
   - pymdownx.snippets
   - admonition
   - pymdownx.details
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

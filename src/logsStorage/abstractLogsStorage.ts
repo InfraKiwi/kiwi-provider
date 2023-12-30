@@ -5,11 +5,7 @@
 
 import { AbstractRegistryEntry } from '../util/registry';
 import type e from 'express';
-import Joi from 'joi';
-import {
-  AbstractLogsStorageGetUploadUrlRequestSchema,
-  LogsStorageRoutesMountPrefix,
-} from './abstractLogsStorage.schema';
+import { AbstractLogsStorageGetUploadUrlRequestSchema } from './abstractLogsStorage.schema';
 import type {
   AbstractLogsStorageGetDownloadUrlResponseInterface,
   AbstractLogsStorageGetUploadUrlRequestInterface,
@@ -18,16 +14,27 @@ import type {
 import type { HostLogs, Prisma, PrismaClient } from '@prisma/client';
 import { createHash } from 'node:crypto';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
+import { joiAttemptRequired } from '../util/joi';
+import path from 'node:path';
+import { normalizePathToUnix } from '../util/path';
 
 export interface LogsStorageContext extends DataSourceContext {
   client: PrismaClient;
 }
 
 export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEntry<ConfigType> {
-  // Returns an upload url the client can use to upload log files
+  /*
+   * Returns an upload url the client can use to upload log files
+   * If the returned path starts with `.`, then it will be treated as relative to the
+   * router mount point.
+   */
   abstract getUploadUrl(context: LogsStorageContext, hash: string, storageKey: string): Promise<string>;
 
-  // Get the url we can use to download the logs
+  /*
+   * Get the url we can use to download the logs.
+   * If the returned path starts with `.`, then it will be treated as relative to the
+   * router mount point.
+   */
   abstract getDownloadUrl(context: LogsStorageContext, hash: string): Promise<string>;
 
   /*
@@ -57,7 +64,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
   ) {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     appForHost.post('/uploadUrl', async (req, res) => {
-      const reqData = Joi.attempt(
+      const reqData = joiAttemptRequired(
         req.body,
         AbstractLogsStorageGetUploadUrlRequestSchema
       ) as AbstractLogsStorageGetUploadUrlRequestInterface;
@@ -80,8 +87,10 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
       const hashInst = createHash('sha512');
       hashInst.update(storageKey);
       const hash = hashInst.digest('hex');
-      const uploadUrl = await logsStorage.getUploadUrl(context, hash, storageKey);
-      const uploadUrlWithPrefix = LogsStorageRoutesMountPrefix + uploadUrl;
+      let uploadUrl = await logsStorage.getUploadUrl(context, hash, storageKey);
+      if (uploadUrl.startsWith('.')) {
+        uploadUrl = './' + normalizePathToUnix(uploadUrl);
+      }
 
       const data: Prisma.HostLogsCreateInput = {
         hostReport: { connect: { hostname_release_type_key: reportId } },
@@ -96,7 +105,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
 
       const resp: AbstractLogsStorageGetUploadUrlResponseInterface = {
         storageKey,
-        uploadUrl: uploadUrlWithPrefix,
+        uploadUrl,
       };
       res.send(resp);
     });
@@ -104,15 +113,22 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     appForAdmin.get('/downloadUrl/:hash', async (req, res) => {
       const hash = req.params.hash;
-      const downloadUrl = await logsStorage.getDownloadUrl(context, hash);
-      const downloadUrlWithPrefix = '/admin' + LogsStorageRoutesMountPrefix + downloadUrl;
+
+      /*
+       * TODO proper schema validation
+       */
+      let downloadUrl = await logsStorage.getDownloadUrl(context, hash);
+      if (downloadUrl.startsWith('.')) {
+        // Move back one path level (:hash)
+        downloadUrl = './' + normalizePathToUnix(path.join('..', downloadUrl));
+      }
 
       if (req.query.redirect) {
-        res.redirect(downloadUrlWithPrefix);
+        res.redirect(downloadUrl);
         return;
       }
 
-      const resp: AbstractLogsStorageGetDownloadUrlResponseInterface = { downloadUrl: downloadUrlWithPrefix };
+      const resp: AbstractLogsStorageGetDownloadUrlResponseInterface = { downloadUrl };
       res.send(resp);
     });
   }

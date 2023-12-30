@@ -14,6 +14,7 @@ import { createArchiveFile } from '../src/commands/createArchiveFile';
 import type { ContextLogger, ContextWorkDir } from '../src/util/context';
 import { fsPromiseMkdir, fsPromiseRm } from '../src/util/fs';
 import { setupUncaughtHandler } from '../src/util/uncaught';
+import { joiAttemptRequired } from '../src/util/joi';
 
 /*
  *This program should generate an archive of recipes that each host can download.
@@ -47,7 +48,7 @@ const argsConfig: ParseArgsConfig = {
 async function main() {
   const { positionals, values } = parseArgs(argsConfig);
 
-  const { source, outputTarFile, archiveDir, dump, ...otherArgs } = Joi.attempt(
+  const { source, outputTarFile, archiveDir, dump, ...otherArgs } = joiAttemptRequired(
     values,
     joiParseArgsLogOptionsSchema.append({
       source: Joi.array().items(Joi.string()).default([]),
@@ -68,7 +69,7 @@ async function main() {
     await fsPromiseMkdir(archiveDir);
   }
 
-  const recipeGlob: string[] = Joi.attempt(positionals, Joi.array<string[]>().items(Joi.string()).min(1));
+  const recipeGlob: string[] = joiAttemptRequired(positionals, Joi.array<string[]>().items(Joi.string()).min(1));
 
   const recipesPaths = await glob(recipeGlob);
   const context: ContextLogger & ContextWorkDir = {

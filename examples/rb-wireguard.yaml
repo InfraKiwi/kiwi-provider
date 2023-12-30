@@ -5,11 +5,11 @@ tasks:
   - label: Install nginx
 
 vars:
-  dump: ${{ ctx | dump }}
+  dump: ${{ __context | dump }}
 
-  peers: !!tplJSON >
+  peers: !tplJSON >
     {%
-      set hostnames = ctx.inventory.getHostsByPattern(context,'docker-[1:3],!' + ctx.hostname) | keys
+      set hostnames = context.inventory.getHostsByPattern(context,'docker-[1:3],!' + context.hostname) | keys
     %}
     {%
       set hosts = {}
@@ -24,8 +24,8 @@ vars:
     | toJSON
     }}
 
-  otherPeers: !!eval |
-    const hosts = Object.entries(ctx.inventory.getHostsByPattern(context,'docker-[1:3],!' + ctx.hostname))
+  otherPeers: !eval |
+    const hosts = Object.entries(context.inventory.getHostsByPattern(context,'docker-[1:3],!' + context.hostname))
       .reduce((acc, [hostname, host]) => {
         acc[hostname] = hostname.replace('docker', 'baaa');
         return acc;

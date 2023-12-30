@@ -1,0 +1,7 @@
+tasks:
+  - shell:
+      cmd: |
+        echo Hello world!
+    out: shell
+
+  - test: shell.stdout.trim() == "Hello world!"

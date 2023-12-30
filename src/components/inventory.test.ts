@@ -90,7 +90,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
 
     test.each(tests)('$query', async (args: InventoryQueryTest) => {
       const inventory = args.config ? new Inventory(args.config) : getInventory();
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
 
       const hosts = inventory.getHostsByPattern(context, args.query);
       const hostnames = Object.keys(hosts);
@@ -101,7 +101,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
 
     test('fetch group names for hosts', async () => {
       const inventory = getInventory();
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
 
       expect(inventory.getGroupNamesForHost(context, inventory.getRawHostObject('test-another-3.hello.io')!)).toEqual([
         'another',
@@ -119,7 +119,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
     test('implicit host', async () => {
       // When querying an empty inventory with localhost, an empty host shall be returned, pointing to localhost
       const inventory = new Inventory({});
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
 
       const hosts = inventory.getHostsByPattern(context, 'localhost');
       const hostnames = Object.keys(hosts);
@@ -129,7 +129,7 @@ describe('inventory - can get the right hosts in the right groups', () => {
 
     test('getRawSubInventoryConfig', async () => {
       const inventory = getInventory();
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
 
       {
         const config = await inventory.createRawSubInventoryConfig(context, ['test-4.hello.io']);
@@ -177,21 +177,21 @@ describe('inventory - can get the right hosts in the right groups', () => {
 
     test('rel-1', async () => {
       const inventory = getInventory();
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
       const config = await inventory.createRawSubInventoryConfig(context, ['rel-1']);
       expect(Object.keys(config.groups!)).toContain('relationsTest');
       const subInventory = new Inventory(config);
-      await subInventory.loadGroupsAndStubs(context);
+      await subInventory.loadHostStubsAndGroups(context);
       expect(subInventory.getRawHostObject('rel-1')).not.toBeUndefined();
       expect(subInventory.getRawHostObject('rel-2')).not.toBeUndefined();
     });
 
     test('rel-2', async () => {
       const inventory = getInventory();
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
       const config = await inventory.createRawSubInventoryConfig(context, ['rel-2']);
       const subInventory = new Inventory(config);
-      await subInventory.loadGroupsAndStubs(context);
+      await subInventory.loadHostStubsAndGroups(context);
       expect(subInventory.getRawHostObject('rel-1')).not.toBeUndefined();
       expect(subInventory.getRawHostObject('rel-2')).not.toBeUndefined();
       expect(subInventory.getRawHostObject('rel-3')).toBeUndefined();
@@ -199,10 +199,10 @@ describe('inventory - can get the right hosts in the right groups', () => {
 
     test('rel-3', async () => {
       const inventory = getInventory();
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
       const config = await inventory.createRawSubInventoryConfig(context, ['rel-3']);
       const subInventory = new Inventory(config);
-      await subInventory.loadGroupsAndStubs(context);
+      await subInventory.loadHostStubsAndGroups(context);
       expect(subInventory.getRawHostObject('rel-1')).not.toBeUndefined();
       expect(subInventory.getRawHostObject('rel-2')).not.toBeUndefined();
       expect(subInventory.getRawHostObject('rel-3')).not.toBeUndefined();
@@ -212,11 +212,11 @@ describe('inventory - can get the right hosts in the right groups', () => {
 
     test('rel-4', async () => {
       const inventory = getInventory();
-      await inventory.loadGroupsAndStubs(context);
+      await inventory.loadHostStubsAndGroups(context);
       const config = await inventory.createRawSubInventoryConfig(context, ['rel-4']);
       expect(Object.keys(config.groups!)).toContain('relationsFromRel4');
       const subInventory = new Inventory(config);
-      await subInventory.loadGroupsAndStubs(context);
+      await subInventory.loadHostStubsAndGroups(context);
       expect(subInventory.getRawHostObject('rel-1')).toBeUndefined();
       expect(subInventory.getRawHostObject('rel-2')).toBeUndefined();
       expect(subInventory.getRawHostObject('rel-3')).toBeUndefined();

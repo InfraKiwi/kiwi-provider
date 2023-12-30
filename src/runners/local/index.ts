@@ -13,8 +13,8 @@ import type { ContextLogger } from '../../util/context';
 import { fsPromiseReadFile, fsPromiseTmpDir, fsPromiseTmpFile } from '../../util/fs';
 import {
   downloadNodeDist,
-  getCurrentNodeJSArch,
-  getCurrentNodeJSPlatform,
+  getCurrentNodeJSExecutableArch,
+  getCurrentNodeJSExecutablePlatform,
   NodeJSExecutablePlatform,
 } from '../../util/downloadNodeDist';
 import type { RunStatistics } from '../../util/runContext';
@@ -36,10 +36,10 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
      *We need to set up the environment inside the container, meaning that we need a properly working
      *nodejs executable.
      */
-    const nodePlatform = getCurrentNodeJSPlatform();
+    const nodePlatform = getCurrentNodeJSExecutablePlatform();
     const nodeBin = await downloadNodeDist(context, {
       platform: nodePlatform,
-      arch: getCurrentNodeJSArch(),
+      arch: getCurrentNodeJSExecutableArch(),
     });
 
     if (nodePlatform == NodeJSExecutablePlatform.linux || nodePlatform == NodeJSExecutablePlatform.darwin) {

@@ -4,35 +4,66 @@
  */
 
 import Joi from 'joi';
-import { joiMetaClassName } from '../util/joi';
-import { RecipeMinimalSchema, TestRecipeMinimalSchema } from './recipe.schema';
+import { joiMetaClassName, joiMetaUnknownType } from '../util/joi';
+import { RecipeMinimalSchema, RecipeTestMockSchema } from './recipe.schema';
+import { RecipeSourceListSchema } from '../recipeSources/recipeSourceList.schema';
 
 export const testSuiteRecipeIdBeforeAll = '__testSuiteBeforeAll';
 export const testSuiteRecipeIdAfterAll = '__testSuiteAfterAll';
 export const testSuiteRecipeIdBeforeEach = '__testSuiteBeforeEach';
 export const testSuiteRecipeIdAfterEach = '__testSuiteAfterEach';
 
-export const TestRunnerSchema = Joi.object().unknown(true).meta(joiMetaClassName('TestRunnerInterface'));
+export const TestRunnerSchema = Joi.object()
+  .unknown(true)
+  .meta(joiMetaClassName('TestRunnerInterface'))
+  .meta(
+    joiMetaUnknownType(
+      Joi.any().description(`
+  The test runner to use.
+  You can check the available test runners here: ##link#See all available test runners#/runners
+`)
+    )
+  );
+
+export const TestRecipeMinimalSchema = RecipeMinimalSchema.append({
+  testMocks: Joi.array().items(RecipeTestMockSchema).description(`
+    A list of test mocks to apply to this recipe's execution.
+  `),
+}).meta(joiMetaClassName('TestRecipeMinimalInterface'));
 
 export const TestRecipeSchema = TestRecipeMinimalSchema.append({
-  // A friendly label, used to describe the test
-  label: Joi.string(),
-
-  // An optional id that can be used when referring to this test
-  testId: Joi.string(),
+  testId: Joi.string().description(`
+  An optional id that can be used when referring to this test.
+  `),
 }).meta(joiMetaClassName('TestRecipeInterface'));
 
 export const TestSuiteSchema = Joi.object({
-  // Where is the test suite running? e.g. in a docker container spun up for the purpose
-  runner: TestRunnerSchema.required(),
+  runner: TestRunnerSchema.required().description(`
+  Where is the test suite running? e.g. in a docker container spun up for the purpose.
+  `),
 
-  // If true, each test will be executed in a clean new runner
-  clean: Joi.boolean(),
+  clean: Joi.boolean().description(`
+  If true, each test will be executed in a clean new runner.
+  `),
 
-  beforeAll: RecipeMinimalSchema,
-  afterAll: RecipeMinimalSchema,
-  beforeEach: RecipeMinimalSchema,
-  afterEach: RecipeMinimalSchema,
+  recipeSources: RecipeSourceListSchema.description(`
+    A list of additional recipe sources to use for this test suite.
+  `),
 
-  tests: Joi.array().items(TestRecipeSchema).min(1).required(),
+  beforeAll: TestRecipeMinimalSchema.description(`
+  A minimal recipe config, which will be executed at the beginning of the test suite execution.
+  `),
+  afterAll: TestRecipeMinimalSchema.description(`
+  A minimal recipe config, which will be executed at the end of the test suite execution.
+  `),
+  beforeEach: TestRecipeMinimalSchema.description(`
+  A minimal recipe config, which will be executed before each test.
+  `),
+  afterEach: TestRecipeMinimalSchema.description(`
+  A minimal recipe config, which will be executed after each test.
+  `),
+
+  tests: Joi.array().items(TestRecipeSchema).min(1).required().description(`
+  An array of minimal recipes, each defining a test.
+  `),
 }).meta({ className: 'TestSuiteInterface' });

@@ -6,7 +6,8 @@
 import type { NunjucksContext } from './tpl';
 import { nunjucksAddGlobal } from './tpl';
 import path from 'node:path';
-import { getOSInfo } from '../os';
+import { getOSInfo, getProcessInfo } from '../os';
+import { get10InfraInfo } from '../10infra';
 
 function getVars(this: NunjucksContext) {
   return this.getVariables();
@@ -14,11 +15,23 @@ function getVars(this: NunjucksContext) {
 
 nunjucksAddGlobal('getVars', getVars);
 
-function os(this: NunjucksContext) {
+function fnOs(this: NunjucksContext) {
   return getOSInfo();
 }
 
-nunjucksAddGlobal('os', os);
+nunjucksAddGlobal('os', fnOs);
+
+function fnProcess(this: NunjucksContext) {
+  return getProcessInfo();
+}
+
+nunjucksAddGlobal('process', fnProcess);
+
+function fn10InfraInfo(this: NunjucksContext) {
+  return get10InfraInfo();
+}
+
+nunjucksAddGlobal('tenInfraInfo', fn10InfraInfo);
 
 function pathJoin(this: NunjucksContext, ...params: string[]) {
   return path.join(...params);

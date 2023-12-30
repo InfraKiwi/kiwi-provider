@@ -46,7 +46,9 @@ export interface RunContextShutdownHook {
 }
 
 export class RunContext
-  implements ContextLogger, ContextRecipeSourceList, ContextWorkDir, RunContextPublicVarsInterface {
+  implements ContextLogger, ContextRecipeSourceList, ContextWorkDir, RunContextPublicVarsInterface
+{
+  // eslint-disable-next-line @stylistic/brace-style
   logger: Logger = defaultLogger;
   host: InventoryHost;
   vars: VarsInterface = {};
@@ -103,7 +105,7 @@ export class RunContext
   get varsForTemplate(): VarsInterface {
     return {
       ...this.vars,
-      ctx: this.forcedVars,
+      __context: this.forcedVars,
     };
   }
 

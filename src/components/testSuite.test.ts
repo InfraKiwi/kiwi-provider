@@ -103,7 +103,7 @@ describe('testing stack', () => {
           label: 'test_1',
           tasks: [
             {
-              store: {
+              write: {
                 content: 'Hello',
                 raw: true,
                 // Stored in the temporary working directory
@@ -118,7 +118,7 @@ describe('testing stack', () => {
             {
               stat: 'path=tmpFile',
               failedIf: {
-                if: 'result.vars.exists',
+                if: '__result.vars.exists',
                 message: 'The file already exists!',
               },
             },

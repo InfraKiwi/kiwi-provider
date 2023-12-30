@@ -74,6 +74,24 @@ describe('data source file', () => {
       },
       expect: 'A joke!',
     },
+    {
+      args: {
+        path: 'myFile.js',
+        workDir,
+      },
+      expect: {
+        helloWorld: 'Hello world!',
+      },
+    },
+    {
+      args: {
+        path: 'myFile.ts',
+        workDir,
+      },
+      expect: {
+        helloWorld: 'Hello world!',
+      },
+    },
   ];
 
   test.each(tests)('$#', async (args: DataSourceFileTest) => {

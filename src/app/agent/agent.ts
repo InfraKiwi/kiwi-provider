@@ -10,7 +10,6 @@ import FormData from 'form-data';
 import type { Axios } from 'axios';
 import axios from 'axios';
 import type { AgentConfigInterface } from './agent.schema.gen';
-import Joi from 'joi';
 import { AgentConfigSchema } from './agent.schema';
 import type { ConfigProviderRouteGetConfigForHostnameResultInterface } from '../configProvider/configProvider.schema.gen';
 import { Archive } from '../../components/archive';
@@ -42,6 +41,9 @@ import { Inventory } from '../../components/inventory';
 import * as os from 'node:os';
 import type { InventoryInterface } from '../../components/inventory.schema.gen';
 import { runRecipe } from '../../commands/runRecipe';
+import { joiAttemptRequired } from '../../util/joi';
+import { normalizePathToUnix } from '../../util/path';
+import { RecipePhase } from '../../components/recipe.schema';
 
 interface QueueItem {
   release: string;
@@ -67,7 +69,7 @@ export class Agent {
   readonly #hostname: string;
 
   constructor(logger: Logger, config: AgentConfigInterface) {
-    this.#config = Joi.attempt(config, AgentConfigSchema);
+    this.#config = joiAttemptRequired(config, AgentConfigSchema);
     this.#hostname = this.#config.hostname ?? os.hostname();
     const childLogger = logger.child({ server: 'worker' });
     const loggerContext: ContextLogger = { logger: childLogger };
@@ -98,7 +100,7 @@ export class Agent {
     return client;
   }
 
-  async reloadRelease(force?: boolean): Promise<ReloadReleaseResult> {
+  async reloadRelease(phase: RecipePhase, force?: boolean): Promise<ReloadReleaseResult> {
     const oldRelease = (await this.#db.exists()) ? await this.#db.getRelease() : undefined;
 
     const release = (await this.#context.apiClient.get('/release')).data.release as string;
@@ -115,6 +117,7 @@ export class Agent {
         ...this.#context,
         workDir: undefined,
       },
+      phase,
       release
     );
 
@@ -134,7 +137,7 @@ export class Agent {
 
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     app.get('/reload', async (req, res) => {
-      const result = await this.reloadRelease(req.query.force == 'true');
+      const result = await this.reloadRelease(RecipePhase.runtime, req.query.force == 'true');
       res.status(200).json(result);
     });
   }
@@ -186,22 +189,27 @@ export class Agent {
 
     for (const assetFile of allAssets) {
       const resp = await context.apiClient.get('/assetsDistribution/downloadUrl', { params: { assetFile } });
-      const downloadUrl = (
-        Joi.attempt(
-          resp.data,
-          AbstractAssetsDistributionGetDownloadUrlResponseSchema
-        ) as AbstractAssetsDistributionGetDownloadUrlResponseInterface
-      ).downloadUrl;
+      const downloadUrlResp = joiAttemptRequired(
+        resp.data,
+        AbstractAssetsDistributionGetDownloadUrlResponseSchema
+      ) as AbstractAssetsDistributionGetDownloadUrlResponseInterface;
+
+      const downloadFromSelfAPI = downloadUrlResp.downloadUrl.startsWith('.');
+      const downloadUrl = downloadFromSelfAPI
+        ? normalizePathToUnix(`/assetsDistribution/${downloadUrlResp.downloadUrl}`)
+        : downloadUrlResp.downloadUrl;
+
       context.logger.info(`Downloading archive ${assetFile} from ${downloadUrl}`);
+
       const destination = path.join(assetsDir, assetFile);
       const dirName = path.dirname(destination);
       await mkdirp(dirName);
-      await downloadFile(downloadUrl, destination, context.externalAPIClient);
+      await downloadFile(downloadUrl, destination, downloadFromSelfAPI ? context.apiClient : context.externalAPIClient);
     }
   }
 
-  async #processNewRelease(context: ApiContext, release: string) {
-    context.logger.info(`Processing new release: ${release}`);
+  async #processNewRelease(context: ApiContext, phase: RecipePhase, release: string) {
+    context.logger.info(`Processing release ${release} in phase ${phase}`);
     const childLogger = await getChildLoggerWithLogFile(context, 'init');
     let status = HostReportStatus.pending;
     await childLogger.wrapContext(
@@ -227,7 +235,9 @@ export class Agent {
           await this.#downloadAllAssetsArchives(context, assetsDir, configForHostname.compileResult);
           const archive = new Archive(configForHostname.compileResult.archive, assetsDir);
           const inventory = configForHostname.compileResult.inventory;
-          const recipes = await archive.getInstantiatedRootRecipes(context, false);
+          const recipes = await archive.getInstantiatedRootRecipes(context, false, {
+            phase,
+          });
           for (const recipe of recipes) {
             await this.#queueRecipe(context, release, inventory, recipe);
           }
@@ -284,26 +294,29 @@ export class Agent {
       status,
     };
     const resp = await context.apiClient.post(`${LogsStorageRoutesMountPrefix}/uploadUrl`, data);
-    const uploadInfo = Joi.attempt(
+    const uploadInfo = joiAttemptRequired(
       resp.data,
       AbstractLogsStorageGetUploadUrlResponseSchema
     ) as AbstractLogsStorageGetUploadUrlResponseInterface;
 
-    context.logger.info(
-      `Uploading log file ${logFile} to ${uploadInfo.uploadUrl} with storageKey ${uploadInfo.storageKey}`
-    );
+    const uploadSelfAPI = uploadInfo.uploadUrl.startsWith('.');
+    const uploadUrl = uploadSelfAPI
+      ? normalizePathToUnix(`${LogsStorageRoutesMountPrefix}/${uploadInfo.uploadUrl}`)
+      : uploadInfo.uploadUrl;
+
+    context.logger.info(`Uploading log file ${logFile} to ${uploadUrl} with storageKey ${uploadInfo.storageKey}`);
 
     const fileStream = fs.createReadStream(logFile);
     const form = new FormData();
     form.append('file', fileStream);
 
-    const client = uploadInfo.uploadUrl.startsWith('/') ? context.apiClient : context.externalAPIClient;
-    await client.put(uploadInfo.uploadUrl, form, { headers: { ...form.getHeaders() } });
+    const client = uploadSelfAPI ? context.apiClient : context.externalAPIClient;
+    await client.put(uploadUrl, form, { headers: { ...form.getHeaders() } });
   }
 
   async runRecipeFromQueueItem(context: DataSourceContext, queueItem: QueueItem) {
     const inventory = new Inventory(queueItem.inventory);
-    await inventory.loadGroupsAndStubs(context, true);
+    await inventory.loadHostStubsAndGroups(context, true);
 
     await runRecipe(context, {
       hostname: this.#hostname,

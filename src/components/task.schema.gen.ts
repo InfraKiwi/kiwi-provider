@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -48,26 +48,46 @@ export interface TaskInterface {
   vars?: VarsInterface; //typeRef:VarsInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
 
   /**
-   * If provided, registers any output variables into the variable name
+   * If provided, registers any output variables into a variable with the name
    * provided as value of the `out` argument.
    */
   out?: string;
 
   /**
+   * If provided, registers the full module result into a variable with the name
+   * provided as value of the `outRaw` argument.
+   */
+  outRaw?: string;
+
+  /**
    * When provided, the task will fail if this condition succeeds.
    * Expects a template that would work inside an `if` condition.
+   *
+   * The context available for this condition is the same one available at
+   * the module's resolution time, plus the additional field `__result`,
+   * which contains the result of the module.
+   *
+   * The `__result` field is of type ModuleRunResultInterface. ##typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts"}
    */
   failedIf?:
     | string
-    | FailedIfFullInterface; //typeRef:FailedIfFullInterface:{"relPath":"self","isRegistryExport":false}
+    | FailedIfFullInterface //typeRef:FailedIfFullInterface:{"relPath":"self","isRegistryExport":false}
+    | boolean;
 
   /**
    * When provided, the recipe will stop successfully if this condition succeeds.
    * Expects a template that would work inside an `if` condition.
+   *
+   * The context available for this condition is the same one available at
+   * the module's resolution time, plus the additional field `__result`,
+   * which contains the result of the module.
+   *
+   * The `__result` field is of type ModuleRunResultInterface. ##typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts"}
    */
   exitIf?:
     | string
-    | ExitIfFullInterface; //typeRef:ExitIfFullInterface:{"relPath":"self","isRegistryExport":false}
+    | ExitIfFullInterface //typeRef:ExitIfFullInterface:{"relPath":"self","isRegistryExport":false}
+    | boolean;
 
   /**
    * If true, registers any output variables into the global context.
@@ -106,7 +126,6 @@ export interface TaskTestMockInterface {
   result: ModuleRunResultInterface; //typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts","isRegistryExport":false}
 
   if?: ConditionSetInterface; //typeRef:ConditionSetInterface:{"relPath":"testingCommon.schema.gen.ts","isRegistryExport":false}
-
 }
 // [block TaskTestMockInterface end]
 //meta:TaskTestMockInterface:[{"className":"TestMockBaseInterface"},{"className":"TaskTestMockInterface"}]

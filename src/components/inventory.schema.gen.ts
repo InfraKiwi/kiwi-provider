@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -40,7 +40,6 @@ export interface InventoryGroupInterface {
    * Compile-time vars sources for the entry
    */
   varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
-
 }
 // [block InventoryGroupInterface end]
 //meta:InventoryGroupInterface:[{"className":"InventoryGroupInterface"}]
@@ -77,7 +76,6 @@ export interface InventoryGroupSpecialInterface {
    * Compile-time vars sources for the entry
    */
   varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
-
 }
 // [block InventoryGroupSpecialInterface end]
 //meta:InventoryGroupSpecialInterface:[{"className":"InventoryGroupSpecialInterface"}]
@@ -134,7 +132,6 @@ export interface InventoryHostInterface {
    * Compile-time vars sources for the entry
    */
   varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
-
 }
 // [block InventoryHostInterface end]
 //meta:InventoryHostInterface:[{"className":"InventoryHostInterface"}]
@@ -142,15 +139,29 @@ export interface InventoryHostInterface {
 // [block InventoryHostSourceInterface begin]
 export interface InventoryHostSourceInterface {
   /**
-   * Unknown Property
+   * The host source config.
+   * You can check the available host sources here: ##link#See all available host sources#/hostSources
    */
-  [x: string]: unknown;
+  [x: string]: any;
 }
 // [block InventoryHostSourceInterface end]
-//meta:InventoryHostSourceInterface:[{"className":"InventoryHostSourceInterface"}]
+//meta:InventoryHostSourceInterface:[{"className":"InventoryHostSourceInterface","unknownType":{"type":"any","flags":{"description":"\n    The host source config.\n    You can check the available host sources here: ##link#See all available host sources#/hostSources\n    "}}}]
 
 // [block InventoryInterface begin]
 export interface InventoryInterface {
+  /**
+   * A raw map of hosts (hostname -> host data).
+   *
+   * @example
+   * hosts:
+   *   my-host:
+   *     vars:
+   *       ip: 192.168.1.2
+   */
+  hosts?: {
+    [x: string]: InventoryHostInterface; //typeRef:InventoryHostInterface:{"relPath":"self","isRegistryExport":false}
+  };
+
   /**
    * A list of host sources to load hosts definitions from.
    */
@@ -176,7 +187,6 @@ export interface InventoryInterface {
        * Specify properties for special groups.
        */
       | InventoryGroupSpecialInterface; //typeRef:InventoryGroupSpecialInterface:{"relPath":"self","isRegistryExport":false}
-
   };
 
   /**
@@ -188,7 +198,6 @@ export interface InventoryInterface {
    * Compile-time vars sources for the entry
    */
   varsSources?: VarsSourcesInterface; //typeRef:VarsSourcesInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
-
 }
 // [block InventoryInterface end]
 //meta:InventoryInterface:[{"className":"InventoryInterface"}]

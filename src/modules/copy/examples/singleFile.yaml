@@ -1,0 +1,24 @@
+tasks:
+  - label: Create a temporary file
+    temp: {}
+    out: temp
+
+  - label: Copy one asset
+    copy:
+      from: ${{ __assetsDir }}/one.txt
+      to: ${{ temp.path }}
+    out: copyVar
+
+  # Prints the list of copied files
+  # It will be only one file
+  - debug: >
+      Copied files: ${{ copyVar.files | join(',') }}
+
+  - test: >
+      '/one.txt' in copyVar.files[0]
+
+  - label: Verify we copied the files
+    load:
+      fileRaw: path="${{ temp.path }}"
+    out: one
+  - test: one.content == "1"

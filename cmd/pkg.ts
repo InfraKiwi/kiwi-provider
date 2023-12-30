@@ -14,12 +14,12 @@ import type { ContextLogger } from '../src/util/context';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import { checkVersionCommand } from '../src/util/args';
-import { getJoiEnumValues, joiValidateSyncFSExists } from '../src/util/joi';
+import { getJoiEnumValues, joiAttemptRequired, joiValidateSyncFSExists } from '../src/util/joi';
 import Joi from 'joi';
 import { createNodeJSBundle } from '../src/commands/createNodeJSBundle';
 import {
-  getCurrentNodeJSArch,
-  getCurrentNodeJSPlatform,
+  getCurrentNodeJSExecutableArch,
+  getCurrentNodeJSExecutablePlatform,
   NodeJSExecutableArch,
   NodeJSExecutablePlatform,
 } from '../src/util/downloadNodeDist';
@@ -41,7 +41,7 @@ async function main() {
   checkVersionCommand();
 
   const { values } = parseArgs(argsConfig);
-  const { nodeArch, nodePlatform, outDir, entryPoint, ...otherArgs } = Joi.attempt(
+  const { nodeArch, nodePlatform, outDir, entryPoint, ...otherArgs } = joiAttemptRequired(
     values,
     joiParseArgsLogOptionsSchema.append({
       nodeArch: getJoiEnumValues(NodeJSExecutableArch),
@@ -58,8 +58,8 @@ async function main() {
   await createNodeJSBundle(context, {
     outDir,
     entryPoint,
-    nodeArch: nodeArch ?? getCurrentNodeJSArch(),
-    nodePlatform: nodePlatform ?? getCurrentNodeJSPlatform(),
+    nodeArch: nodeArch ?? getCurrentNodeJSExecutableArch(),
+    nodePlatform: nodePlatform ?? getCurrentNodeJSExecutablePlatform(),
   });
 }
 

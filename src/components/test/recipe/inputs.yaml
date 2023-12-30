@@ -1,6 +1,6 @@
 inputs:
   hello: string?
-  world: !!joi Joi.string()
+  world: !joi Joi.string()
 
 tasks:
   - debug: ${{ getVars() | dump }}

@@ -20,7 +20,11 @@ export function areWeTestingWithJest() {
 }
 
 export const testTimeoutLong = 60 * 1000;
+export const testTimeoutVeryLong = 5 * 60 * 1000;
 
 export const platformIsWin = process.platform === 'win32';
 export const platformIsMacOS = process.platform === 'darwin';
 export const platformNewLine = (platformIsWin ? '\r' : '') + '\n';
+
+// Cache directory used e.g. to download esbuild binaries
+export const globalCacheDir = path.join(platformIsWin ? process.env.LOCALAPPDATA! : process.env.HOME!, '.10infra');

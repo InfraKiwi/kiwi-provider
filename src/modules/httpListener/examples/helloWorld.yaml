@@ -1,8 +1,9 @@
 tasks:
+  # Set up a temporary HTTP server
   - httpListener:
       routes:
         '/hello':
-          get: !!eval |
+          get: !eval |
             return (req, res) => {
               res.send('World')
             }

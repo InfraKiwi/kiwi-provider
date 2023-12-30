@@ -14,14 +14,14 @@ export const ModuleHTTPListenerRouteHandlerFunctionSchema = Joi.function()
   .minArity(2)
   .description(
     `
-A route handler in the form of \`(req, res, [next]) => {}\`. Define it using an \`!!eval\` YAML block.
+A route handler in the form of \`(req, res, [next]) => {}\`. Define it using an \`!eval\` YAML block.
 `
   )
   .example(
     `
 routes:
   '/hello':
-    get: !!eval |
+    get: !eval |
       return (req, res) => {
         res.send('World')
       }
@@ -81,7 +81,7 @@ outputted in the module result.
       ModuleHTTPListenerRouteSchema.description(`
 The mapping \`Route path -> handler\`.
 E.g. /hello:
-    get: !!eval |
+    get: !eval |
       return (req, res) => res.send('Hello world!');
 `)
     ).description(`

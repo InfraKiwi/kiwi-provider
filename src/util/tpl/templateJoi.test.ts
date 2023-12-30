@@ -4,7 +4,9 @@
  */
 
 import { describe, expect, test } from '@jest/globals';
-import { TemplateJoi } from './templateJoi';
+import { joiSchemaBuildFromString, TemplateJoi } from './templateJoi';
+import { joiSchemaDump } from '../joi';
+import Joi from 'joi';
 
 interface TplTestEntry {
   str: string;
@@ -35,5 +37,41 @@ describe('processes joi templates correctly', () => {
     } else {
       expect(valid.error).toBe(undefined);
     }
+  });
+});
+
+describe('buildJoiSchemaFromString', () => {
+  const templates: {
+    str: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    test: any;
+    expect: boolean;
+  }[] = [
+    {
+      str: 'Joi.string()',
+      test: 'hello',
+      expect: true,
+    },
+    {
+      str: 'Joi.string()',
+      test: 2,
+      expect: false,
+    },
+    {
+      str: joiSchemaDump(Joi.string()),
+      test: 'hello',
+      expect: true,
+    },
+    {
+      str: joiSchemaDump(Joi.string()),
+      test: 2,
+      expect: false,
+    },
+  ];
+
+  test.each(templates)('%s', async (el) => {
+    const schema = joiSchemaBuildFromString(el.str);
+    const isTrue = schema.validate(el.test);
+    expect(isTrue.error == null).toEqual(el.expect);
   });
 });

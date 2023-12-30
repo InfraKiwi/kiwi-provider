@@ -8,4 +8,6 @@ You can use the `switch` module to execute different tasks depending on the valu
 
 ## Reference
 
+Key: `switch`
+
 ![type ModuleSwitchInterface]

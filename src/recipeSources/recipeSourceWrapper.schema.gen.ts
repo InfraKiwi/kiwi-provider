@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -13,9 +13,10 @@ export interface RecipeSourceWrapperInterface {
   workDir?: string;
 
   /**
-   * Unknown Property
+   * The recipe source config.
+   * You can check the available recipe sources here: ##link#See all available recipe sources#/recipeSources
    */
-  [x: string]: unknown;
+  [x: string]: any;
 }
 // [block RecipeSourceWrapperInterface end]
-//meta:RecipeSourceWrapperInterface:[{"className":"RecipeSourceWrapperInterface"}]
+//meta:RecipeSourceWrapperInterface:[{"className":"RecipeSourceWrapperInterface"},{"unknownType":{"type":"any","flags":{"description":"\n  The recipe source config.\n  You can check the available recipe sources here: ##link#See all available recipe sources#/recipeSources\n"}}}]

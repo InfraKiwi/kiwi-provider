@@ -7,12 +7,22 @@ import Joi from 'joi';
 import { dataSourceRegistryEntryFactory } from '../registry';
 
 import { loadYAML } from '../../util/yaml';
+import { generateAndLoadESBuildBundleFromFile } from '../../util/esbuild/esbuild';
+import type { ContextLogger } from '../../util/context';
+import { fsPromiseReadFile } from '../../util/fs';
 
-export type DataSourceFileLoaderFunction = (filePath: string) => Promise<unknown>;
+export type DataSourceFileLoaderFunction = (context: ContextLogger, filePath: string) => Promise<unknown>;
+
+const loadYAMLAsLoader: DataSourceFileLoaderFunction = async (c, filePath) => {
+  const content = await fsPromiseReadFile(filePath, 'utf-8');
+  return loadYAML(content);
+};
 export const fileLoadersMap: Record<string, DataSourceFileLoaderFunction> = {
-  '.yaml': loadYAML,
-  '.yml': loadYAML,
-  '.json': loadYAML,
+  '.yaml': loadYAMLAsLoader,
+  '.yml': loadYAMLAsLoader,
+  '.json': loadYAMLAsLoader,
+  '.js': generateAndLoadESBuildBundleFromFile,
+  '.ts': generateAndLoadESBuildBundleFromFile,
 };
 export const getAvailableFileLoadersExtensions = () => Object.keys(fileLoadersMap);
 

@@ -32,7 +32,8 @@ function dataSourceHTTPListGetTestHTTPServer(callback: (err: unknown, server: ht
           });
           return acc;
         }, [])
-    ));
+    )
+  );
   app.get('/listArrayWithObjectIds', (req, res) =>
     res.send(
       Object.keys(dataSourceHTTPListTestEntriesStr)
@@ -41,10 +42,12 @@ function dataSourceHTTPListGetTestHTTPServer(callback: (err: unknown, server: ht
           acc.push({ id });
           return acc;
         }, [])
-    ));
+    )
+  );
   app.get('/listNum', (req, res) => res.send(Array.from(dataSourceHTTPListTestEntriesNum.keys())));
   app.get('/loadNum', (req, res) =>
-    res.send(dataSourceHTTPListTestEntriesNum.get(parseInt(req.query['id'] as string))));
+    res.send(dataSourceHTTPListTestEntriesNum.get(parseInt(req.query['id'] as string)))
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.on('error', (err) => callback(err, undefined as any));

@@ -4,7 +4,7 @@
  */
 
 import Joi from 'joi';
-import { joiMetaClassName, joiValidateValidIfTemplate } from '../../util/joi';
+import { joiMetaClassName, joiMetaUnknownType, joiValidateValidIfTemplate } from '../../util/joi';
 import { localhost127 } from '../../util/constants';
 import type { ServerListenerInterface } from './server.schema.gen';
 
@@ -31,10 +31,20 @@ export const ServerListenerWrapperSchema = Joi.object(getServerListenerSchemaObj
 );
 
 export const ServerHookSchema = Joi.object({
-  if: Joi.string().custom(joiValidateValidIfTemplate).description('The condition that will trigger the hook'),
+  if: Joi.string().custom(joiValidateValidIfTemplate).description(`
+  The condition that will trigger the hook.
+  `),
 })
   .unknown(true)
-  .meta(joiMetaClassName('ServerHookInterface'));
+  .meta(joiMetaClassName('ServerHookInterface'))
+  .meta(
+    joiMetaUnknownType(
+      Joi.any().description(`
+  The hook function config.
+  You can check the available hook functions here: ##link#See all available hook functions#/hooks
+  `)
+    )
+  );
 
 export const ServerHookWithArraySchema = Joi.alternatives([ServerHookSchema, Joi.array().items(ServerHookSchema)]).meta(
   joiMetaClassName('ServerHookWithArrayInterface')

@@ -14,7 +14,7 @@ import type { ModuleSetInterface } from '../modules/set/schema.gen';
 
 interface FailTest {
   fail: ModuleFailInterface;
-  failedIf: string;
+  failedIf: string | boolean;
   expectFail: boolean;
 }
 
@@ -66,6 +66,11 @@ describe('task', () => {
       failedIf: 'false',
       expectFail: false,
     },
+    {
+      fail: {},
+      failedIf: false,
+      expectFail: false,
+    },
   ];
 
   test.each(failTests)('fail test %#', async (test) => {
@@ -85,12 +90,12 @@ describe('task', () => {
   const exitTests: ExitTest[] = [
     {
       set: { iShouldExit: true },
-      exitIf: 'result.vars.iShouldExit == true',
+      exitIf: '__result.vars.iShouldExit == true',
       expectExit: true,
     },
     {
       set: { iShouldExit: false },
-      exitIf: 'result.vars.iShouldExit == true',
+      exitIf: '__result.vars.iShouldExit == true',
       expectExit: false,
     },
   ];
@@ -125,7 +130,7 @@ describe('task', () => {
   });
 
   it('should accept the sensitive arg', async () => {
-    let ctx = getTestRunContext({ vars: { myVarOut: 'output' } });
+    let context = getTestRunContext({ vars: { myVarOut: 'output' } });
 
     {
       const taskConfig: TaskInterface = {
@@ -134,10 +139,10 @@ describe('task', () => {
         out: 'set',
       };
       const task = new Task(taskConfig);
-      const taskRunResult = await task.run(ctx);
+      const taskRunResult = await task.run(context);
       expect(taskRunResult.moduleRunResult?.vars).toEqual({ myVar: loggingMaskedPlaceholder });
 
-      ctx = ctx.withVars({ [taskRunResult.out!]: taskRunResult.moduleRunResult?.vars ?? {} });
+      context = context.withVars({ [taskRunResult.out!]: taskRunResult.moduleRunResult?.vars ?? {} });
     }
 
     {
@@ -157,12 +162,12 @@ describe('task', () => {
       }
 
       const t = new DebuggingTransport();
-      ctx.logger.add(t);
+      context.logger.add(t);
 
       const taskConfig: TaskInterface = { debug: 'Hello ${{ set.myVar }}' };
       const task = new Task(taskConfig);
-      await task.run(ctx);
-      ctx.logger.remove(t);
+      await task.run(context);
+      context.logger.remove(t);
 
       for (const tLine of tLines) {
         expect(tLine.debug).toEqual('Hello [MASKED]');

@@ -37,4 +37,6 @@ export const RunContextPublicVarsSchema = Joi.object({
   isTesting: Joi.boolean().required().description(`
   True only when the recipe is being executes through a test suite.
   `),
-}).meta(joiMetaClassName('RunContextPublicVarsInterface'));
+}).meta(joiMetaClassName('RunContextPublicVarsInterface')).description(`
+  The context available in every task module's execution.
+`);

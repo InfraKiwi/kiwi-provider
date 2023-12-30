@@ -11,14 +11,14 @@ import type {
   CompileArchiveForHostArgsInterface,
   CompileArchiveForHostResultInterface,
 } from './compileArchiveForHost.schema.gen';
-import Joi from 'joi';
 import { CompileArchiveForHostArgsSchema } from './compileArchiveForHost.schema';
+import { joiAttemptRequired } from '../util/joi';
 
 export async function compileArchiveForHost(
   context: HostSourceContext,
   args: CompileArchiveForHostArgsInterface
 ): Promise<CompileArchiveForHostResultInterface> {
-  args = Joi.attempt(args, CompileArchiveForHostArgsSchema);
+  args = joiAttemptRequired(args, CompileArchiveForHostArgsSchema);
 
   let { logger } = context;
   logger ??= newLogger();

@@ -12,6 +12,7 @@
 import globrex from 'globrex';
 import { escapeRegex } from './regex';
 import path from 'node:path';
+import { normalizePathToUnix } from './path';
 
 interface HostPatternSubscript {
   start: number;
@@ -51,7 +52,7 @@ export class HostPattern {
       throw new Error('A host pattern needs to contain at least 1 character');
     }
     if (normalizeSeparatorCheck) {
-      pattern = path.normalize(pattern).replace('\\', '/');
+      pattern = normalizePathToUnix(pattern);
     }
     this.raw = pattern;
 
@@ -146,7 +147,7 @@ patternAfter,
 
   matchString(el: string): boolean {
     if (normalizeSeparatorCheck) {
-      el = path.normalize(el).replace('\\', '/');
+      el = normalizePathToUnix(el);
     }
     const match = this.regex.exec(el);
     if (match == null) {

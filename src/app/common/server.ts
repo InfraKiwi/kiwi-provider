@@ -13,6 +13,9 @@ import bodyParser from 'body-parser';
 import Joi from 'joi';
 import { getServerListenerSchemaObject } from './server.schema';
 import type { ServerListenerInterface, ServerListenerWrapperInterface } from './server.schema.gen';
+import { localhost127 } from '../../util/constants';
+import type { Server } from 'node:http';
+import { getRoutes } from '../../util/expressRoutes';
 
 export interface NewServerArgs {
   auditRequestOptions?: CommonOptions;
@@ -62,5 +65,23 @@ export function newServer(context: ContextLogger, args: NewServerArgs): Express 
     })
   );
 
+  app.use((req, res, next) => {
+    // Only log json responses
+    next();
+
+    if ((res.getHeader('Content-Type') as string)?.includes('application/json') != true) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (req as any).skipLogResponse = true;
+    }
+  });
+
   return app;
+}
+
+export function appListen({ logger }: ContextLogger, app: Express, config: ServerListenerInterface): Server {
+  const server = app.listen(config.port, config.addr ?? localhost127, () => {
+    logger.info('Server listening', { address: server.address() });
+    getRoutes(app).forEach((route) => logger.info(`${route}`));
+  });
+  return server;
 }

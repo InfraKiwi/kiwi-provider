@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -22,7 +22,6 @@ export type ConditionSetInterface =
 // [block TestMockBaseInterface begin]
 export interface TestMockBaseInterface {
   result: ModuleRunResultInterface; //typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts","isRegistryExport":false}
-
 }
 // [block TestMockBaseInterface end]
 //meta:TestMockBaseInterface:[{"className":"TestMockBaseInterface"}]

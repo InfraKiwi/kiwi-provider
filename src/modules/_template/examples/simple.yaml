@@ -1,0 +1,6 @@
+tasks:
+  - _template:
+      hello: world
+    out: exampleVar
+
+  - test: exampleVar.newValue == "world123"

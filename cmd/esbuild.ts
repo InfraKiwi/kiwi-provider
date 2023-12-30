@@ -6,7 +6,7 @@
 import '../src/util/loadAllRegistryEntries.gen';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
-import { joiValidateSyncFSExists } from '../src/util/joi';
+import { joiAttemptRequired, joiValidateSyncFSExists } from '../src/util/joi';
 import Joi from 'joi';
 import { runESBuild } from '../src/commands/esbuild';
 import { setupUncaughtHandler } from '../src/util/uncaught';
@@ -31,7 +31,7 @@ const argsConfig: ParseArgsConfig = {
 async function main() {
   const { values } = parseArgs(argsConfig);
 
-  const { entryPoint, outFile, ...otherArgs } = Joi.attempt(
+  const { entryPoint, outFile, ...otherArgs } = joiAttemptRequired(
     values,
     joiParseArgsLogOptionsSchema.append({
       entryPoint: Joi.string().custom(joiValidateSyncFSExists).required(),

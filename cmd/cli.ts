@@ -10,7 +10,7 @@ import { joiParseArgsLogOptionsSchema, newLoggerFromParseArgs, parseArgsLogOptio
 import { checkVersionCommand, getArgDefault } from '../src/util/args';
 import * as os from 'node:os';
 import '../src/util/loadAllRegistryEntries.gen';
-import { joiValidateShortieObject, joiValidateSyncFSExists } from '../src/util/joi';
+import { joiAttemptRequired, joiValidateShortieObject, joiValidateSyncFSExists } from '../src/util/joi';
 import type { RecipeSourceCtorContext } from '../src/recipeSources/recipeSourceList';
 import { RecipeSourceList } from '../src/recipeSources/recipeSourceList';
 import type { RecipeCtorContext } from '../src/components/recipe';
@@ -23,7 +23,6 @@ import { fsPromiseTmpDir, fsPromiseTmpFile, fsPromiseWriteFile } from '../src/ut
 import type { MyPartialRunContextOmit, RunStatistics } from '../src/util/runContext';
 import { newRunStatistics } from '../src/util/runContext';
 import { TestSuite } from '../src/components/testSuite';
-import type { ContextLogger } from '../src/util/context';
 import type { AbstractRunnerInstance } from '../src/runners/abstractRunner';
 import { TestRunnerSchema } from '../src/components/testSuite.schema';
 import { runnerRegistry } from '../src/runners/registry';
@@ -33,6 +32,7 @@ import { Inventory } from '../src/components/inventory';
 import { runRecipe } from '../src/commands/runRecipe';
 
 import { loadYAMLFromFile } from '../src/util/yaml';
+import { set10InfraInfo } from '../src/util/10infra';
 
 enum MainCommand {
   run = 'run',
@@ -41,8 +41,14 @@ enum MainCommand {
   test = 'test',
 }
 
+const appName = '10infra-cli';
+
 async function main() {
   checkVersionCommand();
+
+  set10InfraInfo({
+    appName,
+  });
 
   const args = process.argv.slice(2);
   let mainCommand = args[0] as MainCommand;
@@ -134,7 +140,7 @@ async function main() {
     runner,
 
     ...otherArgs
-  } = Joi.attempt(values, argsValidation, 'Error evaluating command args:');
+  } = joiAttemptRequired(values, argsValidation, 'Error evaluating command args:');
   const logger = newLoggerFromParseArgs(otherArgs);
   setupUncaughtHandler(logger);
 
@@ -152,7 +158,7 @@ async function main() {
 
   if (isArchive) {
     const recipeIds = positionals;
-    await runRecipeFromArchive(
+    await runRecipeFromArchiveDir(
       context,
       recipeIds,
 
@@ -182,10 +188,10 @@ async function runTestSuite(args: string[]) {
     args,
   });
 
-  const { ...otherArgs } = Joi.attempt(values, joiParseArgsLogOptionsSchema, 'Error evaluating command args:');
+  const { ...otherArgs } = joiAttemptRequired(values, joiParseArgsLogOptionsSchema, 'Error evaluating command args:');
   const logger = newLoggerFromParseArgs(otherArgs);
   setupUncaughtHandler(logger);
-  const context: ContextLogger = { logger };
+  const context: RecipeCtorContext = { logger };
 
   const testSuites: TestSuite[] = [];
 
@@ -297,18 +303,21 @@ async function runRecipes(
   statsFileName && (await fsPromiseWriteFile(statsFileName, JSON.stringify(recipesStats)));
 }
 
-async function runRecipeFromArchive(
+async function runRecipeFromArchiveDir(
   context: RecipeCtorContext & Partial<MyPartialRunContextOmit>,
   recipeIds: string[],
   archiveDir: string,
-  inventoryPath: string,
+  inventoryPath: string | undefined,
   hostname: string,
   throwOnRecipeFailure: boolean,
   statsFileName?: string
 ) {
+  const inventory = inventoryPath ? await Inventory.fromFile(context, inventoryPath) : new Inventory({});
+  const archive = await Archive.fromDir(archiveDir);
+
   const recipesStats = await runRecipesFromArchive(context, {
-    archiveDir,
-    inventoryPath,
+    archive,
+    inventory,
     hostname,
     recipeIds,
     throwOnRecipeFailure,

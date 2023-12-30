@@ -65,21 +65,26 @@ export async function execCmd(
   const promise = promiseExecFile(cmd, args, otherOptions);
   try {
     options.logVerbose &&
-    context.logger.verbose('Exec cmd', {
+      context.logger.verbose('Exec cmd', {
         cmd,
         args,
       });
     const result = await runShellCommandInternal(context, promise, { ignoreBadExitCode });
     options.logVerbose &&
-    context.logger.verbose('Exec cmd (result)', {
+      context.logger.verbose('Exec cmd (result)', {
         cmd,
         args,
         ...result,
       });
     return result;
-  } catch (ex) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (ex: any) {
     throw ExecCmdErrorThrow.withCause(ex, ex);
   }
+}
+
+function stripCR(str: string): string {
+  return str.replaceAll('\r', '');
 }
 
 async function runShellCommandInternal(
@@ -102,7 +107,24 @@ async function runShellCommandInternal(
     exitCode = code;
   });
 
-  await promise;
+  try {
+    await promise;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (ex: any) {
+    if ('cmd' in ex && 'code' in ex && typeof ex.code == 'number') {
+      // Not sure that ex.code is a correct evaluation
+      const code = exitCode ?? ex.code;
+      if (!options.ignoreBadExitCode && code > 0) {
+        throw ExecErrorExitCode.withCause(ex, code);
+      }
+
+      return {
+        stdout: stripCR(stdout),
+        stderr: stripCR(stderr),
+        exitCode: ex.code,
+      };
+    }
+  }
 
   exitCode ??= 0;
 
@@ -111,8 +133,8 @@ async function runShellCommandInternal(
   }
 
   return {
-    stdout,
-    stderr,
+    stdout: stripCR(stdout),
+    stderr: stripCR(stderr),
     exitCode,
   };
 }

@@ -18,4 +18,9 @@ app:
 #      if: status == "failure"
 #      http:
 #        url: https://webhook.site/xxx
-#        data: !!json ${{ getVars() | toJson }}
+#        data: !json ${{ getVars() | toJson }}
+
+listener:
+  addr: 0.0.0.0
+  port: 13900
+  externalUrl: http://127.0.0.1:13900

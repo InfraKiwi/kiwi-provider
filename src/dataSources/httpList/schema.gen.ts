@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -28,7 +28,6 @@ export interface MultiDataSourceHTTPListArgsInterface {
      * The configuration of the list HTTP call.
      */
     http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
-
   };
 
   /**
@@ -49,7 +48,6 @@ export interface MultiDataSourceHTTPListArgsInterface {
      * The configuration of the load HTTP call.
      */
     http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
-
   };
 }
 // [block MultiDataSourceHTTPListArgsInterface end]
@@ -76,7 +74,6 @@ export interface MultiDataSourceHTTPListInterface {
      * The configuration of the list HTTP call.
      */
     http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
-
   };
 
   /**
@@ -97,7 +94,6 @@ export interface MultiDataSourceHTTPListInterface {
      * The configuration of the load HTTP call.
      */
     http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../http/schema.gen.ts","isRegistryExport":false}
-
   };
 }
 // [block MultiDataSourceHTTPListInterface end]

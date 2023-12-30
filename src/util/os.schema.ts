@@ -179,3 +179,58 @@ The array will be empty if no CPU information is available, such as if the
 An object containing some OS information, directly generated using the 
 Node.js \`os\` API: https://nodejs.org/api/os.html
 `);
+
+export const ProcessInfoSchema = Joi.object({
+  env: joiObjectWithPattern(
+    Joi.alternatives([
+      Joi.string(), // Undefined
+      Joi.alternatives(),
+    ])
+  ).description(`
+    An object containing a copy of the user environment.
+  `),
+
+  argv: Joi.array().items(Joi.string()).required().description(`
+   The \`process.argv\` property returns an array containing the command-line
+   arguments passed when the 10infra process was launched. The first element will
+   be {@link execPath}. The remaining elements will be any additional command-line
+   arguments.
+  `),
+
+  execPath: Joi.string().required().description(`
+   The \`process.execPath\` property returns the absolute pathname of the executable
+   that started the 10infraprocess. Symbolic links, if any, are resolved.
+  `),
+
+  gid: Joi.number().description(`
+    The numerical group identity of the process. 
+    See http://man7.org/linux/man-pages/man2/getgid.2.html
+    
+    This function is only available on POSIX platforms (i.e. not Windows).
+    On non-POSIX platforms, this value will be \`undefined\`.
+  `),
+  uid: Joi.number().description(`
+    The numerical user identity of the process. 
+    See http://man7.org/linux/man-pages/man2/getuid.2.html
+    
+    This function is only available on POSIX platforms (i.e. not Windows).
+    On non-POSIX platforms, this value will be \`undefined\`.
+  `),
+  groups: Joi.array().items(Joi.number()).description(`
+    An array with the supplementary group
+    IDs. POSIX leaves it unspecified if the effective group ID is included but
+    Node.js ensures it always is.
+    
+    This function is only available on POSIX platforms (i.e. not Windows).
+    On non-POSIX platforms, this value will be \`undefined\`.
+  `),
+  pid: Joi.number().required().description(`
+   The PID of the process.
+  `),
+  ppid: Joi.number().required().description(`
+   The PID of the parent of the current process.
+  `),
+}).meta(joiMetaClassName('ProcessInfoInterface')).description(`
+An object containing some information about the current process, 
+directly generated using the Node.js \`process\` API: https://nodejs.org/api/process.html
+`);

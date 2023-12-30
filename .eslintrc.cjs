@@ -16,7 +16,7 @@ module.exports = {
   parserOptions: {
     project: './tsconfig.json',
   },
-  plugins: ['jest', 'unused-imports', 'import', 'unicorn', '@stylistic'],
+  plugins: ['jest', 'unused-imports', 'import', 'unicorn', '@stylistic', 'cmaster11'],
   root: true,
   ignorePatterns: ['**/test/**/*.js', '**/examples/**/*.js', '**/loadAll*.gen.ts', '**/**.gen.*.ts'],
   env: {
@@ -38,8 +38,10 @@ module.exports = {
     {
       files: ['**schema.gen.ts'],
       rules: {
-        '@stylistic/indent': ['error', 2],
         'multiline-comment-style': ['off'],
+        // Prettier is disabled here, so we use this rule to properly
+        // align all unions in ts
+        '@stylistic/indent-binary-ops': ['error', 2],
       },
     },
     {
@@ -58,12 +60,13 @@ module.exports = {
         allowTemplateLiterals: true,
       },
     ],
-    'comma-spacing': ['error'],
+    // 'comma-spacing': ['error'], // Prettier conflict
     '@stylistic/comma-dangle': ['error', 'always-multiline'],
     curly: ['error', 'all'],
-    'keyword-spacing': ['error'],
+    // 'keyword-spacing': ['error'], // Prettier conflict
     'no-unused-vars': ['off'],
     '@stylistic/semi': ['error'],
+    '@stylistic/no-multi-spaces': ['error'],
     '@stylistic/array-bracket-newline': ['error', { multiline: true }],
     '@stylistic/array-element-newline': [
       'error',
@@ -75,8 +78,7 @@ module.exports = {
     '@stylistic/brace-style': ['error', '1tbs'],
     '@stylistic/function-call-argument-newline': ['error', 'consistent'],
     '@stylistic/function-call-spacing': ['error'],
-    '@stylistic/function-paren-newline': ['error', 'consistent'],
-    '@stylistic/indent-binary-ops': ['error', 2],
+    // '@stylistic/indent': ['error', 2],
     'multiline-comment-style': ['error'],
     '@stylistic/max-len': [
       'error',
@@ -122,7 +124,7 @@ module.exports = {
         args: 'none',
       },
     ],
-    '@typescript-eslint/object-curly-spacing': ['error', 'always'],
+    // '@typescript-eslint/object-curly-spacing': ['error', 'always'], // Prettier conflict
     '@stylistic/lines-around-comment': [
       'error',
       {
@@ -137,7 +139,7 @@ module.exports = {
         allowTypeStart: true,
       },
     ],
-    '@typescript-eslint/member-delimiter-style': ['error'],
+    // '@typescript-eslint/member-delimiter-style': ['error'], // Prettier conflict
     '@typescript-eslint/quotes': [
       'error',
       'single',
@@ -183,6 +185,8 @@ module.exports = {
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/class-literal-property-style': 'off',
+    '@typescript-eslint/no-duplicate-type-constituents': 'off',
+    'cmaster11/no-duplicate-type-constituents': ['error', { fixOrderLTR: true }],
   },
   settings: {
     'import/parsers': {

@@ -1,0 +1,16 @@
+tasks:
+  # Set up a temporary HTTP server
+  - httpListener:
+      routes:
+        '/hello':
+          get: !eval |
+            return (req, res) => {
+              res.send('World')
+            }
+    out: listener
+
+  # Make an HTTP request
+  - http:
+      url: http://${{ listener.address }}/hello
+    out: resp
+  - test: resp.data == "World"

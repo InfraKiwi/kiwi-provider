@@ -1,0 +1,28 @@
+vars:
+  myObj:
+    hello: world
+    hey: yay!
+
+tasks:
+  - label: Create a temporary JSON file
+    temp: extension=json
+    out: temp
+
+  - label: Save an object
+    write:
+      path: ${{ temp.path }}
+      # Internally loads the content of myObj into
+      # the `content` field, without having to deal
+      # with converting myObj to JSON etc.
+      # The long route would be: !json ${{ myObj | toJSON }}
+      content: !var myObj
+
+  - label: Read back the obj
+    load:
+      file:
+        path: ${{ temp.path }}
+    out: loadedVars
+
+    # Prints "Hello world!"
+  - debug: Hello ${{ loadedVars.hello }}!
+  - test: loadedVars.hello == "world" and loadedVars.hey == "yay!"

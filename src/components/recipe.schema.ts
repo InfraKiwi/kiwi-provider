@@ -5,16 +5,47 @@
 
 import Joi from 'joi';
 import { TaskSchema } from './task.schema';
-import { joiMetaClassName, joiObjectWithPattern, joiValidateSemVer, joiValidateValidJoiSchema } from '../util/joi';
+import {
+  getJoiEnumValuesAsAlternatives,
+  joiMetaClassName,
+  joiObjectWithPattern,
+  joiValidateSemVer,
+  joiValidateValidJoiSchema,
+} from '../util/joi';
 
 import { RecipeSourceListSchema } from '../recipeSources/recipeSourceList.schema';
 import { VarsContainerSchemaObject, VarsSchema } from './varsContainer.schema';
 import { ConditionSetSchema, TestMockBaseSchema } from './testingCommon.schema';
 
-export const regexRecipeId = /^(?:(\w+):)?(.+)$/;
+export const regexRecipeId = /^(?!\.)(?:(\w+):)?(.+)$/;
 export const contextVarAssetsDir = '__assetsDir';
 
+export enum RecipePhase {
+  bootstrap = 'bootstrap',
+  runtime = 'runtime',
+}
+
 export const RecipeTargetsSchema = Joi.array().items(Joi.string()).meta(joiMetaClassName('RecipeTargetsInterface'));
+
+export const RecipePhaseSchema = getJoiEnumValuesAsAlternatives(RecipePhase, (entry) => {
+  switch (entry) {
+    case RecipePhase.bootstrap:
+      return `
+  Recipes are run in the boostrap phase when the agent is being installed
+  on the machine for the first time.
+  `;
+    case RecipePhase.runtime:
+      return `
+  Recipes are normally run in the runtime phase.
+  `;
+  }
+})
+  .default(RecipePhase.runtime)
+  .optional().description(`
+Which phase this recipe belongs to.
+
+@default ${RecipePhase.runtime}
+`);
 
 export const RecipeDependencySchema = Joi.object({
   // TODO support versioning
@@ -38,12 +69,36 @@ export const HostVarsBlockSchema = Joi.object(hostVarsBlock).meta(joiMetaClassNa
 export const RecipeInputsSchema = joiObjectWithPattern(
   Joi.alternatives([
     // e.g. string, number, e.g.
-    Joi.string().allow(...Object.keys(Joi.types())),
-    // A full-fledged schema
-    Joi.custom(joiValidateValidJoiSchema),
+    Joi.string().valid(
+      ...Object.keys(Joi.types())
+        .map((k) => [k, `${k}?`])
+        .flat()
+    ).description(`
+    A string that represents a raw type, e.g. string, number, etc.
+    If ending with \`?\`, mark the input as optional.
+    `),
+    Joi.custom(joiValidateValidJoiSchema).description(`
+    A Joi validation schema in form of JS code.
+     
+    Must be defined using the \`!joi\` YAML tag, which makes the \`Joi\` 
+    namespace available to use and automatically prepends a \`return\` keyword
+    to the provided code.
+    
+    You can check out more examples of Joi validation at: https://joi.dev/api
+    `).example(`
+    inputs:
+      // Accepts an optional string
+      hello: string?
+      // Fully validates that \`world\` will be a string of min 3 and max 30 chars
+      world: !joi Joi.string().min(3).max(30)
+    `),
   ])
 ).meta({ className: 'RecipeInputsInterface' });
 
+/*
+ * NOTE: The RecipeTestMockSchema is defined in this file because, in the end,
+ * the recipe is the one that uses the definition of the mock.
+ */
 export const RecipeTestMockSchema = TestMockBaseSchema.pattern(
   Joi.string(),
 
@@ -54,40 +109,68 @@ export const RecipeTestMockSchema = TestMockBaseSchema.pattern(
   ConditionSetSchema
 ).meta(joiMetaClassName('RecipeTestMockInterface'));
 
-export const RecipeMinimalSchema = Joi.object({
-  // What other recipes we depend on
-  dependencies: joiObjectWithPattern(RecipeDependencyWithAlternativesSchema, regexRecipeId),
+export const RecipeMinimalSchemaObject = {
+  label: Joi.string().description(`
+    A friendly label, used to describe the recipe.
+  `),
 
-  // The tasks to execute in this recipe
-  tasks: Joi.array().items(TaskSchema).min(1).required(),
+  inputs: RecipeInputsSchema.description(`
+    Inputs validation config.
+  `),
 
-  // Input validation
-  inputs: RecipeInputsSchema,
+  dependencies: joiObjectWithPattern(RecipeDependencyWithAlternativesSchema, regexRecipeId).description(`
+      A key/value map that lists which other recipes this recipe depends upon.
+      Dependencies are bundled at compile time and this list must be exhaustive.
+    `),
 
-  // Enabled only in testing mode
-  testMocks: Joi.array().items(RecipeTestMockSchema),
+  tasks: Joi.array().items(TaskSchema).min(1).required().description(`
+    The list of tasks to execute in this recipe.
+  `),
 
   ...VarsContainerSchemaObject,
   ...hostVarsBlock,
-}).meta({ className: 'RecipeMinimalInterface' });
+};
+
+export const RecipeMinimalSchema = Joi.object(RecipeMinimalSchemaObject).meta({ className: 'RecipeMinimalInterface' });
 
 /*
  *The full schema contains all elements that are not allowed in a dependency
  */
 export const RecipeSchema = RecipeMinimalSchema.append({
-  // The list of targets this recipe will be run on
-  targets: RecipeTargetsSchema,
-
-  // If provided, these hosts' vars will also be fetched at recipe compile time
-  otherHosts: RecipeTargetsSchema,
-
-  recipeSources: RecipeSourceListSchema,
-
   /*
-   * If true, use only the recipe sources provided in the recipe config instead of using the ones also provided
-   * by the recipe and the upper context
+   * TODO
+   * TODO untrusted docs/warning
+   * TODO
    */
-  ignoreContextSources: Joi.boolean(),
+
+  targets: RecipeTargetsSchema.description(`
+    The list of targets this recipe will run on.
+    
+    Note: this field is ignored in untrusted recipes.
+  `).example(`
+  targets:
+    - lb-[0:5].hello.com
+    - asinglemachine.hello.com
+  `),
+
+  phase: RecipePhaseSchema,
+
+  otherHosts: RecipeTargetsSchema.description(`
+    If provided, these hosts' vars will also be fetched at recipe compile time.
+    Useful when e.g. recipes require other hosts' vars like IP addresses to 
+    configure network access rules.
+  `),
+
+  recipeSources: RecipeSourceListSchema.description(`
+    A list of additional recipe sources to use for this recipe.
+  `),
+
+  ...RecipeMinimalSchemaObject,
+
+  ignoreContextSources: Joi.boolean().description(`
+    If true, use only the recipe sources provided in the recipe config instead 
+    of using the ones also provided by the recipe and the upper context
+  `),
 })
   .required()
   .meta({ className: 'RecipeInterface' });
@@ -95,9 +178,6 @@ export const RecipeSchema = RecipeMinimalSchema.append({
 export const RecipeForArchiveSchema = Joi.object({
   config: RecipeMinimalSchema.required(),
   targets: RecipeTargetsSchema,
+  phase: RecipePhaseSchema,
   otherHosts: RecipeTargetsSchema,
 }).meta(joiMetaClassName('RecipeForArchiveInterface'));
-
-export const TestRecipeMinimalSchema = RecipeMinimalSchema.append({}).meta(
-  joiMetaClassName('TestRecipeMinimalInterface')
-);

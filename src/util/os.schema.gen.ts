@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -167,11 +167,9 @@ export interface OSInfoInterface {
    */
   networkInterfaces: {
     [x: string]:
-      | (
+      | ((
         | OSInfoNetworkInterfaceInfoIPv4Interface //typeRef:OSInfoNetworkInterfaceInfoIPv4Interface:{"relPath":"self","isRegistryExport":false}
-
-        | OSInfoNetworkInterfaceInfoIPv6Interface)[] //typeRef:OSInfoNetworkInterfaceInfoIPv6Interface:{"relPath":"self","isRegistryExport":false}
-
+        | OSInfoNetworkInterfaceInfoIPv6Interface)[]) //typeRef:OSInfoNetworkInterfaceInfoIPv6Interface:{"relPath":"self","isRegistryExport":false}
         | undefined;
   };
 
@@ -245,8 +243,9 @@ export interface OSInfoNetworkInterfaceInfoIPv4Interface {
    */
   cidr:
     | string
-
-    | null;
+    | (
+      | string
+      | null);
 }
 // [block OSInfoNetworkInterfaceInfoIPv4Interface end]
 //meta:OSInfoNetworkInterfaceInfoIPv4Interface:[{"className":"OSInfoNetworkInterfaceInfoIPv4Interface"}]
@@ -285,8 +284,79 @@ export interface OSInfoNetworkInterfaceInfoIPv6Interface {
    */
   cidr:
     | string
-
-    | null;
+    | (
+      | string
+      | null);
 }
 // [block OSInfoNetworkInterfaceInfoIPv6Interface end]
 //meta:OSInfoNetworkInterfaceInfoIPv6Interface:[{"className":"OSInfoNetworkInterfaceInfoIPv6Interface"}]
+
+// [block ProcessInfoInterface begin]
+/**
+ * An object containing some information about the current process,
+ * directly generated using the Node.js `process` API: https://nodejs.org/api/process.html
+ */
+export interface ProcessInfoInterface {
+  /**
+   * An object containing a copy of the user environment.
+   */
+  env?: {
+    [x: string]:
+      | string
+      | undefined;
+  };
+
+  /**
+   * The `process.argv` property returns an array containing the command-line
+   * arguments passed when the 10infra process was launched. The first element will
+   * be {@link execPath}. The remaining elements will be any additional command-line
+   * arguments.
+   */
+  argv: string[];
+
+  /**
+   * The `process.execPath` property returns the absolute pathname of the executable
+   * that started the 10infraprocess. Symbolic links, if any, are resolved.
+   */
+  execPath: string;
+
+  /**
+   * The numerical group identity of the process.
+   * See http://man7.org/linux/man-pages/man2/getgid.2.html
+   *
+   * This function is only available on POSIX platforms (i.e. not Windows).
+   * On non-POSIX platforms, this value will be `undefined`.
+   */
+  gid?: number;
+
+  /**
+   * The numerical user identity of the process.
+   * See http://man7.org/linux/man-pages/man2/getuid.2.html
+   *
+   * This function is only available on POSIX platforms (i.e. not Windows).
+   * On non-POSIX platforms, this value will be `undefined`.
+   */
+  uid?: number;
+
+  /**
+   * An array with the supplementary group
+   * IDs. POSIX leaves it unspecified if the effective group ID is included but
+   * Node.js ensures it always is.
+   *
+   * This function is only available on POSIX platforms (i.e. not Windows).
+   * On non-POSIX platforms, this value will be `undefined`.
+   */
+  groups?: number[];
+
+  /**
+   * The PID of the process.
+   */
+  pid: number;
+
+  /**
+   * The PID of the parent of the current process.
+   */
+  ppid: number;
+}
+// [block ProcessInfoInterface end]
+//meta:ProcessInfoInterface:[{"className":"ProcessInfoInterface"}]

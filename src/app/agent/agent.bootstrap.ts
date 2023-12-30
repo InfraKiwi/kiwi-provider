@@ -5,7 +5,6 @@
 
 import type { ContextLogger } from '../../util/context';
 import type { AgentBootstrapConfigInterface } from './agent.bootstrap.schema.gen';
-import Joi from 'joi';
 import { AgentBootstrapConfigSchema } from './agent.bootstrap.schema';
 import path from 'node:path';
 import { fsPromiseExists, fsPromiseWriteFile } from '../../util/fs';
@@ -14,12 +13,13 @@ import type { AppConfigSchemaInterface } from '../common/server';
 import { AgentListenerDefaultPort } from './agent.schema';
 
 import { dumpYAML } from '../../util/yaml';
+import { joiAttemptRequired } from '../../util/joi';
 
 export async function agentBootstrapConfig(
   { logger }: ContextLogger,
   config: AgentBootstrapConfigInterface
 ): Promise<string> {
-  config = Joi.attempt(config, AgentBootstrapConfigSchema, 'Failed to parse agent bootstrap config');
+  config = joiAttemptRequired(config, AgentBootstrapConfigSchema, 'Failed to parse agent bootstrap config');
 
   logger.info('Bootstrapping 10infra agent', config);
 
@@ -31,7 +31,7 @@ export async function agentBootstrapConfig(
       );
     }
 
-    logger.warning(`Overwriting existing 10infra agent configuration at ${configPath}`);
+    logger.warn(`Overwriting existing 10infra agent configuration at ${configPath}`);
   } else {
     logger.info(`Generating new 10infra agent configuration at ${configPath}`);
   }

@@ -3,26 +3,36 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import type { RunnerContext, RunnerRunRecipesResult } from '../abstractRunner';
+import type { RunnerContext, RunnerContextSetup, RunnerRunRecipesResult } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
 import type { DockerInspectPlatform } from './schema';
-import { RunnerDockerBinaryDefault, RunnerDockerSchema, RunnerDockerSupportedPlatforms } from './schema';
-import type { RunnerDockerInterface } from './schema.gen';
+import { DockerInspectResultSchema } from './schema';
+import {
+  RunnerDockerBinaryDefault,
+  RunnerDockerSchema,
+  RunnerDockerSupportedPlatforms,
+  RunnerDockerSleepCommands,
+} from './schema';
+import type { DockerInspectResultInterface, RunnerDockerInterface } from './schema.gen';
 import type { ExecCmdOptions, RunShellResult } from '../../util/exec';
 import { execCmd } from '../../util/exec';
 import type { ContextLogger } from '../../util/context';
-import { fsPromiseReadFile, fsPromiseTmpFile } from '../../util/fs';
+import { fsPromiseReadFile, fsPromiseTmpFile, fsPromiseWriteFile } from '../../util/fs';
 import path from 'node:path';
 import type { Axios } from 'axios';
 import { downloadNodeDist, NodeJSExecutableArch, NodeJSExecutablePlatform } from '../../util/downloadNodeDist';
 import type { RunStatistics } from '../../util/runContext';
 import { createCJSRunnerBundle } from '../../util/createCJSRunnerBundle';
+import { randomUUID } from 'node:crypto';
+import { joiAttemptRequired } from '../../util/joi';
+import { getErrorPrintfClass } from '../../util/error';
+import { normalizePathToUnix } from '../../util/path';
 
-const waitCommands: { [k in DockerInspectPlatform]: string[] } = {
-  linux: ['/bin/sh', '-c', 'while :; do sleep 2073600; done'],
-  windows: ['powershell', '-Command', 'while($true) { Start-Sleep -Seconds 2073600; }'],
-};
+export const RunnerDockerErrorContainerDied = getErrorPrintfClass(
+  'RunnerDockerErrorContainerDied',
+  'The docker container %s has died (exit code %d)'
+);
 
 export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   #axios?: Axios;
@@ -30,15 +40,22 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   #containerId?: string;
   #nodeBin?: string;
   #cjsBundle?: string;
+  #containerIsDead = false;
 
-  async setUp(context: ContextLogger): Promise<void> {
+  async setUp(context: RunnerContextSetup): Promise<void> {
     await super.setUp(context);
     await this.#prepareEnvironment(context);
   }
 
   async tearDown(context: ContextLogger): Promise<void> {
-    if (this.#containerId) {
+    if (this.#containerId && !this.#containerIsDead) {
+      // const containerId = this.#containerId;
       await this.#dockerKill(context);
+
+      /*
+       * const logs = await this.#dockerLogs(context, containerId);
+       * context.logger.info(`Docker container torn down`, { logs });
+       */
     }
     await super.tearDown(context);
   }
@@ -184,7 +201,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     return this.#platform.split('/')[0] as DockerInspectPlatform;
   }
 
-  async #prepareEnvironment(context: ContextLogger) {
+  async #prepareEnvironment(context: RunnerContextSetup) {
     await this.#dockerRun(context);
 
     /*
@@ -250,29 +267,112 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     });
   }
 
+  async #buildDockerImage(context: RunnerContextSetup): Promise<string> {
+    if (this.config.image) {
+      return this.config.image;
+    }
+
+    if (this.config.dockerfile == null) {
+      throw new Error(`Undefined docker runner dockerfile context`);
+    }
+    const { context: dockerfileContext, inline, args } = this.config.dockerfile;
+
+    const tag = `10infra-test-${randomUUID()}`;
+    const platform = this.#platform;
+
+    const buildArgs: string[] = ['--platform', platform, '--tag', tag, ...(args ?? [])];
+
+    if (inline) {
+      const tmp = await fsPromiseTmpFile({
+        keep: false,
+        discardDescriptor: true,
+      });
+      await fsPromiseWriteFile(tmp, inline);
+      buildArgs.push('-f', tmp);
+    }
+
+    const contextDir = dockerfileContext ?? context.workDir;
+    if (contextDir == null) {
+      throw new Error(`Docker runner context directory not defined`);
+    }
+    context.logger.verbose(`Building test docker image with tag ${tag}`, {
+      platform,
+    });
+    const cwd = context.workDir ?? process.cwd();
+    const relativeContextDir = path.relative(cwd, contextDir);
+    await this.#execDockerBinCommand(context, ['build', ...buildArgs, normalizePathToUnix(relativeContextDir)], {
+      cwd: context.workDir,
+    });
+    context.logger.info(`Built test docker image with tag ${tag}`, {
+      /*
+       * stdout: result.stdout,
+       * stderr: result.stderr,
+       */
+    });
+    return tag;
+  }
+
   // Run a container, use the wait command, and return the container id
-  async #dockerRun(context: ContextLogger): Promise<void> {
-    const waitCommand = this.config.waitCommand ?? waitCommands[this.#basePlatform];
-    if (waitCommand == null) {
+  async #dockerRun(context: RunnerContextSetup): Promise<void> {
+    const sleepCommand = this.config.sleepCommand ?? RunnerDockerSleepCommands[this.#basePlatform];
+    if (sleepCommand == null) {
       throw new Error(`Wait command not defined for ${this.#basePlatform}`);
     }
 
     const platform = this.#platform;
-    const image = this.config.image;
+    const image = await this.#buildDockerImage(context);
     context.logger.verbose('Spinning up container', {
       platform,
       image,
-      waitCommand,
+      sleepCommand,
     });
     const result = await this.#execDockerBinCommand(context, [
       'run',
       '--platform',
       platform,
+
+      /*
+       * Allocate a TTY for any image that requires it
+       * This allows us to gather more logs.
+       */
+      '-t',
       '-d',
+      ...(this.config.runArgs ?? []),
       image,
-      ...waitCommand,
+      ...(sleepCommand == false ? [] : sleepCommand),
     ]);
     this.#containerId = result.stdout.trim();
+  }
+
+  async #dockerVerifyContainerIsAlive(context: ContextLogger) {
+    const inspect = await this.#execDockerBinCommand(context, ['inspect', this.#assertContainerId()]);
+    const result = joiAttemptRequired(
+      JSON.parse(inspect.stdout),
+      DockerInspectResultSchema
+    ) as DockerInspectResultInterface;
+    const containerResult = result[0];
+    if (!containerResult.State.Running) {
+      const logs = await this.#dockerLogs(context, this.#assertContainerId());
+      this.#containerIsDead = true;
+      context.logger.error(`The docker container has died (exit code ${containerResult.State.ExitCode})`, {
+        logs,
+      });
+      throw new RunnerDockerErrorContainerDied(this.#assertContainerId(), containerResult.State.ExitCode);
+    }
+  }
+
+  async #dockerLogs(context: ContextLogger, containerId: string) {
+    let logs = '';
+    try {
+      const logsResult = await this.#execDockerBinCommand(context, ['logs', containerId]);
+      logs = [logsResult.stdout, logsResult.stderr]
+        .map((s) => s.trim())
+        .filter((s) => s != '')
+        .join('\n\n');
+    } catch (ex) {
+      context.logger.debug(`Failed to fetch container logs`, { ex });
+    }
+    return logs;
   }
 
   async #dockerKill(context: ContextLogger) {
@@ -286,6 +386,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       src,
       dst,
     });
+    await this.#dockerVerifyContainerIsAlive(context);
     await this.#execDockerBinCommand(context, ['cp', src, `${this.#assertContainerId()}:${dst}`]);
   }
 
@@ -294,11 +395,13 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       src,
       dst,
     });
+    await this.#dockerVerifyContainerIsAlive(context);
     await this.#execDockerBinCommand(context, ['cp', `${this.#assertContainerId()}:${src}`, dst]);
   }
 
   async dockerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
     this.#dockerLogVerbose(context, 'Executing command in container', { args });
+    await this.#dockerVerifyContainerIsAlive(context);
     return await this.#execDockerBinCommand(context, ['exec', this.#assertContainerId(), ...args], options);
   }
 
@@ -308,7 +411,9 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
      * https://shellgeek.com/use-powershell-to-create-temporary-file/
      */
     const tmpFileCmd: string[] =
-      this.#basePlatform == 'windows' ? ['powershell', '/C', '(New-TemporaryFile).FullName'] : ['mktemp'];
+      this.#basePlatform == 'windows'
+        ? ['powershell', '/C', '(New-TemporaryFile).FullName']
+        : ['mktemp', ...(this.config.tmpDir ? ['-p', this.config.tmpDir] : [])];
     const tmpFile = (await this.dockerExec(context, tmpFileCmd)).stdout.trim();
     if (tmpFile == '') {
       throw new Error('Empty temporary file path returned');
@@ -323,6 +428,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
         ? [
             'powershell',
             '/C',
+            // TODO support for custom tmp dir
             `
 $parent = [System.IO.Path]::GetTempPath()
 [string] $name = [System.Guid]::NewGuid()
@@ -330,7 +436,7 @@ $fullPath = Join-Path $parent $name
 New-Item -ItemType Directory -Path $fullPath > $null
 $fullPath`,
           ]
-        : ['mktemp', '-d'];
+        : ['mktemp', '-d', ...(this.config.tmpDir ? ['-p', this.config.tmpDir] : [])];
     const tmpFile = (await this.dockerExec(context, tmpDirCmd)).stdout.trim();
     if (tmpFile == '') {
       throw new Error('Empty temporary dir path returned');

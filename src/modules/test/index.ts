@@ -5,7 +5,7 @@
 
 import type { RunContext } from '../../util/runContext';
 import { ModuleTestSchema, ModuleTestSilentSchema } from './schema';
-import type { ModuleTestInterface } from './schema.gen';
+import type { ModuleTestInterface, TestFunctionInterface } from './schema.gen';
 import { moduleRegistryEntryFactory } from '../registry';
 import traverse from 'traverse';
 import { IfTemplate } from '../../util/tpl';
@@ -17,7 +17,10 @@ export interface ModuleTestResult {
 }
 
 export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTestResult> {
-  static async testSuite(context: RunContext, condition: string): Promise<boolean> {
+  static async evalTest(context: RunContext, condition: string | TestFunctionInterface): Promise<boolean> {
+    if (typeof condition === 'function') {
+      return await condition(context);
+    }
     return new IfTemplate(condition).isTrue(context.vars);
   }
 
@@ -28,9 +31,9 @@ export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTe
   async run(context: RunContext): Promise<ModuleRunResult<ModuleTestResult>> {
     const result: ModuleTestResult = { tests: {} };
 
-    const testsObject: Record<string, string> = {};
+    const testsObject: Record<string, string | TestFunctionInterface> = {};
 
-    if (typeof this.config == 'string') {
+    if (typeof this.config == 'string' || typeof this.config === 'function') {
       testsObject['test'] = this.config;
     } else if (Array.isArray(this.config)) {
       for (let i = 0; i < this.config.length; i++) {
@@ -51,9 +54,9 @@ export class ModuleTest extends AbstractModuleBase<ModuleTestInterface, ModuleTe
       }
       promises.push(
         (async () => {
-          const testResult = await ModuleTest.testSuite(context, val);
+          const testResult = await ModuleTest.evalTest(context, val);
           if (!testResult) {
-            failed.push(this.key!);
+            failed.push(`${this.key!}: ${val}`);
           }
           result.tests[this.key!] = testResult;
         })()

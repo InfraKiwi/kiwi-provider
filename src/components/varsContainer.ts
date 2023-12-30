@@ -5,18 +5,18 @@
 
 import { VarsSource } from './varsSource';
 import type { VarsContainerInterface, VarsInterface, VarsSourcesInterface } from './varsContainer.schema.gen';
-import Joi from 'joi';
 import { VarsContainerSchema, VarsSchema, VarsSourcesSchema } from './varsContainer.schema';
 import { extractAllTemplates } from '../util/tpl';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
+import { joiAttemptRequired } from '../util/joi';
 
 export abstract class VarsContainer {
   #vars: VarsInterface = {};
   #varsSources: VarsSource[] = [];
   #varsCache?: VarsInterface;
 
-  constructor(config: VarsContainerInterface) {
-    config = Joi.attempt(config, VarsContainerSchema);
+  protected constructor(config: VarsContainerInterface) {
+    config = joiAttemptRequired(config, VarsContainerSchema);
 
     this.vars = extractAllTemplates(config.vars);
     this.varsSources = config.varsSources ?? [];
@@ -27,7 +27,7 @@ export abstract class VarsContainer {
   }
 
   set vars(value: VarsInterface) {
-    value = Joi.attempt(value, VarsSchema, 'validate vars container config');
+    value = joiAttemptRequired(value ?? {}, VarsSchema, 'validate vars container config');
     this.#vars = extractAllTemplates(value);
   }
 
@@ -36,7 +36,7 @@ export abstract class VarsContainer {
   }
 
   set varsSources(value: VarsSourcesInterface) {
-    value = Joi.attempt(value, VarsSourcesSchema, 'Error validating vars source config:');
+    value = joiAttemptRequired(value, VarsSourcesSchema, 'Error validating vars source config:');
     this.#varsSources = value.map((varsSourceConfig) => new VarsSource(varsSourceConfig));
   }
 

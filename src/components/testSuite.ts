@@ -13,13 +13,14 @@ import {
 } from './testSuite.schema';
 import Joi from 'joi';
 import type { RecipeCtorContext } from './recipe';
+import { RecipeTestMock } from './recipe';
 import { Recipe } from './recipe';
 import { Archive } from './archive';
 import type { ContextLogger } from '../util/context';
 import { fsPromiseTmpDir, fsPromiseTmpFile } from '../util/fs';
-import type { TestSuiteInterface } from './testSuite.schema.gen';
+import type { TestRecipeMinimalInterface, TestSuiteInterface } from './testSuite.schema.gen';
 import type { AbstractRunnerInstance } from '../runners/abstractRunner';
-import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
+import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { RecipeMinimalSchema } from './recipe.schema';
 import type { RecipeInterface } from './recipe.schema.gen';
 import { runnerRegistry } from '../runners/registry';
@@ -27,6 +28,8 @@ import type { RunStatistics } from '../util/runContext';
 import '../util/loadAllRegistryEntries.testSuite.gen';
 import { Table } from 'console-table-printer';
 import { secondsToHMS } from '../util/date';
+import { RecipeSourceList } from '../recipeSources/recipeSourceList';
+import path from 'node:path';
 
 interface TestMetadata {
   fileName?: string;
@@ -55,46 +58,68 @@ export interface TestSuiteResult {
   runOrder: string[];
 }
 
+function extractTestMocks(config: TestRecipeMinimalInterface) {
+  return (config.testMocks ?? []).map((mockConfig) => new RecipeTestMock(mockConfig));
+}
+
 export class TestSuite {
   config: TestSuiteInterface;
   meta?: TestMetadata;
 
   constructor(config: TestSuiteInterface, meta?: TestMetadata) {
-    this.config = Joi.attempt(config, TestSuiteSchema);
+    this.config = joiAttemptRequired(config, TestSuiteSchema);
     this.meta = meta;
 
     // Validate runner
     runnerRegistry.findRegistryEntryFromIndexedConfig(this.config.runner, TestRunnerSchema);
   }
 
-  async #prepareTestArchive(context: ContextLogger): Promise<TestArchive> {
-    const recipeCtorContext: RecipeCtorContext = {
-      ...context,
-      recipeSources: undefined,
-      workDir: undefined,
-    };
+  async #prepareTestArchive(context: RecipeCtorContext): Promise<TestArchive> {
+    if (this.config.recipeSources) {
+      context.recipeSources = RecipeSourceList.mergePrepend(
+        context,
+        new RecipeSourceList(context, this.config.recipeSources),
+        context.recipeSources
+      );
+    }
 
     const recipes: Recipe[] = [];
     const testRecipes: TestRecipe[] = [];
 
     if (this.config.beforeAll) {
-      const recipe = new Recipe(recipeCtorContext, this.config.beforeAll, { id: testSuiteRecipeIdBeforeAll });
+      const recipe = new Recipe(context, this.config.beforeAll, {
+        id: testSuiteRecipeIdBeforeAll,
+        testMocks: extractTestMocks(this.config.beforeAll),
+      });
       recipes.push(recipe);
       testRecipes.push({ recipeId: recipe.fullId! });
     }
 
     if (this.config.beforeEach) {
-      recipes.push(new Recipe(recipeCtorContext, this.config.beforeEach, { id: testSuiteRecipeIdBeforeEach }));
+      recipes.push(
+        new Recipe(context, this.config.beforeEach, {
+          id: testSuiteRecipeIdBeforeEach,
+          testMocks: extractTestMocks(this.config.beforeEach),
+        })
+      );
     }
     if (this.config.afterEach) {
-      recipes.push(new Recipe(recipeCtorContext, this.config.afterEach, { id: testSuiteRecipeIdAfterEach }));
+      recipes.push(
+        new Recipe(context, this.config.afterEach, {
+          id: testSuiteRecipeIdAfterEach,
+          testMocks: extractTestMocks(this.config.afterEach),
+        })
+      );
     }
 
     for (let i = 0; i < this.config.tests.length; i++) {
       const testConfig = this.config.tests[i];
       const id = Recipe.cleanId(testConfig.testId ?? testConfig.label ?? `test_${i}`);
       const recipeConfig: RecipeInterface = joiKeepOnlyKeysInJoiSchema(testConfig, RecipeMinimalSchema);
-      const recipe = new Recipe(recipeCtorContext, recipeConfig, { id });
+      const recipe = new Recipe(context, recipeConfig, {
+        id,
+        testMocks: extractTestMocks(testConfig),
+      });
       recipes.push(recipe);
 
       testRecipes.push({
@@ -105,13 +130,16 @@ export class TestSuite {
     }
 
     if (this.config.afterAll) {
-      const recipe = new Recipe(recipeCtorContext, this.config.afterAll, { id: testSuiteRecipeIdAfterAll });
+      const recipe = new Recipe(context, this.config.afterAll, {
+        id: testSuiteRecipeIdAfterAll,
+        testMocks: extractTestMocks(this.config.afterAll),
+      });
       recipes.push(recipe);
       testRecipes.push({ recipeId: recipe.fullId! });
     }
 
     const archiveDir = await fsPromiseTmpDir({});
-    const archive = await Archive.create(recipeCtorContext, {
+    const archive = await Archive.create(context, {
       archiveDir,
       recipes,
     });
@@ -129,17 +157,23 @@ export class TestSuite {
     };
   }
 
-  async run(context: ContextLogger, testIds?: string[]): Promise<TestSuiteResult> {
+  async run(context: RecipeCtorContext, testIds?: string[]): Promise<TestSuiteResult> {
     const testSuiteResult: TestSuiteResult = {
       testResults: {},
       runOrder: [],
+    };
+
+    context = {
+      ...context,
+      // Default the run context to start in the same folder as the test suite file
+      workDir: context.workDir ?? (this.meta?.fileName ? path.dirname(this.meta.fileName) : undefined),
     };
 
     const { testRecipes, archiveFile } = await this.#prepareTestArchive(context);
 
     if (testIds) {
       testIds = testIds.map((id) => Recipe.cleanId(id));
-      Joi.assert(
+      joiAttemptRequired(
         testIds,
         Joi.array().items(Joi.string().valid(...testRecipes.map((r) => r.recipeId))),
         'Failed to find defined test ids in the test suite archive'

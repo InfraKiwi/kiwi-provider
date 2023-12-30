@@ -39,6 +39,9 @@ import * as tar from 'tar';
 import type { InventoryHost } from './inventoryHost';
 import type { InventoryInterface } from './inventory.schema.gen';
 import { dumpYAML, loadYAMLFromFile } from '../util/yaml';
+import { joiAttemptRequired } from '../util/joi';
+import type { RecipePhase } from './recipe.schema';
+import { normalizePathToUnix } from '../util/path';
 
 interface BuildRecipeDependenciesTreeContext extends ContextLogger, ContextRecipeSourceList, ContextWorkDir {
   visitedAssetsDirs: Record<string, string>;
@@ -74,12 +77,20 @@ class RecipeSourceArchive extends AbstractRecipeSource<
 
 recipeSourceRegistryEntryFactory.register(RecipeSourceArchiveSchema, RecipeSourceArchive);
 
+export type GetInstantiatedRootRecipesQuery =
+  | {
+      ids: string[];
+    }
+  | {
+      phase: RecipePhase;
+    };
+
 export class Archive {
   readonly config: ArchiveInterface;
   readonly assetsDir: string;
 
   constructor(config: ArchiveInterface, assetsDir: string) {
-    this.config = Joi.attempt(config, ArchiveSchema, 'Error validating archive data: ');
+    this.config = joiAttemptRequired(config, ArchiveSchema, 'Error validating archive data: ');
     this.assetsDir = assetsDir;
   }
 
@@ -116,9 +127,30 @@ export class Archive {
     return recipeSources;
   }
 
-  async getInstantiatedRootRecipes(context: DataSourceContext, dryRun: boolean, ids?: string[]) {
+  async getInstantiatedRootRecipes(
+    context: DataSourceContext,
+    dryRun: boolean,
+    query?: GetInstantiatedRootRecipesQuery
+  ) {
     const recipes: Recipe[] = [];
-    Joi.assert(
+
+    const ids: string[] = [];
+    if (query) {
+      if ('ids' in query) {
+        ids.push(...query.ids);
+      } else if ('phase' in query) {
+        ids.push(
+          ...Object.keys(this.config.rootRecipes).filter((k) => this.config.rootRecipes[k].phase == query.phase)
+        );
+      } else {
+        throw new Error(`Invalid getInstantiatedRootRecipes query: ${JSON.stringify(query)}`);
+      }
+    } else {
+      // All recipes
+      ids.push(...Object.keys(this.config.rootRecipes));
+    }
+
+    joiAttemptRequired(
       ids,
       Joi.array().items(Joi.string().valid(...Object.keys(this.config.rootRecipes))),
       'Invalid root recipes ids'
@@ -184,7 +216,8 @@ export class Archive {
       }
       const depRecipeConfig = archive.recipeSources[sourceId][recipeId];
       const depRecipe = await stats.measureBlock(`dependency recipe init: ${recipeId}`, () =>
-        this.instantiateRecipe(context, recipeId, depRecipeConfig, dryRun));
+        this.instantiateRecipe(context, recipeId, depRecipeConfig, dryRun)
+      );
       dependenciesBySource[sourceId][recipeId] = depRecipe;
       dependenciesBySourceArchiveConfigs[sourceId][recipeId] = {
         ...depRecipeConfig,
@@ -226,7 +259,7 @@ export class Archive {
 
     for (const key in archive.recipeSources) {
       const recipes = archive.recipeSources[key];
-      for (const recipeId in archive.rootRecipes) {
+      for (const recipeId in recipes) {
         const blockVars = filterHostVarsBlockForHost(host, recipes[recipeId].config);
         Object.assign(recipes[recipeId].config, blockVars);
       }
@@ -272,7 +305,8 @@ export class Archive {
       const archiveEntry = archive.rootRecipes[rootRecipeId]!;
 
       const recipe = await stats.measureBlock(`root recipe init: ${rootRecipeId}`, () =>
-        this.instantiateRecipe(context, rootRecipeId, archiveEntry, true));
+        this.instantiateRecipe(context, rootRecipeId, archiveEntry, true)
+      );
       rootRecipes[rootRecipeId] = recipe;
       rootRecipesArchiveConfigs[rootRecipeId] = {
         ...archiveEntry,
@@ -294,7 +328,7 @@ export class Archive {
     archive.rootRecipes = rootRecipesArchiveConfigs;
     archive.recipeSources = dependenciesBySourceArchiveConfigs;
 
-    Joi.assert(archive, ArchiveSchema, 'Failed to validate archive for host: ');
+    joiAttemptRequired(archive, ArchiveSchema, 'Failed to validate archive for host: ');
 
     const subInventory = await inventory.createRawSubInventoryConfig(context, [host.id, ...Object.keys(otherHosts)]);
 
@@ -306,7 +340,7 @@ export class Archive {
   }
 
   static async create(context: RecipeCtorContext, args: CreateArchiveArgsInterface): Promise<Archive> {
-    args = Joi.attempt(args, CreateArchiveArgsSchema, 'Failed to validate Archive.create args: ');
+    args = joiAttemptRequired(args, CreateArchiveArgsSchema, 'Failed to validate Archive.create args: ');
 
     let { logger } = context;
     logger ??= newLogger();
@@ -497,7 +531,7 @@ async function copyAssets(
 
   logger?.info(`Packing assets for folder ${recipeAssetsDir}`);
   const counterPadded = (copyAssetsCounter++).toString(10).padStart(4, '0');
-  const archiveFile = path.join(assetsRootDir, `${counterPadded}_${recipeId.slice(-16)}.tar.gz`);
+  const archiveFile = path.join(assetsRootDir, `${counterPadded}_${Recipe.cleanId(recipeId).slice(-16)}.tar.gz`);
 
   const files = await getAllFiles(recipeAssetsDir);
   await tar.c(
@@ -508,7 +542,7 @@ async function copyAssets(
     },
     files
   );
-  const relative = path.relative(archiveDir, archiveFile);
+  const relative = normalizePathToUnix(path.relative(archiveDir, archiveFile));
 
   visitedAssetsDirs[recipeAssetsDir] = relative;
   return relative;

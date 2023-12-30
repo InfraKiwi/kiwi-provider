@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -27,11 +27,10 @@ export interface ModuleHTTPListenerInterface {
     /**
      * The mapping `Route path -> handler`.
      * E.g. /hello:
-     *     get: !!eval |
+     *     get: !eval |
      *       return (req, res) => res.send('Hello world!');
      */
     [x: string]: ModuleHTTPListenerRouteInterface; //typeRef:ModuleHTTPListenerRouteInterface:{"relPath":"self","isRegistryExport":false}
-
   };
 }
 // [block ModuleHTTPListenerInterface end]
@@ -39,12 +38,12 @@ export interface ModuleHTTPListenerInterface {
 
 // [block ModuleHTTPListenerRouteHandlerFunctionInterface begin]
 /**
- * A route handler in the form of `(req, res, [next]) => {}`. Define it using an `!!eval` YAML block.
+ * A route handler in the form of `(req, res, [next]) => {}`. Define it using an `!eval` YAML block.
  *
  * @example
  * routes:
  *   '/hello':
- *     get: !!eval |
+ *     get: !eval |
  *       return (req, res) => {
  *         res.send('World')
  *       }
@@ -60,12 +59,12 @@ export type ModuleHTTPListenerRouteHandlerFunctionInterface = ((...args: any[]) 
 export type ModuleHTTPListenerRouteHandlerInterface =
 
   /**
-   * A route handler in the form of `(req, res, [next]) => {}`. Define it using an `!!eval` YAML block.
+   * A route handler in the form of `(req, res, [next]) => {}`. Define it using an `!eval` YAML block.
    *
    * @example
    * routes:
    *   '/hello':
-   *     get: !!eval |
+   *     get: !eval |
    *       return (req, res) => {
    *         res.send('World')
    *       }
@@ -124,7 +123,6 @@ export interface ModuleHTTPListenerRouteInterface {
   put?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
   patch?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
-
 }
 // [block ModuleHTTPListenerRouteInterface end]
 //meta:ModuleHTTPListenerRouteInterface:[{"className":"ModuleHTTPListenerRouteInterface"}]

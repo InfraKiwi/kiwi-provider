@@ -8,7 +8,7 @@ tasks:
               - id1
               - id2
         '/load/:id':
-          get: !!eval |
+          get: !eval |
             const entries = {
               id1: { text: "Hello" },
               id2: { text: "World" },

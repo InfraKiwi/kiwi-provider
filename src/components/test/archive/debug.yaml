@@ -1,0 +1,15 @@
+targets:
+  - all
+
+otherHosts:
+  - debug-*
+
+vars:
+  recipeVar: 1
+
+dependencies:
+  source-1/recipe-1: {}
+
+tasks:
+  - debug: my debug recipe
+  - recipe: source-1/recipe-1

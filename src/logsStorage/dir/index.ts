@@ -26,7 +26,12 @@ export class LogsStorageDir extends AbstractLogsStorage<LogsStorageDirInterface>
   constructor(config: LogsStorageDirInterface) {
     super(config);
 
-    this.#storagePath = path.normalize(this.config.path);
+    let storagePath = path.normalize(this.config.path);
+    // We need to provide an absolute path to sendFile
+    if (!path.isAbsolute(storagePath)) {
+      storagePath = path.join(process.cwd(), storagePath);
+    }
+    this.#storagePath = storagePath;
     const storage = multer.diskStorage({
       destination: (req, file, cb) => {
         const storageKey = (req as LogsStorageUploadRequest).record.storageKey;
@@ -48,7 +53,7 @@ export class LogsStorageDir extends AbstractLogsStorage<LogsStorageDirInterface>
   }
 
   async getDownloadUrl(context: LogsStorageContext, hash: string): Promise<string> {
-    return `/download/${hash}`;
+    return `./download/${hash}`;
   }
 
   mountRoutes(context: LogsStorageContext, appForHost: e.IRouter, appForAdmin: e.IRouter) {
@@ -109,7 +114,7 @@ export class LogsStorageDir extends AbstractLogsStorage<LogsStorageDirInterface>
   }
 
   async getUploadUrl(context: LogsStorageContext, storageKey: string): Promise<string> {
-    return `/upload/${storageKey}`;
+    return `./upload/${storageKey}`;
   }
 }
 

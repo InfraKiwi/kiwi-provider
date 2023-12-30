@@ -9,10 +9,12 @@ export function setupUncaughtHandler(logger: Logger) {
   process
     .on('unhandledRejection', (reason, p) => {
       logger.error('Unhandled rejection', { reason });
+      logger.end();
       process.exit(1);
     })
     .on('uncaughtException', (err) => {
       logger.error('Uncaught exception', { err });
+      logger.end();
       process.exit(1);
     });
 }

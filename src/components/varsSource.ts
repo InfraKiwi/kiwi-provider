@@ -9,16 +9,15 @@ import { AbstractTemplate, extractAllTemplates } from '../util/tpl';
 import { dataSourceRegistry } from '../dataSources/registry';
 import type { AbstractDataSourceTypes, DataSourceContext } from '../dataSources/abstractDataSource';
 import { AbstractMultiDataSource } from '../dataSources/abstractDataSource';
-import Joi from 'joi';
 import type { VarsInterface } from './varsContainer.schema.gen';
-import { VarsSchema } from './varsContainer.schema';
+import { joiAttemptRequired } from '../util/joi';
 
 export class VarsSource {
   config: VarsSourceInterface;
   source: AbstractDataSourceTypes<VarsInterface>;
 
   constructor(config: VarsSourceInterface) {
-    this.config = Joi.attempt(config, VarsSourceSchema);
+    this.config = joiAttemptRequired(config, VarsSourceSchema);
     this.source = dataSourceRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractDataSourceTypes<VarsInterface>>(
       this.config,
       VarsSourceSchema,
@@ -55,7 +54,7 @@ export class VarsSource {
       }
     } else {
       context.logger?.debug(`Loading vars from data source ${source.registryEntry.entryName}`);
-      const value = Joi.attempt(await source.loadVars(context), VarsSchema, 'Error validating vars:');
+      const value = await source.loadVars(context);
       if (this.config.flatten) {
         for (const key in value) {
           vars[key] = VarsSource.#processLoadedValues(value[key], this.config);

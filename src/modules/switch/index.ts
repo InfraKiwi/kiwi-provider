@@ -73,9 +73,9 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
     context.vars = oldVars;
 
     return {
-      vars: vars,
+      vars,
       exit,
-      changed: changed,
+      changed,
     };
   }
 }

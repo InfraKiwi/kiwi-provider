@@ -1,0 +1,27 @@
+tasks:
+  - label: Create a temporary directory
+    tempDir: {}
+    out: temp
+  - label: Put a file in the directory
+    writeRaw:
+      path: ${{ temp.path }}/hello.txt
+      content: Hello world
+    out: write
+
+    # This step is normally unnecessary. Here it is shown
+    # to create a contrast in the example
+  - label: Verify the hello file exists
+    stat:
+      path: ${{ write.path }}
+    failedIf: __result.vars.exists != true
+
+  # Delete the folder
+  - rm:
+      path: ${{ temp.path }}
+      # As with the `rm -r` command, `recursive` is needed to delete a directory
+      recursive: true
+
+  - label: Verify the dir doesn't exist anymore
+    stat:
+      path: ${{ temp.path }}
+    failedIf: __result.vars.exists == true

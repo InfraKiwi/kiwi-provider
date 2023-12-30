@@ -1,0 +1,14 @@
+runner:
+  docker:
+    image: debian:bookworm
+
+tests:
+  - label: Test docker container
+    tasks:
+      # Print details about the running OS
+      - shell:
+          cmd: |
+            cat /etc/os-release
+        out: shell
+
+      - test: shell.stdout.includes("Debian GNU/Linux 12 (bookworm)")

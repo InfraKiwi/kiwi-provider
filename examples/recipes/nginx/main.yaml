@@ -29,5 +29,5 @@ tasks:
 
   - debug: ${{ nginxConfig.content }}
 
-  - store: path="${{ temp.path }}" content="${{ nginxConfig.content }}" raw=true
+  - write: path="${{ temp.path }}" content="${{ nginxConfig.content }}" raw=true
     ignoreMocks: true

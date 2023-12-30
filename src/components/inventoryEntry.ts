@@ -4,12 +4,11 @@
  */
 
 import type { InventoryEntryInterface, InventoryEntryRelationsInterface } from './inventoryEntry.schema.gen';
-import Joi from 'joi';
 import { InventoryEntryRelationsSchema, InventoryEntrySchema } from './inventoryEntry.schema';
 import { VarsContainer } from './varsContainer';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import type { VarsInterface } from './varsContainer.schema.gen';
-import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
+import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
 
 export abstract class InventoryEntry extends VarsContainer {
@@ -19,7 +18,7 @@ export abstract class InventoryEntry extends VarsContainer {
   #relations?: InventoryEntryRelationsInterface;
 
   protected constructor(id: string, config: InventoryEntryInterface) {
-    config = Joi.attempt(config, InventoryEntrySchema, 'validate inventory entry config');
+    config = joiAttemptRequired(config, InventoryEntrySchema, 'validate inventory entry config');
     super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
 
     this.#config = config;
@@ -30,7 +29,7 @@ export abstract class InventoryEntry extends VarsContainer {
   async loadVars(context: DataSourceContext): Promise<VarsInterface> {
     await super.loadVars(context);
     if (this.#config.varsKeyRelations && this.#config.varsKeyRelations in this.vars) {
-      this.relations = Joi.attempt(this.vars[this.#config.varsKeyRelations], InventoryEntryRelationsSchema);
+      this.relations = joiAttemptRequired(this.vars[this.#config.varsKeyRelations], InventoryEntryRelationsSchema);
     }
     return this.vars;
   }

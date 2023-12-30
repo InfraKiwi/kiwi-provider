@@ -21,51 +21,51 @@ interface ModuleSwitchTest {
 describe('switch module', () => {
   testExamples(__dirname);
 
-  const debug = '${{ __switchValue }}';
+  const set = { val: '${{ __switchValue }}' };
   const casesSimple = {
     hello: {
-      debug,
-      out: 'debug',
+      set,
+      out: 'set',
     },
     world: {
-      debug,
-      out: 'debug',
+      set,
+      out: 'set',
     },
     two: [
       {
-        debug,
-        out: 'debug',
+        set,
+        out: 'set',
       },
       {
-        debug,
-        out: 'debug2',
+        set,
+        out: 'set2',
       },
     ],
   };
   const defaultSimple = {
-    debug,
-    out: 'debug',
+    set,
+    out: 'set',
   };
   const casesComplex: ModuleSwitchCaseFullInterface[] = [
     {
       if: '__switchValue == "one"',
       task: {
-        debug,
-        out: 'debug',
+        set,
+        out: 'set',
       },
     },
     {
       if: '__switchValue == "two"',
       task: {
-        debug,
-        out: 'debug',
+        set,
+        out: 'set',
       },
       fallthrough: true,
     },
     {
       task: {
-        debug,
-        out: 'debugFallthrough',
+        set,
+        out: 'setFallthrough',
       },
     },
   ];
@@ -77,7 +77,7 @@ describe('switch module', () => {
         cases: casesSimple,
       },
       expect: {
-        vars: { debug: 'hello' },
+        vars: { set: { val: 'hello' } },
         changed: false,
       },
     },
@@ -87,7 +87,9 @@ describe('switch module', () => {
         default: defaultSimple,
       },
       expect: {
-        vars: { debug: undefined },
+        vars: {
+          set: { val: '' },
+        },
         changed: false,
       },
     },
@@ -98,7 +100,9 @@ describe('switch module', () => {
         default: defaultSimple,
       },
       expect: {
-        vars: { debug: '123' },
+        vars: {
+          set: { val: '123' },
+        },
         changed: false,
       },
     },
@@ -110,8 +114,8 @@ describe('switch module', () => {
       },
       expect: {
         vars: {
-          debug: 'two',
-          debug2: 'two',
+          set: { val: 'two' },
+          set2: { val: 'two' },
         },
         changed: false,
       },
@@ -122,7 +126,7 @@ describe('switch module', () => {
         cases: casesComplex,
       },
       expect: {
-        vars: { debug: 'one' },
+        vars: { set: { val: 'one' } },
         changed: false,
       },
     },
@@ -133,8 +137,8 @@ describe('switch module', () => {
       },
       expect: {
         vars: {
-          debug: 'two',
-          debugFallthrough: 'two',
+          set: { val: 'two' },
+          setFallthrough: { val: 'two' },
         },
         changed: false,
       },
@@ -144,7 +148,7 @@ describe('switch module', () => {
   test.each(tests)('$#', async (t) => {
     const runContext = getTestRunContext();
     const module = new ModuleSwitch(t.args);
-
-    await expect(module.run(runContext)).resolves.toEqual(t.expect);
+    const result = await module.run(runContext);
+    expect(result).toEqual(t.expect);
   });
 });

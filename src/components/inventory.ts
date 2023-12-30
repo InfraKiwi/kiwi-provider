@@ -21,12 +21,11 @@ import { tryOrThrowAsync } from '../util/try';
 import { InventoryHost } from './inventoryHost';
 import type { AbstractHostSourceInstance, HostSourceContext } from '../hostSources/abstractHostSource';
 import { hostSourceRegistry } from '../hostSources/registry';
-import Joi from 'joi';
 import type { HostSourceRawInterface } from '../hostSources/raw/schema.gen';
 import { InventoryGroup } from './inventoryGroup';
 import { VarsContainer } from './varsContainer';
 import type { VarsInterface } from './varsContainer.schema.gen';
-import { joiKeepOnlyKeysInJoiSchema } from '../util/joi';
+import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { VarsContainerSchema } from './varsContainer.schema';
 import path from 'node:path';
 
@@ -61,7 +60,7 @@ export class Inventory extends VarsContainer {
   #throwOnHostNotMatched = false;
 
   constructor(config: InventoryInterface, meta?: InventoryMetadata) {
-    config = Joi.attempt(config, InventorySchema, 'validate inventory config');
+    config = joiAttemptRequired(config, InventorySchema, 'validate inventory config');
     super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
 
     this.#config = config;
@@ -88,7 +87,7 @@ export class Inventory extends VarsContainer {
   static async fromFile(context: HostSourceContext, inventoryPath: string): Promise<Inventory> {
     const data = await loadYAMLFromFile(inventoryPath);
     const inventory = new Inventory(data as InventoryInterface, { fileName: inventoryPath });
-    await inventory.loadGroupsAndStubs(context);
+    await inventory.loadHostStubsAndGroups(context);
     return inventory;
   }
 
@@ -138,7 +137,7 @@ export class Inventory extends VarsContainer {
 
     visitedCache ??= newVisitedCache();
     if (!(groupName in this.#groups)) {
-      context.logger.warning(`Inventory group ${groupName} not found`);
+      context.logger.warn(`Inventory group ${groupName} not found`);
       return {};
     }
 
@@ -312,10 +311,14 @@ export class Inventory extends VarsContainer {
     return filtered;
   }
 
-  async loadGroupsAndStubs(context: HostSourceContext, loadVars = false) {
+  async loadHostStubsAndGroups(context: HostSourceContext, loadVars = false) {
     await Promise.all(Object.keys(this.#groups).map((groupName) => this.#groups[groupName].loadVars(context)));
 
     const hosts: Record<string, InventoryHost> = {};
+
+    for (const hostKey in this.#config.hosts) {
+      hosts[hostKey] = new InventoryHost(hostKey, this.#config.hosts[hostKey]);
+    }
 
     await Promise.all(
       (this.#config.hostSources ?? []).map(async (inventoryHostSourceConfig) => {
@@ -328,7 +331,7 @@ export class Inventory extends VarsContainer {
           hosts,
           await tryOrThrowAsync(
             () => hostSource.loadHostsStubs(context),
-            `Failed to load hosts stubs for source ${hostSource.registryEntry.entryName}`,
+            `Failed to load hosts stubs for source ${hostSource.registryEntry.entryName}`
           )
         );
       })

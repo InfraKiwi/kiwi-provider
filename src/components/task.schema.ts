@@ -22,6 +22,8 @@ export const TaskTestMockSchema = TestMockBaseSchema.append({ if: ConditionSetSc
   joiMetaClassName('TaskTestMockInterface')
 );
 
+export const postChecksContextResultKey = '__result';
+
 export const TaskSchema = Joi.object({
   label: Joi.string().description(`
   A friendly identifier for the task, which will be printed in logs.
@@ -37,18 +39,37 @@ export const TaskSchema = Joi.object({
   `),
 
   out: Joi.string().description(`
-  If provided, registers any output variables into the variable name
+  If provided, registers any output variables into a variable with the name
   provided as value of the \`out\` argument.
   `),
 
-  failedIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), FailedIfFullSchema]).description(`
+  outRaw: Joi.string().description(`
+  If provided, registers the full module result into a variable with the name
+  provided as value of the \`outRaw\` argument.
+  `),
+
+  failedIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), FailedIfFullSchema, Joi.boolean()])
+    .description(`
   When provided, the task will fail if this condition succeeds.
   Expects a template that would work inside an \`if\` condition.
+  
+  The context available for this condition is the same one available at
+  the module's resolution time, plus the additional field \`${postChecksContextResultKey}\`,
+  which contains the result of the module.
+  
+  The \`${postChecksContextResultKey}\` field is of type ModuleRunResultInterface. ##typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts"}
 `),
 
-  exitIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), ExitIfFullSchema]).description(`
+  exitIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), ExitIfFullSchema, Joi.boolean()])
+    .description(`
   When provided, the recipe will stop successfully if this condition succeeds.
   Expects a template that would work inside an \`if\` condition.  
+  
+  The context available for this condition is the same one available at
+  the module's resolution time, plus the additional field \`${postChecksContextResultKey}\`,
+  which contains the result of the module.
+  
+  The \`${postChecksContextResultKey}\` field is of type ModuleRunResultInterface. ##typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts"}
 `),
 
   global: Joi.boolean().description(`
@@ -74,10 +95,12 @@ export const TaskSchema = Joi.object({
   .unknown(true)
   .meta({
     className: 'TaskInterface',
-    ...joiMetaUnknownType(Joi.any().description(`
+    ...joiMetaUnknownType(
+      Joi.any().description(`
     The module to use in the task.
     You can check the available task modules here: ##link#See all available task modules#/modules
-    `)),
+    `)
+    ),
   })
   .description(
     `

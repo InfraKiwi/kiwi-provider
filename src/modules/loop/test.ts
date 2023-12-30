@@ -83,7 +83,8 @@ describe('loop module', () => {
   test.each(tests)('$#', async (t) => {
     const runContext = getTestRunContext();
     const module = new ModuleLoop(t.args);
+    const result = await module.run(runContext);
 
-    await expect(module.run(runContext)).resolves.toEqual(t.expect);
+    expect(result).toEqual(t.expect);
   });
 });
