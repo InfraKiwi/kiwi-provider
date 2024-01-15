@@ -10,7 +10,7 @@ __metadata:
   resolution: "10infra-config@workspace:."
   dependencies:
     "@jest/globals": "npm:^29.7.0"
-    "@prisma/client": "npm:^5.7.1"
+    "@prisma/client": "npm:^5.8.1"
     "@stylistic/eslint-plugin": "npm:^1.5.1"
     "@types/debug": "npm:^4.1.12"
     "@types/eslint": "npm:^8.56.0"
@@ -1195,15 +1195,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@prisma/client@npm:^5.7.1":
-  version: 5.7.1
-  resolution: "@prisma/client@npm:5.7.1"
+"@prisma/client@npm:^5.8.1":
+  version: 5.8.1
+  resolution: "@prisma/client@npm:5.8.1"
   peerDependencies:
     prisma: "*"
   peerDependenciesMeta:
     prisma:
       optional: true
-  checksum: 5eafbe3955de13620c7b661282c79e85211bb0cba950559f87e7a679ff06f5242864b0cbe6e76316eb35366ac3df9b2b02ced7cbedc238bcbc4e412d7acf3b72
+  checksum: 08a0eb392b1b7773545faa08bb1501352a999b7c215fa16977c61596abdd86b573723c244fbc096d8a42bab9a9bbc31a9d761aa8a85c03d2f94d6a68c04ff17f
   languageName: node
   linkType: hard
 
