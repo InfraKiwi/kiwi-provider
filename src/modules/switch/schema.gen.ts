@@ -5,7 +5,7 @@
 
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
-import type { TaskInterface } from '../../components/task.schema.gen';
+import type { TaskSingleOrArrayInterface } from '../../components/task.schema.gen';
 
 // [block ModuleSwitchCaseFullInterface begin]
 export interface ModuleSwitchCaseFullInterface {
@@ -18,21 +18,7 @@ export interface ModuleSwitchCaseFullInterface {
    * If true, the evaluation will proceed also to the next case.
    */
   fallthrough?: boolean;
-
-  /**
-   * The task configuration
-   */
-  task:
-
-    /**
-     * The task to be executed.
-     */
-    | TaskInterface //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
-    /**
-     * An array of tasks to be executed.
-     */
-    | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
+  task: TaskSingleOrArrayInterface; //typeRef:TaskSingleOrArrayInterface:{"relPath":"../../components/task.schema.gen.ts","isRegistryExport":false}
 }
 // [block ModuleSwitchCaseFullInterface end]
 //meta:ModuleSwitchCaseFullInterface:[{"className":"ModuleSwitchCaseFullInterface"}]
@@ -52,22 +38,9 @@ export interface ModuleSwitchInterface {
     /**
      * An object, where each key represents a case match and the value the task config.
      */
-    | ({
-    /**
-     * The task configuration
-     */
-    [x: string]:
-
-      /**
-       * The task to be executed.
-       */
-      | TaskInterface //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
-      /**
-       * An array of tasks to be executed.
-       */
-      | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-  })
+    | {
+    [x: string]: TaskSingleOrArrayInterface; //typeRef:TaskSingleOrArrayInterface:{"relPath":"../../components/task.schema.gen.ts","isRegistryExport":false}
+  }
 
     /**
      * An array of conditions to evaluate.
@@ -77,17 +50,7 @@ export interface ModuleSwitchInterface {
   /**
    * The default case, which is executed if no other cases match successfully.
    */
-  default?:
-
-    /**
-     * The task to be executed.
-     */
-    | TaskInterface //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
-    /**
-     * An array of tasks to be executed.
-     */
-    | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
+  default?: TaskSingleOrArrayInterface; //typeRef:TaskSingleOrArrayInterface:{"relPath":"../../components/task.schema.gen.ts","isRegistryExport":false}
 }
 // [block ModuleSwitchInterface end]
 //meta:ModuleSwitchInterface:[{"className":"ModuleSwitchInterface","entryNames":["switch"]}]

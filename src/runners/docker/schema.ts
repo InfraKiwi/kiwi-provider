@@ -29,6 +29,8 @@ export const RunnerDockerSleepCommands: { [k in DockerInspectPlatform]: string[]
 };
 
 export const RunnerDockerBinaryDefault = 'docker';
+export const RunnerDockerReadyTimeoutDefault = 60000;
+export const RunnerDockerReadyIntervalDefault = 1000;
 
 export const DockerInspectResultSchema = Joi.array()
   .items(
@@ -93,6 +95,24 @@ export const RunnerDockerSchema = runnerRegistryEntryFactory.createJoiEntrySchem
       If the default directory is mounted under a tmpfs mount, you need to specify
       a different directory in this option. The directory must already exist in the
       docker container.
+    `),
+
+    ready: Joi.object({
+      command: Joi.array().items(Joi.string()).min(1).required().description(`
+        The command/args array to use to check if the Docker container is ready
+        to accept commands.
+      `),
+      timeout: Joi.number().integer().min(1).default(RunnerDockerReadyTimeoutDefault).optional().description(`
+        How many milliseconds to wait before declaring the runner invalid.
+        When the timeout expires, the test suite execution will fail.
+      `),
+      interval: Joi.number().integer().min(1).default(RunnerDockerReadyIntervalDefault).optional().description(`
+        How frequently, in milliseconds, to check for the runner readiness
+        using the \`ready.command\` command.
+      `),
+    }).description(`
+      If provided, defines a command the runner uses to verify the Docker container
+      has started and is ready to accept commands.
     `),
 
     sleepCommand: Joi.alternatives([

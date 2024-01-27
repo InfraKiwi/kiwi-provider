@@ -28,5 +28,5 @@ export const ModuleDownloadSchema = moduleRegistryEntryFactory.createJoiEntrySch
       'If an archive type is provided, treat the downloaded file as an archive and extract it to `dest`, which must be a directory.'
     ),
   }),
-  { label: 'ModuleDownloadInterface' }
+  { name: 'ModuleDownloadInterface' }
 );

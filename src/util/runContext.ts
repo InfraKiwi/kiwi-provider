@@ -41,14 +41,15 @@ export function newRunStatistics(): RunStatistics {
 export type RunContextShutdownHookFn = () => void | Promise<void>;
 
 export interface RunContextShutdownHook {
-  label: string;
+  name: string;
   fn: RunContextShutdownHookFn;
 }
 
+/* eslint-disable @stylistic/brace-style */
 export class RunContext
   implements ContextLogger, ContextRecipeSourceList, ContextWorkDir, RunContextPublicVarsInterface
 {
-  // eslint-disable-next-line @stylistic/brace-style
+  /* eslint-enable @stylistic/brace-style */
   logger: Logger = defaultLogger;
   host: InventoryHost;
   vars: VarsInterface = {};
@@ -124,8 +125,8 @@ export class RunContext
     return this.clone({ logger: this.logger.child(options) });
   }
 
-  withLabel(label: string): RunContext {
-    return this.clone({ logger: this.logger.child({ label }) });
+  withName(name: string): RunContext {
+    return this.clone({ logger: this.logger.child({ name }) });
   }
 
   withVars(vars: VarsInterface): RunContext {
@@ -179,7 +180,7 @@ export class RunContext
       try {
         await hook.fn();
       } catch (ex) {
-        this.logger.error(`Failed to execute shutdown hook: ${hook.label}`, { ex });
+        this.logger.error(`Failed to execute shutdown hook: ${hook.name}`, { ex });
       }
     }
   }

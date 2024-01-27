@@ -4,18 +4,21 @@
  */
 
 import Joi from 'joi';
-import { joiMetaClassName, joiMetaUnknownType, joiValidateValidIfTemplate } from '../util/joi';
+import { joiMetaClassName, joiMetaUnknownType } from '../util/joi';
 import { VarsSchema } from './varsContainer.schema';
 import { ModuleFailFullSchema } from '../modules/fail/schema';
 import { ModuleExitFullSchema } from '../modules/exit/schema';
 import { ConditionSetSchema, TestMockBaseSchema } from './testingCommon.schema';
+import { joiMetaDelayTemplatesResolution, joiValidateValidIfTemplate } from '../util/tpl';
+
+export const taskPreviousTaskResultContextKey = '__previousTaskResult';
 
 export const FailedIfFullSchema = ModuleFailFullSchema.append({
-  if: Joi.string().custom(joiValidateValidIfTemplate).required(),
+  if: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), Joi.boolean()]).required(),
 }).meta(joiMetaClassName('FailedIfFullInterface'));
 
 export const ExitIfFullSchema = ModuleExitFullSchema.append({
-  if: Joi.string().custom(joiValidateValidIfTemplate).required(),
+  if: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), Joi.boolean()]).required(),
 }).meta(joiMetaClassName('ExitIfFullInterface'));
 
 export const TaskTestMockSchema = TestMockBaseSchema.append({ if: ConditionSetSchema }).meta(
@@ -25,7 +28,7 @@ export const TaskTestMockSchema = TestMockBaseSchema.append({ if: ConditionSetSc
 export const postChecksContextResultKey = '__result';
 
 export const TaskSchema = Joi.object({
-  label: Joi.string().description(`
+  name: Joi.string().description(`
   A friendly identifier for the task, which will be printed in logs.
 `),
 
@@ -46,6 +49,15 @@ export const TaskSchema = Joi.object({
   outRaw: Joi.string().description(`
   If provided, registers the full module result into a variable with the name
   provided as value of the \`outRaw\` argument.
+  `),
+
+  global: Joi.boolean().description(`
+  If true, registers any output variables into the global context.
+  `),
+
+  sensitive: Joi.boolean().description(`  
+  If true, all registered variables will be treated as secrets
+  E.g. useful for logging purposes.
   `),
 
   failedIf: Joi.alternatives([Joi.string().custom(joiValidateValidIfTemplate), FailedIfFullSchema, Joi.boolean()])
@@ -72,22 +84,13 @@ export const TaskSchema = Joi.object({
   The \`${postChecksContextResultKey}\` field is of type ModuleRunResultInterface. ##typeRef:ModuleRunResultInterface:{"relPath":"../modules/abstractModuleBase.schema.gen.ts"}
 `),
 
-  global: Joi.boolean().description(`
-  If true, registers any output variables into the global context.
-  `),
-
-  sensitive: Joi.boolean().description(`  
-  If true, all registered variables will be treated as secrets
-  E.g. useful for logging purposes.
-  `),
-
   keepPreviousTaskResult: Joi.boolean().description(`
-  Really only meant for debugging purposes, preserves the result of the
-  previous task and does not overwrite it. E.g. useful while using the debug
-  module.
+    Really only meant for debugging purposes, preserves the result of the
+    previous task in the \`${taskPreviousTaskResultContextKey}\` variable and does
+    not overwrite it. E.g. useful while using the debug module.
   `),
 
-  // TODO
+  // TODO omit in docs (new metadata feature?)
   testMocks: Joi.array().items(TaskTestMockSchema).description(`
   Enabled only in testing mode.
   `),
@@ -107,3 +110,11 @@ export const TaskSchema = Joi.object({
   Defines a task to be executed.
   `
   );
+
+export const TaskSingleOrArraySchema = Joi.alternatives([
+  TaskSchema.description('The task to be executed.'),
+  Joi.array().items(TaskSchema).min(1).description('An array of tasks to be executed.'),
+]).meta({
+  ...joiMetaClassName('TaskSingleOrArrayInterface'),
+  ...joiMetaDelayTemplatesResolution(),
+});

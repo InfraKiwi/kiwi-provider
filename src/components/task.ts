@@ -6,9 +6,20 @@
 // module: ModuleBase<unknown, unknown>
 import { moduleRegistry } from '../modules/registry';
 import type { RunContext } from '../util/runContext';
-import { extractAllTemplates, IfTemplate, objectContainsTemplates, resolveTemplates } from '../util/tpl';
-import { postChecksContextResultKey, TaskSchema, TaskTestMockSchema } from './task.schema';
-import type { TaskInterface, TaskTestMockInterface } from './task.schema.gen';
+import {
+  extractAllTemplates,
+  IfTemplate,
+  objectContainsTemplates,
+  resolveTemplates,
+  resolveTemplatesWithJoiSchema,
+} from '../util/tpl';
+import {
+  postChecksContextResultKey,
+  taskPreviousTaskResultContextKey,
+  TaskSchema,
+  TaskTestMockSchema,
+} from './task.schema';
+import type { TaskInterface, TaskSingleOrArrayInterface, TaskTestMockInterface } from './task.schema.gen';
 import traverse from 'traverse';
 import { maskSensitiveValue } from '../util/logger';
 import type {
@@ -29,6 +40,8 @@ import { TestMockBaseSchema } from './testingCommon.schema';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import { findAsync } from '../util/findAsync';
 import { lookupTaskFailureHint } from './taskFailures';
+import { getArrayFromSingleOrArray } from '../util/array';
+import { omit } from '../util/object';
 
 export interface TaskRunResult<ResultType extends ModuleRunResultBaseType> {
   moduleRunResult?: ModuleRunResult<ResultType>;
@@ -88,22 +101,22 @@ export class Task {
     if (config.failedIf != null) {
       switch (typeof config.failedIf) {
         case 'boolean':
+        case 'string':
           this.failedIfTemplate = new IfTemplate(`${config.failedIf}`);
           break;
         default:
-          this.failedIfTemplate = new IfTemplate(
-            typeof config.failedIf == 'string' ? config.failedIf : config.failedIf.if
-          );
+          this.failedIfTemplate = new IfTemplate(`${config.failedIf.if}`);
       }
     }
 
     if (config.exitIf != null) {
       switch (typeof config.exitIf) {
         case 'boolean':
+        case 'string':
           this.exitIfTemplate = new IfTemplate(`${config.exitIf}`);
           break;
         default:
-          this.exitIfTemplate = new IfTemplate(typeof config.exitIf == 'string' ? config.exitIf : config.exitIf.if);
+          this.exitIfTemplate = new IfTemplate(`${config.exitIf.if}`);
       }
     }
 
@@ -132,31 +145,46 @@ export class Task {
     });
     context.logger.debug('Initializing task');
 
+    const registryEntry = moduleRegistry.findRegistryEntryFromIndexedConfig(taskConfig, TaskSchema, {
+      skipConfigValidation: true,
+    });
+    taskConfig = omit(taskConfig, [registryEntry.entryName]);
+    let moduleConfig = this.config[registryEntry.entryName];
+
     if (this.templated) {
       await tryOrThrowAsync(async () => {
-        taskConfig = await resolveTemplates(this.config, context.varsForTemplate);
+        const vars = context.varsForTemplate;
+
+        /*
+         * We split the configs this way because we're using the joi schema to find templates
+         * that should NOT be resolved
+         */
+        moduleConfig = await resolveTemplatesWithJoiSchema(
+          this.config[registryEntry.entryName],
+          vars,
+          registryEntry.schema
+        );
+        taskConfig = await resolveTemplates(taskConfig, vars);
       }, 'Failed to initialize task config while resolving templates');
     }
 
-    const module = moduleRegistry.getRegistryEntryInstanceFromIndexedConfig<AbstractModuleBaseInstance>(
-      taskConfig,
-      TaskSchema
-    );
+    const module = new registryEntry.clazz(moduleConfig);
+
     this.#resolvedModule = module;
 
-    let label: string | undefined;
-    if (taskConfig.label) {
-      label = `T:${taskConfig.label}`;
+    let name: string | undefined;
+    if (taskConfig.name) {
+      name = `T:${taskConfig.name}`;
     } else if (module.label) {
-      label = `M:${module.registryEntry.entryName}:${module.label}`;
+      name = `M:${module.registryEntry.entryName}:${module.label}`;
     } else {
-      label = `M:${module.registryEntry.entryName}`;
+      name = `M:${module.registryEntry.entryName}`;
     }
 
     // NOTE: very important to run this because it resolves all conditions/templates/mocks
     this.#evaluateConfig(taskConfig);
 
-    context = context.withLabel(label).prependTestMocks(this.#testMocks);
+    context = context.withName(name).prependTestMocks(this.#testMocks);
 
     if (this.ifTemplate && !(await this.ifTemplate.isTrue(context.vars))) {
       context.logger.info('Task skipped');
@@ -263,6 +291,8 @@ export class Task {
     }
 
     context.logger.info('Task completed', {
+      config: context.isTesting ? module.config : undefined,
+      mock: mock != null,
       result,
       forceExit,
     });
@@ -284,7 +314,7 @@ export class Task {
     const accumulatedVars: VarsInterface = {};
 
     for (let i = 0; i < tasks.length; i++) {
-      context.vars['__previousTaskResult'] = context.previousTaskResult;
+      context.vars[taskPreviousTaskResultContextKey] = context.previousTaskResult;
 
       const task = tasks[i];
       const taskResult = await tryOrThrowAsync(
@@ -293,7 +323,7 @@ export class Task {
           const hint = lookupTaskFailureHint(err);
           const hintSuffix = hint ? '\n\n' + hint : '';
           const taskLabel = [
-            ...(task.config.label ? ['"' + task.config.label + '"'] : []),
+            ...(task.config.name ? ['"' + task.config.name + '"'] : []),
             ...(task.resolvedModule ? ['[' + task.resolvedModule.registryEntry.entryName + ']'] : []),
           ].join(' ');
           return `Failed to run task${taskLabel != '' ? ' ' + taskLabel : ''} with index ${i}` + hintSuffix;
@@ -345,5 +375,9 @@ export class Task {
       changed,
       vars: accumulatedVars,
     };
+  }
+
+  static getTasksFromSingleOrArraySchema(val: TaskSingleOrArrayInterface): Task[] {
+    return [...getArrayFromSingleOrArray(val).map((t) => new Task(t))];
   }
 }

@@ -6,6 +6,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as nunjucks from 'nunjucks';
 import { AbstractTemplate } from './abstractTemplate';
+import { escapeRegex } from '../regex';
+import { arrayCompare } from '../array';
+import type Joi from 'joi';
+import { joiCustomErrorMessage, joiFindMetaValuePaths } from '../joi';
+import { joiMetaDelayTemplatesResolutionKey } from './tpl.joi';
 
 export interface NunjucksContext {
   lookup(name: string): any;
@@ -83,6 +88,11 @@ export class TemplateRenderingError extends Error {
   }
 }
 
+const inTemplateContextToStringBegin = '[[__10I_TPL:5KZ5NrzNki86YKNc:';
+const inTemplateContextToStringEnd = ':__TPL]]';
+const inTemplateContextRegexStr =
+  escapeRegex(inTemplateContextToStringBegin) + '(.+?)' + escapeRegex(inTemplateContextToStringEnd);
+
 // ---
 export class Template extends AbstractTemplate {
   static #nunjucksEnv: nunjucks.Environment;
@@ -90,7 +100,10 @@ export class Template extends AbstractTemplate {
   readonly #tpl: nunjucks.Template;
   readonly parseJSON: boolean;
 
-  constructor(value: string, parseJSON?: boolean) {
+  // Shared context cache
+  static #renderContext?: any;
+
+  constructor(value: string, parseJSON = false) {
     super(value);
 
     // Delay the initialization so that all globals and filters will be loaded
@@ -100,28 +113,44 @@ export class Template extends AbstractTemplate {
 
     // TODO support at-render-time environment, e.g. to fetch the inventory
     this.#tpl = nunjucks.compile(value, Template.#nunjucksEnv);
-    this.parseJSON = parseJSON ?? false;
+    this.parseJSON = parseJSON;
   }
 
   async render(context?: any): Promise<any> {
-    const result = await new Promise<string>((res, rej) => {
-      this.#tpl.render(context, (err: Error | null, val: string | null) => {
-        if (err != null) {
-          rej(new TemplateRenderingError(this, err));
-          return;
-        }
-        res(val!);
+    /*
+     * This is a beautiful hack. We cache the context whenever we render,
+     * and if this template contains recursive templates, we can render them
+     * via the toString() call using the provided context!
+     */
+    Template.#renderContext = context;
+
+    try {
+      const result = await new Promise<string>((res, rej) => {
+        this.#tpl.render(context, (err: Error | null, val: string | null) => {
+          if (err != null) {
+            rej(new TemplateRenderingError(this, err));
+            return;
+          }
+          res(val!);
+        });
       });
-    });
 
-    if (this.parseJSON) {
-      return JSON.parse(result);
+      if (this.parseJSON) {
+        return JSON.parse(result);
+      }
+
+      return result;
+    } finally {
+      Template.#renderContext = undefined;
     }
-
-    return result;
   }
 
   toString(): string {
+    // We are in a render call
+    if (Template.#renderContext) {
+      return `${inTemplateContextToStringBegin}${this.original}${inTemplateContextToStringEnd}`;
+    }
+
     return this.original;
   }
 
@@ -187,19 +216,62 @@ export function extractAllTemplates(el: any): any {
   return el;
 }
 
-export async function resolveTemplates(el: any, tplArgs: any): Promise<any> {
+export interface ResolveTemplatesOptions {
+  nodePath?: string[];
+  skipPaths?: string[][];
+}
+
+// This schema will be used to evaluate which templates to NOT resolve
+export async function resolveTemplatesWithJoiSchema(el: any, tplArgs: any, schema: Joi.Schema): Promise<any> {
+  const skipPaths = joiFindMetaValuePaths(schema.describe(), joiMetaDelayTemplatesResolutionKey, true, true);
+  return resolveTemplates(el, tplArgs, {
+    skipPaths,
+  });
+}
+
+export async function resolveTemplates(el: any, tplArgs: any, options?: ResolveTemplatesOptions): Promise<any> {
+  const nodePath = options?.nodePath ?? [];
+  if ((options?.skipPaths ?? []).find((p) => arrayCompare(p, nodePath)) != null) {
+    return el;
+  }
+
   if (el instanceof AbstractTemplate) {
-    return await el.render(tplArgs);
+    let rendered = await el.render(tplArgs);
+    // Process nested templates
+    if (typeof rendered == 'string') {
+      // while (inTemplateContextRegex.test(rendered)) {
+      const re = new RegExp(inTemplateContextRegexStr, 'g');
+      let match: RegExpMatchArray | null = null;
+      while ((match = re.exec(rendered))) {
+        const fullMatch = match[0];
+        const tpl = match[1];
+        const renderedTpl = (await resolveTemplates(extractAllTemplates(tpl), tplArgs)) as string;
+        rendered =
+          (rendered as string).substring(0, match.index) +
+          renderedTpl +
+          (rendered as string).substring(match.index! + fullMatch.length);
+        re.lastIndex += renderedTpl.length - fullMatch.length;
+      }
+      // }
+    }
+    return rendered;
   }
 
   if (Array.isArray(el)) {
     const newArray = [];
+    let i = 0;
     for (const objElement of el) {
       if (objectContainsTemplates(objElement)) {
-        newArray.push(await resolveTemplates(objElement, tplArgs));
+        newArray.push(
+          await resolveTemplates(objElement, tplArgs, {
+            nodePath: [...nodePath, `${i}`],
+            skipPaths: options?.skipPaths,
+          })
+        );
       } else {
         newArray.push(objElement);
       }
+      i++;
     }
     return newArray;
   }
@@ -210,7 +282,10 @@ export async function resolveTemplates(el: any, tplArgs: any): Promise<any> {
     for (const objKey in el) {
       const objValue = el[objKey];
       if (objectContainsTemplates(objValue)) {
-        newObject[objKey] = await resolveTemplates(objValue, tplArgs);
+        newObject[objKey] = await resolveTemplates(objValue, tplArgs, {
+          nodePath: [...nodePath, objKey],
+          skipPaths: options?.skipPaths,
+        });
       } else {
         newObject[objKey] = objValue;
       }
@@ -229,4 +304,13 @@ export class IfTemplate extends Template {
   async isTrue(context?: any): Promise<boolean> {
     return (await this.render(context)) == true;
   }
+}
+
+export function joiValidateValidIfTemplate(val: string, helpers: Joi.CustomHelpers<string>): Joi.ErrorReport | string {
+  try {
+    new IfTemplate(val);
+  } catch (err) {
+    return joiCustomErrorMessage(helpers, 'The string must be a valid nunjucks condition');
+  }
+  return val;
 }

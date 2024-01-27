@@ -22,9 +22,7 @@ export interface RunnerRunRecipesResult {
   output?: string;
 }
 
-/*
- *By adding any of these runners, the whole system becomes also a push one. Heh.
- */
+/* By adding any of these runners, the whole system becomes also a push one. Heh. */
 export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<ConfigType> {
   // Used to execute commands before the test run
   async setUp(context: RunnerContextSetup): Promise<void> {}
@@ -51,21 +49,35 @@ export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<C
     }
   }
 
-  protected parseRunRecipesFromArchiveLogs(context: ContextLogger, logs: string): LogEntry[] {
-    try {
-      // Expect JSON
-      return logs
-        .split('\n')
-        .map((s) => s.trim())
-        .filter((s) => s != '')
-        .map((line) => JSON.parse(line));
-    } catch (ex) {
-      context.logger.error('Failed to parse runRecipesFromArchive logs', {
-        error: ex,
-        logs,
-      });
+  protected printRunnerLogs(context: ContextLogger, line: string) {
+    const logs = this.parseRunnerLogs(context, line);
+    for (const entry of logs) {
+      entry.color = 'red';
+      context.logger.log(entry);
     }
-    return [];
+  }
+
+  protected parseRunnerLogs(context: ContextLogger, logs: string): LogEntry[] {
+    const lines = logs
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s != '');
+
+    const parsed: LogEntry[] = [];
+
+    for (const line of lines) {
+      try {
+        // Expect JSON
+        parsed.push(JSON.parse(line));
+      } catch (ex) {
+        parsed.push({
+          message: line,
+          level: 'warn',
+        });
+      }
+    }
+
+    return parsed;
   }
 
   protected formatRunShellOutput(result: RunShellResult): string {

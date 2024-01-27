@@ -7,6 +7,7 @@ import type { RunnerContext, RunnerContextSetup, RunnerRunRecipesResult } from '
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
 import type { DockerInspectPlatform } from './schema';
+import { RunnerDockerReadyIntervalDefault, RunnerDockerReadyTimeoutDefault } from './schema';
 import { DockerInspectResultSchema } from './schema';
 import {
   RunnerDockerBinaryDefault,
@@ -28,6 +29,7 @@ import { randomUUID } from 'node:crypto';
 import { joiAttemptRequired } from '../../util/joi';
 import { getErrorPrintfClass } from '../../util/error';
 import { normalizePathToUnix } from '../../util/path';
+import { backOff } from 'exponential-backoff';
 
 export const RunnerDockerErrorContainerDied = getErrorPrintfClass(
   'RunnerDockerErrorContainerDied',
@@ -70,9 +72,12 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     const args: string[] = [
       'runRecipesFromArchive',
+
+      '--logStyle',
+      'json',
       '--logFile',
       logFile,
-      '--logNoConsole',
+      // '--logNoConsole',
       '--statsFileName',
       statsFileName,
       '--archiveDir',
@@ -87,7 +92,10 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     let result: RunShellResult;
     try {
-      result = await this.#runnerExec(context, args);
+      result = await this.#runnerExec(context, args, {
+        streamLogs: false,
+        onLog: (l, i) => this.printRunnerLogs(context, l),
+      });
     } finally {
       const logFileLocal = await fsPromiseTmpFile({
         keep: false,
@@ -95,10 +103,13 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
         postfix: '.log',
       });
       await this.#dockerDownload(context, logFile, logFileLocal);
-      const logs = this.parseRunRecipesFromArchiveLogs(context, await fsPromiseReadFile(logFileLocal, 'utf-8'));
-      for (const entry of logs) {
-        context.logger.log(entry);
-      }
+
+      /*
+       * const logs = this.parseRunnerLogs(context, await fsPromiseReadFile(logFileLocal, 'utf-8'));
+       * for (const entry of logs) {
+       *   context.logger.log(entry);
+       * }
+       */
     }
 
     const statsFileLocal = await fsPromiseTmpFile({
@@ -144,7 +155,10 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     args: string[],
     options?: ExecCmdOptions
   ): Promise<RunShellResult> {
-    return await execCmd(context, this.config.bin ?? RunnerDockerBinaryDefault, args, options);
+    return await execCmd(context, this.config.bin ?? RunnerDockerBinaryDefault, args, {
+      ...options,
+      streamLogs: options?.streamLogs ?? true,
+    });
   }
 
   #assertContainerId(): string {
@@ -203,10 +217,11 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
   async #prepareEnvironment(context: RunnerContextSetup) {
     await this.#dockerRun(context);
+    await this.#dockerWaitForReadyContainer(context);
 
     /*
-     *We need to set up the environment inside the container, meaning that we need a properly working
-     *nodejs executable.
+     * We need to set up the environment inside the container, meaning that we need a properly working
+     * nodejs executable.
      */
     const nodePlatform = this.#nodePlatform;
     const nodeBin = await downloadNodeDist(context, {
@@ -245,10 +260,10 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     });
   }
 
-  async #nodeExec(context: ContextLogger, args: string[]) {
+  async #nodeExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
     const nodeBin = this.#assertNodeBin();
     context.logger.verbose('Executing NodeJS command', { args });
-    return await this.dockerExec(context, [nodeBin, ...args]);
+    return await this.dockerExec(context, [nodeBin, ...args], options);
   }
 
   async #runnerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
@@ -275,12 +290,12 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     if (this.config.dockerfile == null) {
       throw new Error(`Undefined docker runner dockerfile context`);
     }
-    const { context: dockerfileContext, inline, args } = this.config.dockerfile;
+    const { context: dockerfileContext = context.workDir, inline, args = [] } = this.config.dockerfile;
 
     const tag = `10infra-test-${randomUUID()}`;
     const platform = this.#platform;
 
-    const buildArgs: string[] = ['--platform', platform, '--tag', tag, ...(args ?? [])];
+    const buildArgs: string[] = ['--platform', platform, '--tag', tag, ...args];
 
     if (inline) {
       const tmp = await fsPromiseTmpFile({
@@ -291,7 +306,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       buildArgs.push('-f', tmp);
     }
 
-    const contextDir = dockerfileContext ?? context.workDir;
+    const contextDir = dockerfileContext;
     if (contextDir == null) {
       throw new Error(`Docker runner context directory not defined`);
     }
@@ -344,8 +359,34 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     this.#containerId = result.stdout.trim();
   }
 
+  async #dockerWaitForReadyContainer(context: ContextLogger) {
+    if (this.config.ready == null) {
+      return;
+    }
+
+    const {
+      command,
+      timeout = RunnerDockerReadyTimeoutDefault,
+      interval = RunnerDockerReadyIntervalDefault,
+    } = this.config.ready;
+
+    await backOff(
+      async () => {
+        await this.dockerExec(context, command);
+      },
+      {
+        timeMultiple: 1,
+        startingDelay: interval,
+        delayFirstAttempt: true,
+        numOfAttempts: Math.floor(timeout / interval),
+      }
+    );
+  }
+
   async #dockerVerifyContainerIsAlive(context: ContextLogger) {
-    const inspect = await this.#execDockerBinCommand(context, ['inspect', this.#assertContainerId()]);
+    const inspect = await this.#execDockerBinCommand(context, ['inspect', this.#assertContainerId()], {
+      streamLogs: false,
+    });
     const result = joiAttemptRequired(
       JSON.parse(inspect.stdout),
       DockerInspectResultSchema
@@ -400,12 +441,15 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async dockerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
-    this.#dockerLogVerbose(context, 'Executing command in container', { args });
+    this.#dockerLogVerbose(context, 'Executing command in container', {
+      args,
+      streamLogs: options?.streamLogs,
+    });
     await this.#dockerVerifyContainerIsAlive(context);
     return await this.#execDockerBinCommand(context, ['exec', this.#assertContainerId(), ...args], options);
   }
 
-  async #dockerGetTmpFile(context: ContextLogger, extension?: string) {
+  async #dockerGetTmpFile(context: ContextLogger, extension = '') {
     /*
      * Upload to a temporary file
      * https://shellgeek.com/use-powershell-to-create-temporary-file/
@@ -418,7 +462,8 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     if (tmpFile == '') {
       throw new Error('Empty temporary file path returned');
     }
-    return tmpFile + (extension ?? '');
+
+    return tmpFile + extension;
   }
 
   async #dockerGetTmpDir(context: ContextLogger) {

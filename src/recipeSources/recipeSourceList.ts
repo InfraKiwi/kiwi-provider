@@ -45,7 +45,7 @@ export class RecipeSourceList {
   constructor(
     context: RecipeSourceCtorContext,
     config: RecipeSourceListInterface,
-    rawEntries?: AbstractRecipeSourceInstance[]
+    rawEntries: AbstractRecipeSourceInstance[] = []
   ) {
     // Make sure there are no sources with duplicate ids
     this.#config = joiAttemptRequired(config, RecipeSourceListSchema);
@@ -54,11 +54,9 @@ export class RecipeSourceList {
     this.#sourcesByUniqueId = {};
     this.#sourceEntries = [];
 
-    if (rawEntries) {
-      for (const entry of rawEntries) {
-        this.#sourcesByUniqueId[entry.uniqueId] = entry;
-        this.#sourcesById[entry.id] = entry;
-      }
+    for (const entry of rawEntries) {
+      this.#sourcesByUniqueId[entry.uniqueId] = entry;
+      this.#sourcesById[entry.id] = entry;
     }
 
     const newEntries = this.#config.map((el) => {
@@ -79,7 +77,7 @@ export class RecipeSourceList {
       return source;
     });
 
-    const allEntries: AbstractRecipeSourceInstance[] = [...(rawEntries ?? []), ...newEntries];
+    const allEntries: AbstractRecipeSourceInstance[] = [...rawEntries, ...newEntries];
 
     this.#sourceEntries.push(
       ...allEntries.map((source) => {

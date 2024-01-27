@@ -17,6 +17,10 @@ const promiseExecFile = util.promisify(childProcess.execFile);
 export interface ExecOptionsCommon {
   ignoreBadExitCode?: boolean;
   logVerbose?: boolean;
+  streamLogs?: boolean;
+  onStdout?: (line: string) => void;
+  onStderr?: (line: string) => void;
+  onLog?: (line: string, isStderr: boolean) => void;
 }
 
 export type PromiseExecWithChild = childProcess.PromiseWithChild<{ stdout: string | Buffer; stderr: string | Buffer }>;
@@ -39,10 +43,28 @@ export async function execShell(
   cmd: string,
   options: ExecShellOptions = {}
 ): Promise<RunShellResult> {
-  const { ignoreBadExitCode, ...otherOptions } = options;
+  context = {
+    ...context,
+    logger: context.logger.child({
+      logPrefix: 'execShell',
+    }),
+  };
+
+  const { ignoreBadExitCode, logVerbose, streamLogs, onStdout, onStderr, onLog, ...otherOptions } = options;
   const promise = promiseExec(cmd, otherOptions);
   try {
-    const result = await runShellCommandInternal(context, promise, { ignoreBadExitCode });
+    logVerbose &&
+      context.logger.verbose('Exec shell', {
+        cmd,
+        color: context.logger.defaultMeta?.['color'] ?? 'blue',
+      });
+    const result = await runShellCommandInternal(context, promise, {
+      ignoreBadExitCode,
+      streamLogs,
+      onStdout,
+      onStderr,
+      onLog,
+    });
     context.logger.verbose('Exec shell result', {
       cmd,
       ...result,
@@ -61,16 +83,30 @@ export async function execCmd(
   args?: string[],
   options: ExecCmdOptions = {}
 ): Promise<RunShellResult> {
-  const { ignoreBadExitCode, ...otherOptions } = options;
+  context = {
+    ...context,
+    logger: context.logger.child({
+      logPrefix: 'execCmd',
+      color: context.logger.defaultMeta?.['color'] ?? 'blue',
+    }),
+  };
+
+  const { ignoreBadExitCode, logVerbose, streamLogs, onStdout, onStderr, onLog, ...otherOptions } = options;
   const promise = promiseExecFile(cmd, args, otherOptions);
   try {
-    options.logVerbose &&
+    logVerbose &&
       context.logger.verbose('Exec cmd', {
         cmd,
         args,
       });
-    const result = await runShellCommandInternal(context, promise, { ignoreBadExitCode });
-    options.logVerbose &&
+    const result = await runShellCommandInternal(context, promise, {
+      ignoreBadExitCode,
+      streamLogs,
+      onStdout,
+      onStderr,
+      onLog,
+    });
+    logVerbose &&
       context.logger.verbose('Exec cmd (result)', {
         cmd,
         args,
@@ -93,15 +129,26 @@ async function runShellCommandInternal(
   options: ExecOptionsCommon
 ): Promise<RunShellResult> {
   let stdout = '';
-  let stderr = '';
+  const stderr = '';
   let exitCode: number | null = null;
 
   const child = promise.child;
-  child.stdout?.on('data', function (data) {
+  child.stdout?.on('data', function (data: string) {
+    data = stripCR(data);
     stdout += data;
+    if (options.streamLogs) {
+      context.logger.info(data.trimEnd());
+    }
+    options?.onStdout?.(data.trimEnd());
+    options?.onLog?.(data.trimEnd(), false);
   });
-  child.stderr?.on('data', function (data) {
-    stderr += data;
+  child.stderr?.on('data', function (data: string) {
+    data = stripCR(data);
+    if (options.streamLogs) {
+      context.logger.error(data.trimEnd());
+    }
+    options?.onStderr?.(data.trimEnd());
+    options?.onLog?.(data.trimEnd(), true);
   });
   child.on('close', function (code) {
     exitCode = code;
@@ -119,8 +166,8 @@ async function runShellCommandInternal(
       }
 
       return {
-        stdout: stripCR(stdout),
-        stderr: stripCR(stderr),
+        stdout: stdout,
+        stderr: stderr,
         exitCode: ex.code,
       };
     }

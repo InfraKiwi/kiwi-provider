@@ -1,0 +1,57 @@
+name: Test
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      # Code paths
+      - cmd
+      - prisma
+      - src
+      - .env
+      - .eslintrc.cjs
+      - .prettierignore
+      - .prettierrc.yaml
+      - jest.config.cjs
+      - package.json
+      - tsconfig.json
+      - sea-config.json
+      - yarn.lock
+  push:
+    branches:
+      - main
+    paths:
+      # Code paths
+      - cmd
+      - prisma
+      - src
+      - .env
+      - .eslintrc.cjs
+      - .prettierignore
+      - .prettierrc.yaml
+      - jest.config.cjs
+      - package.json
+      - tsconfig.json
+      - sea-config.json
+      - yarn.lock
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: yarn gen
+      # Check if we have a dirty repo after code generation
+      - run: git diff --exit-code
+      - run: yarn lint
+      - run: yarn test

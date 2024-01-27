@@ -6,12 +6,11 @@
 import { AbstractTemplate } from './abstractTemplate';
 import { evalCodeWithBuiltins } from '../eval';
 
-export async function evalCodeWithSetResult(code: string, context?: Record<string, unknown>) {
+export async function evalCodeWithSetResult(code: string, context: Record<string, unknown> = {}) {
   let result: unknown;
 
   const setResult = (val: unknown) => (result = val);
 
-  context ??= {};
   context.setResult = setResult;
 
   const evalResult = await evalCodeWithBuiltins(code, context);

@@ -27,7 +27,7 @@ The executed code will have the following context available:
 
 Or, if the code source is a file:
 
-![type EvalFileContextInterface]
+![type EvalContextFileInterface]
 
 ### Builtins
 

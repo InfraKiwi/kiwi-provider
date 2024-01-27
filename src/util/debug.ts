@@ -51,7 +51,6 @@ export const newDebug: INewDebug = function (key: string) {
   return debugFunction;
 };
 
-// eslint-disable-next-line @typescript-eslint/unbound-method
 newDebug.enable = function (key) {
   if (key != null) {
     Debug.enable(key);
@@ -60,7 +59,6 @@ newDebug.enable = function (key) {
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/unbound-method
 newDebug.disable = function () {
   Debug.enable('');
 };

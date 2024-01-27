@@ -14,17 +14,16 @@ import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import { test } from '@jest/globals';
 import { defaultLogger, newLogger } from './logger';
 import fs from 'node:fs';
-import { contextVarAssetsDir } from '../components/recipe.schema';
 import { loadYAMLFromFile } from './yaml';
 import { TestSuite } from '../components/testSuite';
 
-export function testExamples(rootDir: string, timeout?: number) {
+export function testExamples(rootDir: string, timeout = 20000) {
   const examplesDir = path.join(rootDir, 'examples');
   if (!fs.existsSync(examplesDir)) {
     return;
   }
 
-  const assetsDir = path.join(examplesDir, 'assets');
+  // const assetsDir = path.join(examplesDir, 'assets');
 
   const context: RecipeCtorContext = {
     logger: newLogger(),
@@ -41,14 +40,14 @@ export function testExamples(rootDir: string, timeout?: number) {
       'recipe %s',
       async (file) => {
         const recipe = await sourceList.findAndLoadRecipe(context, file, {});
-        await testRecipe(context, recipe, { [contextVarAssetsDir]: assetsDir });
+        await testRecipe(context, recipe); // , { [contextVarAssetsDirs]: [assetsDir] }
       },
-      timeout ?? 20000
+      timeout
     );
   });
 }
 
-export function testSuitesExamples(rootDir: string, timeout?: number) {
+export function testSuitesExamples(rootDir: string, timeout = 20000) {
   const examplesDir = path.join(rootDir, 'examples');
   if (!fs.existsSync(examplesDir)) {
     return;
@@ -88,7 +87,7 @@ export function testSuitesExamples(rootDir: string, timeout?: number) {
           }
         }
       },
-      timeout ?? 20000
+      timeout
     );
   });
 }

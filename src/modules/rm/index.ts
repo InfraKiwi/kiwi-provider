@@ -12,12 +12,13 @@ import { AbstractModuleBase } from '../abstractModuleBase';
 import { fsPromiseRm } from '../../util/fs';
 import { MultiDataSourceGlob } from '../../dataSources/glob';
 import path from 'node:path';
+import { getArrayFromSingleOrArray } from '../../util/array';
 
 export interface ModuleRmResult {}
 
 export class ModuleRm extends AbstractModuleBase<ModuleRmInterface, ModuleRmResult> {
   async run(context: RunContext): Promise<ModuleRunResult<ModuleRmResult>> {
-    const toRemove: string[] = Array.isArray(this.config.path) ? this.config.path : [this.config.path];
+    const toRemove: string[] = getArrayFromSingleOrArray(this.config.path);
 
     for (const p of toRemove) {
       await fsPromiseRm(p, {
@@ -41,7 +42,7 @@ export interface ModuleRmGlobResult {
 
 export class ModuleRmGlob extends AbstractModuleBase<ModuleRmGlobInterface, ModuleRmGlobResult> {
   async run(context: RunContext): Promise<ModuleRunResult<ModuleRmGlobResult>> {
-    const { recursive, ...rest } = this.config;
+    const { recursive = false, ...rest } = this.config;
 
     const removed: string[] = [];
 
@@ -56,7 +57,7 @@ export class ModuleRmGlob extends AbstractModuleBase<ModuleRmGlobInterface, Modu
          * if the sorting is not correct by chance
          */
         force: true,
-        recursive: recursive ?? false,
+        recursive,
       });
       removed.push(fullPath);
     }

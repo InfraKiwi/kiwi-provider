@@ -8,9 +8,11 @@
 // [block VarsSourceInterface begin]
 export interface VarsSourceInterface {
   /**
-   * If true, extract templates from loaded variables
+   * If true, extract templates from loaded variables. Enabled by default.
    */
-  template?: boolean;
+  template?:
+    | true
+    | boolean;
 
   /**
    * If true and if the data source returns an object then strip out all keys and merge all values.

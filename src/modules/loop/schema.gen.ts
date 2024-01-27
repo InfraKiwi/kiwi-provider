@@ -5,7 +5,7 @@
 
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
-import type { TaskInterface } from '../../components/task.schema.gen';
+import type { TaskSingleOrArrayInterface } from '../../components/task.schema.gen';
 
 // [block ModuleLoopInterface begin]
 export interface ModuleLoopInterface {
@@ -39,17 +39,7 @@ export interface ModuleLoopInterface {
   var?:
     | '__loop'
     | string;
-  task:
-
-    /**
-     * The task to be executed.
-     */
-    | TaskInterface //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
-
-    /**
-     * An array of tasks to be executed.
-     */
-    | TaskInterface[]; //link#See the definition of `TaskInterface`#/core/recipes#taskinterface
+  task: TaskSingleOrArrayInterface; //typeRef:TaskSingleOrArrayInterface:{"relPath":"../../components/task.schema.gen.ts","isRegistryExport":false}
 }
 // [block ModuleLoopInterface end]
 //meta:ModuleLoopInterface:[{"className":"ModuleLoopInterface","entryNames":["loop"]}]

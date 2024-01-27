@@ -13,7 +13,9 @@ import type { ConditionSetInterface } from './testingCommon.schema.gen';
 // [block ExitIfFullInterface begin]
 export interface ExitIfFullInterface {
   message?: string;
-  if: string;
+  if:
+    | string
+    | boolean;
 }
 // [block ExitIfFullInterface end]
 //meta:ExitIfFullInterface:[{"className":"ModuleExitFullInterface"},{"className":"ExitIfFullInterface"}]
@@ -21,7 +23,9 @@ export interface ExitIfFullInterface {
 // [block FailedIfFullInterface begin]
 export interface FailedIfFullInterface {
   message?: string;
-  if: string;
+  if:
+    | string
+    | boolean;
 }
 // [block FailedIfFullInterface end]
 //meta:FailedIfFullInterface:[{"className":"ModuleFailFullInterface"},{"className":"FailedIfFullInterface"}]
@@ -34,7 +38,7 @@ export interface TaskInterface {
   /**
    * A friendly identifier for the task, which will be printed in logs.
    */
-  label?: string;
+  name?: string;
 
   /**
    * When provided, the task will be executed only if this condition succeeds.
@@ -58,6 +62,17 @@ export interface TaskInterface {
    * provided as value of the `outRaw` argument.
    */
   outRaw?: string;
+
+  /**
+   * If true, registers any output variables into the global context.
+   */
+  global?: boolean;
+
+  /**
+   * If true, all registered variables will be treated as secrets
+   * E.g. useful for logging purposes.
+   */
+  sensitive?: boolean;
 
   /**
    * When provided, the task will fail if this condition succeeds.
@@ -90,20 +105,9 @@ export interface TaskInterface {
     | boolean;
 
   /**
-   * If true, registers any output variables into the global context.
-   */
-  global?: boolean;
-
-  /**
-   * If true, all registered variables will be treated as secrets
-   * E.g. useful for logging purposes.
-   */
-  sensitive?: boolean;
-
-  /**
    * Really only meant for debugging purposes, preserves the result of the
-   * previous task and does not overwrite it. E.g. useful while using the debug
-   * module.
+   * previous task in the `__previousTaskResult` variable and does
+   * not overwrite it. E.g. useful while using the debug module.
    */
   keepPreviousTaskResult?: boolean;
 
@@ -120,6 +124,22 @@ export interface TaskInterface {
 }
 // [block TaskInterface end]
 //meta:TaskInterface:[{"className":"TaskInterface","unknownType":{"type":"any","flags":{"description":"\n    The module to use in the task.\n    You can check the available task modules here: ##link#See all available task modules#/modules\n    "}}}]
+
+// [block TaskSingleOrArrayInterface begin]
+export type TaskSingleOrArrayInterface =
+
+  /**
+   * The task to be executed.
+   */
+  | TaskInterface //typeRef:TaskInterface:{"relPath":"self","isRegistryExport":false}
+
+  /**
+   * An array of tasks to be executed.
+   */
+  | TaskInterface[]; //typeRef:TaskInterface:{"relPath":"self","isRegistryExport":false}
+
+// [block TaskSingleOrArrayInterface end]
+//meta:TaskSingleOrArrayInterface:[{"className":"TaskSingleOrArrayInterface","delayTemplatesResolution":true}]
 
 // [block TaskTestMockInterface begin]
 export interface TaskTestMockInterface {

@@ -8,6 +8,7 @@ import path from 'node:path';
 import { convertFromDirectory } from 'joi-to-typescript';
 import * as fs from 'node:fs';
 import type { JoiMetaExternalImport } from '../src/util/joi';
+import { joiFindMeta } from '../src/util/joi';
 import { joiMetaExternalImportKey } from '../src/util/joi';
 import { fsPromiseExists, fsPromiseReadDir, fsPromiseReadFile, fsPromiseRm, fsPromiseWriteFile } from '../src/util/fs';
 import { asyncFilter } from '../src/util/async';
@@ -33,8 +34,8 @@ const srcDir = path.resolve(rootDir, 'src');
 const docsNavBasePath = path.join(rootDir, 'hack', 'docs');
 
 /*
- *These are interfaces for which the docs will always point to a specific docs
- *page instead than embedding them
+ * These are interfaces for which the docs will always point to a specific docs
+ * page instead than embedding them
  */
 const hardcodedInterfaceDocsPaths: Record<string, string> = {
   TaskInterface: '/core/recipes#taskinterface',
@@ -119,7 +120,7 @@ async function genRegistriesEntries() {
     await glob(pathGlob),
     async (p) => await fileContains(p, 'new RegistryEntryFactory(', 'new Registry(')
   );
-  const globList = Array.from(new Set(globRaw.map((el) => el.substring(0, el.lastIndexOf(path.sep) + 1))));
+  const globList = Array.from(new Set(globRaw.map((el) => el.substring(0, el.lastIndexOf(path.sep) + 1)))).sort();
 
   const importGroups: Record<string, ImportGroup> = {
     '.loadAllConfigProvider': {
@@ -201,23 +202,23 @@ async function genRegistriesEntries() {
      *       const fileName = path.join(folder, registryExportsSchemaFileName);
      *       const entries = exportedSchemas;
      *       const contents = `
-     * import Joi from 'joi';
-     * ${Object.keys(entries)
+     *     import Joi from 'joi';
+     *     ${Object.keys(entries)
      *       .reduce((acc: string[], el) => {
      *         acc.push(`import { ${entries[el].registryExport} } from '${entries[el].importPath}';`);
      *         return acc;
      *       }, [])
      *       .join('\n')}
      *
-     * export const ${getRegistryEntriesSchemaBaseName(folder)}Schema = Joi.object({
-     * ${Object.keys(entries)
+     *     export const ${getRegistryEntriesSchemaBaseName(folder)}Schema = Joi.object({
+     *     ${Object.keys(entries)
      *       .reduce((acc: string[], el) => {
      *         acc.push(`  ${el}: ${entries[el].registryExport},`);
      *         return acc;
      *       }, [])
      *       .join('\n')}
-     * }).meta({ className: '${getRegistryEntriesSchemaBaseName(folder)}Interface' });
-     * `;
+     *     }).meta({ className: '${getRegistryEntriesSchemaBaseName(folder)}Interface' });
+     *     `;
      *
      *       // NOTE: flush is not supported until node 21
      *       await fsPromiseWriteFile(fileName, contents, { flush: true });
@@ -247,7 +248,7 @@ const genSchemaFolders = async () => {
   const pathGlob = path.resolve(srcDir, '**/*schema.ts').replaceAll(path.sep, '/');
   debug(`Looking for schemas in ${pathGlob}`);
   const globRaw = await glob(pathGlob);
-  const globList = Array.from(new Set(globRaw.map((el) => el.substring(0, el.lastIndexOf(path.sep) + 1))));
+  const globList = Array.from(new Set(globRaw.map((el) => el.substring(0, el.lastIndexOf(path.sep) + 1)))).sort();
   debug('GlobList', {
     globRaw,
     globList,
@@ -545,6 +546,14 @@ export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
 let esLintConfigCache: object | undefined;
 let esLintCache: ESLint | undefined;
 
+async function prettierFormat(content: string, filePath: string) {
+  const options = await prettier.resolveConfig(filePath);
+  return await prettier.format(content, {
+    ...options,
+    filepath: filePath,
+  });
+}
+
 async function formatTSCode(filePath: string, source: string): Promise<string> {
   // https://eslint.org/docs/latest/integrate/nodejs-api
 
@@ -591,9 +600,7 @@ async function formatTSCode(filePath: string, source: string): Promise<string> {
 function findExternalImportsInJoiDescription(description: Joi.Description) {
   const importedItems: Record<string, string> = {};
 
-  const externalImport: JoiMetaExternalImport = description.metas?.find((m) => joiMetaExternalImportKey in m)?.[
-    joiMetaExternalImportKey
-  ];
+  const externalImport: JoiMetaExternalImport | undefined = joiFindMeta(description, joiMetaExternalImportKey);
   if (externalImport) {
     importedItems[externalImport.name] = externalImport.importPath;
   }
@@ -683,9 +690,9 @@ interface ImportGroup {
 
 async function generateDocsNav(registryFolder: string, subFolders: string[]) {
   /*
-   *### REPLACE NAV BEGIN
-   *- File: ./file/README.md
-   *### REPLACE NAV END
+   * ### REPLACE NAV BEGIN
+   * - File: ./file/README.md
+   * ### REPLACE NAV END
    */
 
   const registryName = path.basename(registryFolder);
@@ -715,7 +722,7 @@ nav:
       ymlFile,
       fullMatch,
     });
-    const navEntries = subFolders.map((sf) => `- "${sf}": ./${sf}/README.md`);
+    const navEntries = subFolders.map((sf) => `- '${sf}': ./${sf}/README.md`);
     const lines = ['### REPLACE NAV BEGIN', ...navEntries, '### REPLACE NAV END'];
     contents = contents.replace(fullMatch, lines.map((line) => `${indent}${line}`).join('\n'));
   }
@@ -727,7 +734,7 @@ nav:
 
 const systemInformationSchemaExclusionList = ['getStaticData', 'getDynamicData', 'getAllData', 'observe', 'get'];
 
-async function genSystemInformationSchema(fnDescriptions?: Record<string, string>) {
+async function genSystemInformationSchema(fnDescriptions: Record<string, string> = {}) {
   const typesFile = path.resolve(__dirname, '..', path.normalize('node_modules/systeminformation/lib/index.d.ts'));
   const out = path.resolve(__dirname, '..', path.normalize('src/modules/info/schema.ts'));
   const contents = await fsPromiseReadFile(typesFile, 'utf8');
@@ -740,8 +747,8 @@ async function genSystemInformationSchema(fnDescriptions?: Record<string, string
       argsString,
     });
     let descStr = '';
-    if (functionName in (fnDescriptions ?? {})) {
-      const desc = fnDescriptions![functionName];
+    if (functionName in fnDescriptions) {
+      const desc = fnDescriptions[functionName];
       descStr = `.description(\`${desc.replaceAll('`', '\\`')}\`)`;
     }
     if (argsString == null) {
@@ -783,18 +790,18 @@ async function genSystemInformationSchema(fnDescriptions?: Record<string, string
   };
 
   /*
-   *export function networkInterfaceDefault(cb?: (data: string) => any): Promise<string>;
-   *export function networkGatewayDefault(cb?: (data: string) => any): Promise<string>;
-   *export function networkInterfaces(
-   *  cb?:
-   *    | ((data: Systeminformation.NetworkInterfacesData[] | Systeminformation.NetworkInterfacesData) => any)
-   *    | boolean
-   *    | string,
-   *  rescan?: boolean,
-   *  defaultString?: string
-   *): Promise<Systeminformation.NetworkInterfacesData[] | Systeminformation.NetworkInterfacesData>;
+   * export function networkInterfaceDefault(cb?: (data: string) => any): Promise<string>;
+   * export function networkGatewayDefault(cb?: (data: string) => any): Promise<string>;
+   * export function networkInterfaces(
+   *   cb?:
+   *     | ((data: Systeminformation.NetworkInterfacesData[] | Systeminformation.NetworkInterfacesData) => any)
+   *     | boolean
+   *     | string,
+   *   rescan?: boolean,
+   *   defaultString?: string
+   * ): Promise<Systeminformation.NetworkInterfacesData[] | Systeminformation.NetworkInterfacesData>;
    *
-   *export function networkStats(ifaces?: string, cb?: (data: Systeminformation.NetworkStatsData[]) => any): Promise<Systeminformation.NetworkStatsData[]>;
+   * export function networkStats(ifaces?: string, cb?: (data: Systeminformation.NetworkStatsData[]) => any): Promise<Systeminformation.NetworkStatsData[]>;
    */
 
   const schemaEntries: string[] = [];
@@ -827,7 +834,7 @@ export const ModuleInfoSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
   `;
 
   let newContents = generatedHeader + '\n\n' + schemaContent;
-  newContents = await prettier.format(newContents, { filepath: out });
+  newContents = await prettierFormat(newContents, out);
   newContents = await formatTSCode(out, newContents);
 
   await fsPromiseWriteFile(out, newContents, 'utf8');
@@ -907,6 +914,7 @@ async function genSystemInformationReadme() {
 
   contents = contents.replace('REPLACE_README_HERE', extracted);
 
+  contents = await prettierFormat(contents, out);
   await fsPromiseWriteFile(out, contents, 'utf8');
 
   return fnDescriptions;

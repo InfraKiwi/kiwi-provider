@@ -24,7 +24,6 @@ export abstract class AbstractRegistryEntry<ConfigType> {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.config = joiAttemptRequired(
       config,
       this.registryEntry.schema,
@@ -44,9 +43,7 @@ export type WrapperInterfaceWithConfigKey<
   ConfigKey extends string,
 > = RemoveIndex<WrapperConfigType> & { [K in ConfigKey]: ConfigType };
 
-/*
- *This class exists for the purpose of having registry entries that are configured with an outer wrapper config, like the recipeSources ones
- */
+/* This class exists for the purpose of having registry entries that are configured with an outer wrapper config, like the recipeSources ones */
 export abstract class AbstractRegistryEntryWrappedConfig<
   WrapperConfigType extends RegistryEntryGenericConfig,
   ConfigType,
@@ -82,7 +79,6 @@ export abstract class AbstractRegistryEntryWrappedConfig<
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RegistryEntryClazz<ConfigType, T extends typeof AbstractRegistryEntry<ConfigType>> = new (
   config: ConfigType
 ) => InstanceType<T>;
@@ -96,6 +92,11 @@ export interface RegistryEntry {
 }
 
 export type RegistryEntryGenericConfig = Record<string, unknown>;
+
+export interface FindRegistryEntryFromIndexedConfigOptions {
+  label?: string;
+  skipConfigValidation?: boolean;
+}
 
 export class Registry {
   readonly #entryLabel: string;
@@ -166,13 +167,15 @@ export class Registry {
   findRegistryEntryFromIndexedConfig(
     config: RegistryEntryGenericConfig,
     baseSchema: Joi.ObjectSchema,
-    label?: string
+    options?: FindRegistryEntryFromIndexedConfigOptions
   ): RegistryEntry {
-    label ??= this.#entryLabel;
+    const label = options?.label ?? this.#entryLabel;
     const describe = baseSchema.describe();
     const rawSchemaKeys = describe.keys ? new Set(Object.keys(describe.keys)) : [];
     const schema = this.getAggregatedObjectSchemaWeak(baseSchema);
-    config = joiAttemptRequired(config, schema, `Error validating ${label}:`) as RegistryEntryGenericConfig;
+    if (options?.skipConfigValidation !== true) {
+      config = joiAttemptRequired(config, schema, `Error validating ${label}:`) as RegistryEntryGenericConfig;
+    }
     const remainingSchemaKeys = new Set(Object.keys(config));
     for (const rawSchemaKey of rawSchemaKeys) {
       remainingSchemaKeys.delete(rawSchemaKey);
@@ -198,7 +201,7 @@ export class Registry {
     outerSchema: Joi.ObjectSchema,
     label?: string
   ): ReturnType {
-    const registryEntry = this.findRegistryEntryFromIndexedConfig(config, outerSchema, label);
+    const registryEntry = this.findRegistryEntryFromIndexedConfig(config, outerSchema, { label });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const moduleConfig = config[registryEntry.entryName] as any;
@@ -211,7 +214,7 @@ export class Registry {
     baseSchema: Joi.ObjectSchema,
     label?: string
   ): ReturnType {
-    const registryEntry = this.findRegistryEntryFromIndexedConfig(config, baseSchema, label);
+    const registryEntry = this.findRegistryEntryFromIndexedConfig(config, baseSchema, { label });
 
     /*
      * We DO NOT unwrap the config here!
@@ -241,7 +244,7 @@ export function registryGetEntryNamesFromJoiSchema(schema: Joi.Schema): string[]
 }
 
 interface createJoiEntrySchemaOptions {
-  label?: string;
+  name?: string;
   aliases?: string[];
 }
 
@@ -256,15 +259,14 @@ export class RegistryEntryFactory {
     this.registry = options.registry;
   }
 
-  createJoiEntrySchema(entryNameRaw: string, schema: Joi.Schema, options?: createJoiEntrySchemaOptions) {
+  createJoiEntrySchema(entryNameRaw: string, schema: Joi.Schema, options: createJoiEntrySchemaOptions = {}) {
     const entryNameWithoutPath = entryNameRaw.replace(this.baseDir, '');
     const entryNameBase = /^[/\\]/.test(entryNameWithoutPath)
       ? entryNameWithoutPath.substring(1)
       : entryNameWithoutPath;
-    options ??= {};
-    options.label ??= toPascalCase(this.typeName) + toPascalCase(entryNameBase) + 'Interface';
+    options.name ??= toPascalCase(this.typeName) + toPascalCase(entryNameBase) + 'Interface';
     schema = schema.meta({
-      className: options.label,
+      className: options.name,
       entryNames: [entryNameBase, ...(options.aliases ?? [])],
     });
     const disableShortie = joiSchemaAcceptsString(schema);

@@ -25,9 +25,7 @@ export abstract class AbstractAssetsDistribution<ConfigType> extends AbstractReg
    */
   abstract getDownloadUrl(context: ContextLogger, assetsFile: string): Promise<string>;
 
-  /*
-   * Mount any routes that may be needed to download the provided file
-   */
+  /* Mount any routes that may be needed to download the provided file */
   abstract mountRoutes(context: ContextLogger, app: IRouter): void;
 
   static mountStaticRoutes(

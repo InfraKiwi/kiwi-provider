@@ -2,11 +2,11 @@ vars:
   myText: Hello world!
 
 tasks:
-  - label: Create a temporary file with no extension
+  - name: Create a temporary file with no extension
     temp: {}
     out: temp
 
-  - label: Save the text
+  - name: Save the text
     writeRaw:
       path: ${{ temp.path }}
       content: ${{ myText }}
@@ -18,7 +18,7 @@ tasks:
     #   # We need to specify we don't want any extension-based conversion
     #   raw: true
 
-  - label: Read back the text
+  - name: Read back the text
     load:
       fileRaw:
         path: ${{ temp.path }}

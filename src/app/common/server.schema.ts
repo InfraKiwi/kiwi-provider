@@ -4,9 +4,10 @@
  */
 
 import Joi from 'joi';
-import { joiMetaClassName, joiMetaUnknownType, joiValidateValidIfTemplate } from '../../util/joi';
+import { joiMetaClassName, joiMetaUnknownType } from '../../util/joi';
 import { localhost127 } from '../../util/constants';
 import type { ServerListenerInterface } from './server.schema.gen';
+import { joiValidateValidIfTemplate } from '../../util/tpl';
 
 export const ServerHooksPrefix = '10infra-config:hooks';
 

@@ -1,0 +1,43 @@
+tasks:
+  # Simple retry
+  - try:
+      task:
+        # Fail forcefully the first two times
+        - debug: This is retry num ${{ __retry }} at ${{ date().getTime() }}
+          failedIf: __retry < 2
+      retry:
+        # Allow only 2 retries
+        max: 2
+        # One retry every 500ms
+        delay: 500
+    out: tryResult
+  - test: tryResult.__retries == 2
+
+  # Retry with exponential backoff
+  - try:
+      task:
+        # Fail forcefully the first two times
+        - debug: This is retry num ${{ __retry }} at ${{ date().getTime() }}
+          failedIf: __retry < 2
+      retry:
+        # Allow only 2 retries
+        max: 2
+        # The following can also be written as `delay: {}`, which uses
+        # default backoff values
+        delay:
+          # Exponential backoff
+          startingDelay: 500 # Begin after 500ms
+          # The startingDelay is multiplied by the timeMultiple to increase the delay between reattempts.
+          timeMultiple: 2
+    out: tryResult
+  - test: tryResult.__retries == 2
+
+  # Catch
+  - try:
+      task:
+        fail: This is an error!
+      catch:
+        debug: |
+          We caught an error: ${{ __lastError }}
+    out: try
+  - test: try.__lastError.includes('This is an error!')

@@ -52,7 +52,7 @@ export async function runRecipesFromArchive(
       }
 
       if (ex instanceof Error) {
-        context.logger.error(`Recipe${recipe.config.label ? ` "${recipe.config.label}"` : ''} execution failed`, {
+        context.logger.error(`Recipe${recipe.config.name ? ` "${recipe.config.name}"` : ''} execution failed`, {
           cause: getErrorCauseChain(ex),
         });
         break;

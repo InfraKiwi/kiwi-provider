@@ -4,7 +4,14 @@
  */
 
 import type { RunContext } from '../util/runContext';
-import { contextVarAssetsDir, RecipeMinimalSchema, RecipeSchema, RecipeTestMockSchema } from './recipe.schema';
+import {
+  contextVarAssetsDir,
+  RecipeAssetsDirsOrderDefault,
+  RecipeAssetsDirsOrderTesting,
+  RecipeMinimalSchema,
+  RecipeSchema,
+  RecipeTestMockSchema,
+} from './recipe.schema';
 import type {
   RecipeDependencyInterface,
   RecipeDependencyWithAlternativesInterface,
@@ -13,12 +20,12 @@ import type {
   RecipeMinimalInterface,
   RecipeTestMockInterface,
 } from './recipe.schema.gen';
-import { extractAllTemplates, Template } from '../util/tpl';
+import { extractAllTemplates, resolveTemplates } from '../util/tpl';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import type { TaskRunTasksInContextResult } from './task';
 import { Task } from './task';
 import path from 'node:path';
-import { fsPromiseExists, fsPromiseStat } from '../util/fs';
+import { fsPromiseCp, fsPromiseExists, fsPromiseStat, fsPromiseTmpDir } from '../util/fs';
 
 import type { InventoryHost } from './inventoryHost';
 import { DataSourceFile, DataSourceFileErrorFileNotFound } from '../dataSources/file';
@@ -38,13 +45,16 @@ import type { ConditionSetInterface } from './testingCommon.schema.gen';
 import { VarsContainer } from './varsContainer';
 import { VarsContainerSchema } from './varsContainer.schema';
 import { normalizePathToUnix } from '../util/path';
-import traverse from 'traverse';
 
 export interface RecipeCtorContext extends ContextLogger, ContextRecipeSourceList, ContextWorkDir {}
 
 export const RecipeErrorInputValidationFailed = getErrorPrintfClass(
   'RecipeErrorInputValidationFailed',
   'The input variable "%s" does not satisfy the required validation rule'
+);
+export const RecipeErrorInputValidationFailedBasicType = getErrorPrintfClass(
+  'RecipeErrorInputValidationFailedBasicType',
+  'The input variable "%s" does not satisfy the required validation rule. Expected type "%s", got "%s"'
 );
 
 export interface RecipeRunResult {
@@ -63,6 +73,10 @@ export interface RecipeMetadata {
 export interface RecipeGetConfigForArchiveArgs {
   isDependency?: boolean;
   keepVars?: boolean;
+}
+
+export interface RecipeTemporaryCloneAssetsContext extends ContextLogger {
+  includeTestAssets: boolean;
 }
 
 export class RecipeTestMock extends TestMock {
@@ -87,7 +101,7 @@ export class RecipeTestMock extends TestMock {
 
 export class Recipe extends VarsContainer {
   readonly config: RecipeInterface;
-  readonly meta?: RecipeMetadata;
+  readonly meta: RecipeMetadata;
 
   readonly #hostVars?: VarsInterface;
   readonly #groupVars?: VarsInterface;
@@ -106,7 +120,7 @@ export class Recipe extends VarsContainer {
     super(joiKeepOnlyKeysInJoiSchema(config, VarsContainerSchema));
     this.config = config;
 
-    this.meta = meta;
+    this.meta = meta ?? {};
 
     this.#hostVars = extractAllTemplates(this.config.hostVars);
     this.#groupVars = extractAllTemplates(this.config.groupVars);
@@ -165,13 +179,6 @@ export class Recipe extends VarsContainer {
       cleanedConfig.groupVars = undefined;
       cleanedConfig.hostVars = undefined;
     }
-
-    // Revert all templates in config to plain strings
-    traverse(cleanedConfig).forEach(function (val) {
-      if (val instanceof Template) {
-        this.update(val.toString());
-      }
-    });
 
     return {
       targets: args.isDependency ? undefined : this.config.targets,
@@ -274,9 +281,9 @@ export class Recipe extends VarsContainer {
 
   #getCombinedRecipeSources(context: RecipeCtorContext): RecipeSourceList | undefined {
     /*
-     *1. Local dir
-     *2. Local sources
-     *3. Context sources
+     * 1. Local dir
+     * 2. Local sources
+     * 3. Context sources
      */
 
     const minimalRecipeSources = this.#getMinimalRecipeSources(context);
@@ -298,24 +305,6 @@ export class Recipe extends VarsContainer {
     return this.#recipeSourcesCombinedWithMinimal;
   }
 
-  async getAssetsDir(): Promise<string | undefined> {
-    if (this.meta?.assetsDir) {
-      return this.meta.assetsDir;
-    }
-
-    const dirName = this.meta?.fileName ? path.dirname(this.meta.fileName) : undefined;
-    if (dirName == null) {
-      return;
-    }
-    const assetsDir = path.join(dirName, 'assets');
-
-    if (!(await fsPromiseExists(assetsDir)) || !(await fsPromiseStat(assetsDir)).isDirectory()) {
-      return;
-    }
-
-    return assetsDir.replaceAll(path.sep, '/');
-  }
-
   #validateInputsOrThrow(vars: VarsInterface) {
     if (this.config.inputs == null) {
       return;
@@ -323,6 +312,7 @@ export class Recipe extends VarsContainer {
     for (const key in this.config.inputs) {
       const validation = this.config.inputs[key];
       let schema: Joi.Schema;
+      let basicType: string | undefined;
       if (typeof validation == 'string') {
         const isOptional = validation.endsWith('?');
         const typeKey = isOptional ? validation.substring(0, validation.length - 1) : validation;
@@ -330,13 +320,18 @@ export class Recipe extends VarsContainer {
         if (!isOptional) {
           schema = schema.required();
         }
+        basicType = validation;
       } else {
         schema = validation as Joi.Schema;
       }
       const varValue = vars[key];
       const validationResult = schema.validate(varValue);
       if (validationResult.error) {
-        throw new RecipeErrorInputValidationFailed(key);
+        if (basicType) {
+          throw new RecipeErrorInputValidationFailedBasicType(key, basicType, typeof varValue);
+        } else {
+          throw new RecipeErrorInputValidationFailed(key);
+        }
       }
     }
   }
@@ -357,14 +352,29 @@ export class Recipe extends VarsContainer {
       .withLoggerFields({ statistics: context.statistics })
       .prependTestMocks(this.meta?.testMocks ?? []);
 
+    /*
+     * For local test runs we need to simulate the archiving features,
+     * so we create a local temporary aggregated archive dir
+     */
+    if (this.meta?.assetsDir == null) {
+      this.meta.assetsDir = await this.temporaryCloneAssets({
+        logger: context.logger,
+        includeTestAssets: context.isTesting,
+      });
+    }
+
     // Store the original vars
     const oldVars = context.vars;
 
     // Process variables from recipe
-    const aggregatedVars = await this.aggregateHostVars(context, context.host, context.vars);
+    let aggregatedVars = await this.aggregateHostVars(context, context.host, context.vars);
+
+    // Resolve recipe vars
+    aggregatedVars = await resolveTemplates(aggregatedVars, aggregatedVars);
 
     // Swap vars with local ones
     context.vars = aggregatedVars;
+
     this.#validateInputsOrThrow(context.vars);
 
     context.logger.info('Running recipe');
@@ -400,33 +410,33 @@ export class Recipe extends VarsContainer {
   }
 
   /*
-   *I MEAN
+   * I MEAN
    *
-   *command line values (for example, -u my_user, these are not variables)
-   *role defaults (defined in role/defaults/main.yml)
-   *[XXX] inventory file vars
-   *[XXX] inventory group_vars/all
-   *[XXX] playbook group_vars/all
-   *[XXX] inventory group_vars/*
-   *[XXX] playbook group_vars/*
-   *[XXX] inventory host_vars/*
-   *[XXX] playbook host_vars/*
-   *[TODO] host facts / cached set_facts
-   *[TODO] play vars
-   *[TODO] play vars_prompt
-   *[TODO] play vars_files
-   *[TODO] role vars (defined in role/vars/main.yml)
-   *[TODO] block vars (only for tasks in block)
-   *[TODO] task vars (only for the task)
-   *[TODO] include_vars
-   *[TODO] set_facts / registered vars
-   *[TODO] role (and include_role) params
-   *[TODO] include params
-   *[TODO] extra vars (for example, -e "user=my_user")(always win precedence)
+   * command line values (for example, -u my_user, these are not variables)
+   * role defaults (defined in role/defaults/main.yml)
+   * [XXX] inventory file vars
+   * [XXX] inventory group_vars/all
+   * [XXX] playbook group_vars/all
+   * [XXX] inventory group_vars/*
+   * [XXX] playbook group_vars/*
+   * [XXX] inventory host_vars/*
+   * [XXX] playbook host_vars/*
+   * [TODO] host facts / cached set_facts
+   * [TODO] play vars
+   * [TODO] play vars_prompt
+   * [TODO] play vars_files
+   * [TODO] role vars (defined in role/vars/main.yml)
+   * [TODO] block vars (only for tasks in block)
+   * [TODO] task vars (only for the task)
+   * [TODO] include_vars
+   * [TODO] set_facts / registered vars
+   * [TODO] role (and include_role) params
+   * [TODO] include params
+   * [TODO] extra vars (for example, -e "user=my_user")(always win precedence)
    */
 
   async aggregateHostVars(
-    context: DataSourceContext,
+    context: RunContext,
     host: InventoryHost,
     contextVars?: VarsInterface
   ): Promise<VarsInterface> {
@@ -434,8 +444,11 @@ export class Recipe extends VarsContainer {
 
     const vars: VarsInterface = {
       ...contextVars,
-      [contextVarAssetsDir]: await this.getAssetsDir(),
     };
+
+    if (this.meta?.assetsDir) {
+      vars[contextVarAssetsDir] = this.meta?.assetsDir;
+    }
 
     // playbook group_vars/*
     Object.assign(vars, this._aggregateGroupVarsForHost(host));
@@ -466,5 +479,44 @@ export class Recipe extends VarsContainer {
      */
 
     return vars;
+  }
+
+  async temporaryCloneAssets(context: RecipeTemporaryCloneAssetsContext): Promise<string | undefined> {
+    const assetsDirs = await this.getAssetsDirs(context.includeTestAssets);
+    if (assetsDirs.length == 0) {
+      return;
+    }
+    context.logger.info(`Packing assets for recipe ${this.standaloneId}`, { assetsDirs });
+
+    const assetsRootDir = await fsPromiseTmpDir({ keep: false });
+    for (const assetsDir of assetsDirs) {
+      await fsPromiseCp(assetsDir, assetsRootDir, { recursive: true });
+    }
+
+    return assetsRootDir;
+  }
+
+  /**
+   * `lookup` defines the list of assets dirs to look for
+   */
+  async getAssetsDirs(isTesting: boolean): Promise<string[]> {
+    if (this.meta?.fileName == null) {
+      return [];
+    }
+
+    const allDirs = new Set<string>();
+    const lookup = isTesting ? RecipeAssetsDirsOrderTesting : RecipeAssetsDirsOrderDefault;
+
+    for (const dir of lookup) {
+      const assetsDir = path.join(path.dirname(this.meta.fileName), dir);
+
+      if (!(await fsPromiseExists(assetsDir)) || !(await fsPromiseStat(assetsDir)).isDirectory()) {
+        continue;
+      }
+
+      allDirs.add(normalizePathToUnix(assetsDir));
+    }
+
+    return Array.from(allDirs);
   }
 }

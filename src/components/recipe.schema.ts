@@ -4,7 +4,6 @@
  */
 
 import Joi from 'joi';
-import { TaskSchema } from './task.schema';
 import {
   getJoiEnumValuesAsAlternatives,
   joiMetaClassName,
@@ -19,6 +18,9 @@ import { ConditionSetSchema, TestMockBaseSchema } from './testingCommon.schema';
 
 export const regexRecipeId = /^(?!\.)(?:(\w+):)?(.+)$/;
 export const contextVarAssetsDir = '__assetsDir';
+
+export const RecipeAssetsDirsOrderDefault: string[] = ['assets'];
+export const RecipeAssetsDirsOrderTesting: string[] = [...RecipeAssetsDirsOrderDefault, 'testAssets'];
 
 export enum RecipePhase {
   bootstrap = 'bootstrap',
@@ -110,8 +112,8 @@ export const RecipeTestMockSchema = TestMockBaseSchema.pattern(
 ).meta(joiMetaClassName('RecipeTestMockInterface'));
 
 export const RecipeMinimalSchemaObject = {
-  label: Joi.string().description(`
-    A friendly label, used to describe the recipe.
+  name: Joi.string().description(`
+    A friendly name, used to describe the recipe.
   `),
 
   inputs: RecipeInputsSchema.description(`
@@ -123,7 +125,18 @@ export const RecipeMinimalSchemaObject = {
       Dependencies are bundled at compile time and this list must be exhaustive.
     `),
 
-  tasks: Joi.array().items(TaskSchema).min(1).required().description(`
+  /*
+   * Task configs are fully evaluated for templates, so we cannot force the
+   * schema here.
+   */
+  tasks: Joi.array()
+    .items(
+      Joi.any().meta({
+        baseType: 'TaskInterface',
+      })
+    )
+    .min(1)
+    .required().description(`
     The list of tasks to execute in this recipe.
   `),
 
@@ -133,9 +146,7 @@ export const RecipeMinimalSchemaObject = {
 
 export const RecipeMinimalSchema = Joi.object(RecipeMinimalSchemaObject).meta({ className: 'RecipeMinimalInterface' });
 
-/*
- *The full schema contains all elements that are not allowed in a dependency
- */
+/* The full schema contains all elements that are not allowed in a dependency */
 export const RecipeSchema = RecipeMinimalSchema.append({
   /*
    * TODO

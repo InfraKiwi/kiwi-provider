@@ -238,6 +238,7 @@ async function runRecipes(
 
   const archiveDir = await fsPromiseTmpDir({});
   const archive = await Archive.create(context, {
+    includeTestAssets: context.isTesting,
     archiveDir,
     recipes,
   });

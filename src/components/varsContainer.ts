@@ -18,7 +18,7 @@ export abstract class VarsContainer {
   protected constructor(config: VarsContainerInterface) {
     config = joiAttemptRequired(config, VarsContainerSchema);
 
-    this.vars = extractAllTemplates(config.vars);
+    this.vars = config.vars ?? {};
     this.varsSources = config.varsSources ?? [];
   }
 
@@ -47,9 +47,6 @@ export abstract class VarsContainer {
       return this.#varsCache;
     }
     await this.internalLoadVars(context);
-    if (this.#vars == null) {
-      this.#vars = {};
-    }
     const vars = this.#vars;
 
     for (const source of this.#varsSources) {

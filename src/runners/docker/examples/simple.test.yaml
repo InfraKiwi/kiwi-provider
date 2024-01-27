@@ -3,7 +3,7 @@ runner:
     image: debian:bookworm
 
 tests:
-  - label: Test docker container
+  - name: Test docker container
     tasks:
       # Print details about the running OS
       - shell:

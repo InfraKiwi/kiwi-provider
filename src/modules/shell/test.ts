@@ -11,7 +11,6 @@ import type { ModuleShellInterface } from './schema.gen';
 import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { testExamples } from '../../util/testUtils';
-import { platformNewLine } from '../../util/constants';
 
 describe('shell module', () => {
   testExamples(__dirname);
@@ -23,7 +22,7 @@ describe('shell module', () => {
 
     const expected: ModuleRunResult<ModuleShellResult> = {
       vars: {
-        stdout: 'Hello' + platformNewLine,
+        stdout: 'Hello' + '\n',
         stderr: '',
         exitCode: 0,
       },

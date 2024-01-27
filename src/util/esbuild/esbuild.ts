@@ -41,9 +41,7 @@ async function ensureESBuild(context: ContextLogger): Promise<string> {
   const esBuildVersionDir = path.join(esBuildCacheDir, `esbuild-${esBuildVersion}`);
   await fsPromiseMkdir(esBuildVersionDir, { recursive: true });
 
-  /*
-   * Mirror the internal structure of the tar package
-   */
+  /* Mirror the internal structure of the tar package */
   const esBuildBinaryFileName =
     path.join(
       'package',

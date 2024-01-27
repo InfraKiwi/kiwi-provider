@@ -1,0 +1,53 @@
+name: Gen artifacts
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifactsMatrix: ${{ steps.genArtifactsMatrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - id: genArtifactsMatrix
+        run: yarn ts-node cmd/ci/ciGenArtifactsMatrix.ts --configFile artifacts.yaml
+
+  gen-artifacts:
+#    if: >
+#      github.event_name == 'workflow_dispatch' ||
+#      (
+#        github.event.repository.owner.login == '10infra' && github.event_name == 'push'
+#      )
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.build.outputs.artifactsMatrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: mkdir dist
+      - run: >
+          yarn ts-node cmd/pkg.ts
+          --outDir dist
+          --entryPoint "$INPUT_ENTRYPOINT"
+          --nodeArch "$INPUT_NODE_ARCH"
+          --nodePlatform "$INPUT_NODE_PLATFORM"
+        env:
+          INPUT_ENTRYPOINT: ${{ matrix.entryPoint }}
+          INPUT_NODE_PLATFORM: ${{ matrix.platform }}
+          INPUT_NODE_ARCH: ${{ matrix.arch }}
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.package }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist

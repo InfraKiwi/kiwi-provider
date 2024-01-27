@@ -92,6 +92,14 @@ describe('data source file', () => {
         helloWorld: 'Hello world!',
       },
     },
+    {
+      args: {
+        path: 'rawWithTpl.txt',
+        workDir,
+        raw: true,
+      },
+      expect: 'Hello ${{ world }}!',
+    },
   ];
 
   test.each(tests)('$#', async (args: DataSourceFileTest) => {

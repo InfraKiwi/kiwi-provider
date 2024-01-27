@@ -5,18 +5,18 @@
 
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
+import type { TaskInterface } from './task.schema.gen';
 import type { RecipeSourceListInterface } from '../recipeSources/recipeSourceList.schema.gen';
 
 import type { RecipeInputsInterface, RecipeDependencyWithAlternativesInterface, RecipeTestMockInterface } from './recipe.schema.gen';
-import type { TaskInterface } from './task.schema.gen';
 import type { VarsInterface, VarsSourcesInterface } from './varsContainer.schema.gen';
 
 // [block TestRecipeInterface begin]
 export interface TestRecipeInterface {
   /**
-   * A friendly label, used to describe the recipe.
+   * A friendly name, used to describe the recipe.
    */
-  label?: string;
+  name?: string;
 
   /**
    * Inputs validation config.
@@ -69,9 +69,9 @@ export interface TestRecipeInterface {
 // [block TestRecipeMinimalInterface begin]
 export interface TestRecipeMinimalInterface {
   /**
-   * A friendly label, used to describe the recipe.
+   * A friendly name, used to describe the recipe.
    */
-  label?: string;
+  name?: string;
 
   /**
    * Inputs validation config.

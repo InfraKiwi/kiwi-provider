@@ -4,11 +4,11 @@ vars:
     hey: yay!
 
 tasks:
-  - label: Create a temporary JSON file
+  - name: Create a temporary JSON file
     temp: extension=json
     out: temp
 
-  - label: Save an object
+  - name: Save an object
     write:
       path: ${{ temp.path }}
       # Internally loads the content of myObj into
@@ -17,7 +17,7 @@ tasks:
       # The long route would be: !json ${{ myObj | toJSON }}
       content: !var myObj
 
-  - label: Read back the obj
+  - name: Read back the obj
     load:
       file:
         path: ${{ temp.path }}

@@ -32,6 +32,7 @@ import path from 'node:path';
 import { loadYAMLFromFile } from '../util/yaml';
 import type { ContextLogger } from '../util/context';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
+import { getArrayFromSingleOrArray } from '../util/array';
 
 export interface VisitedCache {
   groups: Record<string, boolean>;
@@ -129,13 +130,12 @@ export class Inventory extends VarsContainer {
   getHostsByGroup(
     context: ContextLogger,
     groupName: string,
-    visitedCache?: VisitedCache
+    visitedCache: VisitedCache = newVisitedCache()
   ): Record<string, InventoryHost> {
     if (groupName in this.#inventoryCache.hostsByGroup) {
       return this.#inventoryCache.hostsByGroup[groupName];
     }
 
-    visitedCache ??= newVisitedCache();
     if (!(groupName in this.#groups)) {
       context.logger.warn(`Inventory group ${groupName} not found`);
       return {};
@@ -147,7 +147,7 @@ export class Inventory extends VarsContainer {
 
     const hosts: Record<string, InventoryHost> = {};
     const groupEntries = this.#groups[groupName].pattern || {};
-    for (const groupEntry of Array.isArray(groupEntries) ? groupEntries : [groupEntries]) {
+    for (const groupEntry of getArrayFromSingleOrArray(groupEntries)) {
       if (groupEntry in this.#groups) {
         Object.assign(hosts, this.getHostsByGroup(context, groupEntry, visitedCache));
       } else {
@@ -200,12 +200,9 @@ export class Inventory extends VarsContainer {
     context: ContextLogger,
     patternStr: string | string[],
     // If provided, this is used as a start group of hostnames that will be filtered down with the query
-    allHostnames?: Set<string>,
-    visitedCache?: VisitedCache
+    allHostnames = new Set<string>(),
+    visitedCache: VisitedCache = newVisitedCache()
   ): Record<string, InventoryHost> {
-    allHostnames ??= new Set();
-    visitedCache ??= newVisitedCache();
-
     if (Array.isArray(patternStr) || patternStr.indexOf(',') >= 0) {
       const patterns = this.sortPatterns(patternStr);
       let hosts: Record<string, InventoryHost> = {};
@@ -244,9 +241,8 @@ export class Inventory extends VarsContainer {
   #getHostsByMatchingHostPatternWithoutForceInclusion(
     context: ContextLogger,
     pattern: HostPattern,
-    visitedCache?: VisitedCache
+    visitedCache: VisitedCache = newVisitedCache()
   ): Record<string, InventoryHost> {
-    visitedCache ??= newVisitedCache();
     const filtered: Record<string, InventoryHost> = {};
 
     if (pattern.rawWithoutModifiers == groupNameAll) {
@@ -373,10 +369,9 @@ export class Inventory extends VarsContainer {
   getGroupNamesForHost(
     context: ContextLogger,
     host: InventoryHost,
-    visitedCache?: VisitedCache,
+    visitedCache: VisitedCache = newVisitedCache(),
     includeSpecialGroups?: boolean
   ): string[] {
-    visitedCache ??= newVisitedCache();
     const groups = new Set<string>();
     const allGroupNames = this.getAllGroupNamesWithoutSpecialGroups();
     for (const groupName of allGroupNames) {
@@ -474,9 +469,9 @@ export class Inventory extends VarsContainer {
   }
 
   /*
-   *Generates a subset of the current inventory that only contains the specified hosts and any groups
-   *they belong to.
-   *NOTE: this is not a full object copy, there are plenty of references kept inside.
+   * Generates a subset of the current inventory that only contains the specified hosts and any groups
+   * they belong to.
+   * NOTE: this is not a full object copy, there are plenty of references kept inside.
    */
   async createRawSubInventoryConfig(context: DataSourceContext, hostnames: string[]): Promise<InventoryInterface> {
     for (const hostname of hostnames) {
@@ -486,11 +481,11 @@ export class Inventory extends VarsContainer {
     }
 
     /*
-     *Using the hostnames provided as argument, populate the relations via:
-     *- All relations that each host defines
-     *- All relations that each group the host belongs to define
+     * Using the hostnames provided as argument, populate the relations via:
+     * - All relations that each host defines
+     * - All relations that each group the host belongs to define
      *
-     *Then, populate recursively VIA PATTERN MATCHING until all relations are satisfied.
+     * Then, populate recursively VIA PATTERN MATCHING until all relations are satisfied.
      */
 
     const allRelations = new Set<string>();
@@ -535,29 +530,29 @@ export class Inventory extends VarsContainer {
   }
 
   /*
-   *I MEAN
+   * I MEAN
    *
-   *command line values (for example, -u my_user, these are not variables)
-   *role defaults (defined in role/defaults/main.yml)
-   *[XXX] inventory file vars
-   *[XXX] inventory group_vars/all
-   *[XXX] playbook group_vars/all
-   *[XXX] inventory group_vars/*
-   *[XXX] playbook group_vars/*
-   *[XXX] inventory host_vars/*
-   *[XXX] playbook host_vars/*
-   *[TODO] host facts / cached set_facts
-   *[TODO] play vars
-   *[TODO] play vars_prompt
-   *[TODO] play vars_files
-   *[TODO] role vars (defined in role/vars/main.yml)
-   *[TODO] block vars (only for tasks in block)
-   *[TODO] task vars (only for the task)
-   *[TODO] include_vars
-   *[TODO] set_facts / registered vars
-   *[TODO] role (and include_role) params
-   *[TODO] include params
-   *[TODO] extra vars (for example, -e "user=my_user")(always win precedence)
+   * command line values (for example, -u my_user, these are not variables)
+   * role defaults (defined in role/defaults/main.yml)
+   * [XXX] inventory file vars
+   * [XXX] inventory group_vars/all
+   * [XXX] playbook group_vars/all
+   * [XXX] inventory group_vars/*
+   * [XXX] playbook group_vars/*
+   * [XXX] inventory host_vars/*
+   * [XXX] playbook host_vars/*
+   * [TODO] host facts / cached set_facts
+   * [TODO] play vars
+   * [TODO] play vars_prompt
+   * [TODO] play vars_files
+   * [TODO] role vars (defined in role/vars/main.yml)
+   * [TODO] block vars (only for tasks in block)
+   * [TODO] task vars (only for the task)
+   * [TODO] include_vars
+   * [TODO] set_facts / registered vars
+   * [TODO] role (and include_role) params
+   * [TODO] include params
+   * [TODO] extra vars (for example, -e "user=my_user")(always win precedence)
    */
   async aggregateBaseVarsForHost(context: DataSourceContext, host: InventoryHost): Promise<VarsInterface> {
     await this.loadVars({

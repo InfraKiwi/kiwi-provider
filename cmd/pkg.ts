@@ -41,7 +41,13 @@ async function main() {
   checkVersionCommand();
 
   const { values } = parseArgs(argsConfig);
-  const { nodeArch, nodePlatform, outDir, entryPoint, ...otherArgs } = joiAttemptRequired(
+  const {
+    nodeArch = getCurrentNodeJSExecutableArch(),
+    nodePlatform = getCurrentNodeJSExecutablePlatform(),
+    outDir,
+    entryPoint,
+    ...otherArgs
+  } = joiAttemptRequired(
     values,
     joiParseArgsLogOptionsSchema.append({
       nodeArch: getJoiEnumValues(NodeJSExecutableArch),
@@ -58,8 +64,8 @@ async function main() {
   await createNodeJSBundle(context, {
     outDir,
     entryPoint,
-    nodeArch: nodeArch ?? getCurrentNodeJSExecutableArch(),
-    nodePlatform: nodePlatform ?? getCurrentNodeJSExecutablePlatform(),
+    nodeArch,
+    nodePlatform,
   });
 }
 

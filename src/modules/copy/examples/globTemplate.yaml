@@ -2,11 +2,11 @@ vars:
   hello: world
 
 tasks:
-  - label: Create a temporary dir
+  - name: Create a temporary dir
     tempDir: {}
     out: tempDir
 
-  - label: Copy all test assets and process some templates
+  - name: Copy all test assets and process some templates
     copy:
       from:
         workDir: ${{ __assetsDir }}
@@ -27,18 +27,21 @@ tasks:
   - test: >
       'sub1/tpl1.txt' in copyVar.templated
 
-  - label: Verify we copied sub1/tpl1.txt and processed the template
+  - name: Verify we copied sub1/tpl1.txt and processed the template
     load:
       fileRaw: path="${{ tempDir.path }}/sub1/tpl1.txt"
     out: tpl1
   - test: tpl1.content == "Hello world!"
 
-  - label: >
+  - name: >
       Verify we copied sub1/noProcessTpl.txt and DID NOT process the template
       because this file was not included in the `template` glob pattern
     load:
       fileRaw: path="${{ tempDir.path }}/sub1/noProcessTpl.txt"
+      # Make sure to not extract the inner template for our test case
+      template: false
     out: noProcessTpl
+
     # Verify the content
     # Note the usage of the {% raw %}...{% endraw %} flags, which can be used when
     # we DON'T want to render a template!

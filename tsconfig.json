@@ -7,11 +7,12 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "typeRoots": ["node_modules/@types"],
-    "lib": ["DOM", "ES2023", "ES2023.Array"]
+    "lib": ["DOM", "ES2023", "ES2023.Array"],
+    "importHelpers": true,
   },
   "include": ["src", "cmd"],
   "files": ["node_modules/jest-expect-message/types/index.d.ts"],
   "ts-node": {
-    "files": true
-  }
+    "files": true,
+  },
 }

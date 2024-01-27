@@ -52,7 +52,7 @@ export const createNodeJSBundle: fnSignatureCreateNodeJSBundle = async (
   });
   await fsPromiseWriteFile(seaConfigFile, JSON.stringify(seaConfig));
 
-  await execCmd(context, process.execPath, ['--experimental-sea-config', seaConfigFile]);
+  await execCmd(context, process.execPath, ['--experimental-sea-config', seaConfigFile], { streamLogs: true });
   const seaBlob = await fsPromiseReadFile(blobFile);
 
   const nodeBin = await downloadNodeDist(context, {
@@ -65,17 +65,17 @@ export const createNodeJSBundle: fnSignatureCreateNodeJSBundle = async (
   const entryPointName = path.basename(entryPoint, path.extname(entryPoint));
   bundleFileName ??= await getNodeJSBundleFileName(entryPointName, nodePlatform, nodeArch);
   const bundleFile = path.join(outDir, bundleFileName);
-  context.logger.info(`Generating binary at ${bundleFile}`);
+  context.logger.info(`Generating binary at ${bundleFile}`, { bundleFileName });
 
   // Clone node.js executable
   await fsPromiseCopyFile(nodeBin, bundleFile);
 
   /*
-   *https://github.com/StefanScherer/dockerfiles-windows/blob/main/signtool/signtool
+   * https://github.com/StefanScherer/dockerfiles-windows/blob/main/signtool/signtool
    *
-   *docker run --rm -v C:/Users/stefan/Dropbox/MVP:C:/certs:ro -v C:$(pwd):C:/signing -w C:/signing \
-   *-e SIGNING_PASSWORD -e SIGNTOOL -e FILE=$1 mcr.microsoft.com/windows/servercore:ltsc2019 \
-   *powershell -command iex\(\$env:SIGNTOOL\)
+   * docker run --rm -v C:/Users/stefan/Dropbox/MVP:C:/certs:ro -v C:$(pwd):C:/signing -w C:/signing \
+   * -e SIGNING_PASSWORD -e SIGNTOOL -e FILE=$1 mcr.microsoft.com/windows/servercore:ltsc2019 \
+   * powershell -command iex\(\$env:SIGNTOOL\)
    */
 
   // Inject data
@@ -113,13 +113,13 @@ export async function signBinary(context: ContextLogger, binaryPath: string) {
    * logger.info(`Signing binary`);
    */
   /*
-   *Sign the binary (macOS and Windows only):
+   * Sign the binary (macOS and Windows only):
    *
-   *On macOS:
-   *codesign --sign - hello COPY
-   *On Windows (optional):
-   *A certificate needs to be present for this to work. However, the unsigned binary would still be runnable.
+   * On macOS:
+   * codesign --sign - hello COPY
+   * On Windows (optional):
+   * A certificate needs to be present for this to work. However, the unsigned binary would still be runnable.
    *
-   *signtool sign /fd SHA256 hello.exe
+   * signtool sign /fd SHA256 hello.exe
    */
 }

@@ -1,0 +1,15 @@
+name: Setup
+description: Setup the build
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: .nvmrc
+        cache: 'yarn'
+      env:
+        SKIP_YARN_COREPACK_CHECK: true
+    - shell: bash
+      run: corepack enable
+    - shell: bash
+      run: yarn

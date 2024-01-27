@@ -44,7 +44,7 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
         }
 
         found = true;
-        tasksToExecute.push(...(Array.isArray(c.task) ? c.task : [c.task]).map((t) => new Task(t)));
+        tasksToExecute.push(...Task.getTasksFromSingleOrArraySchema(c.task));
         if (c.fallthrough) {
           continue;
         }
@@ -56,16 +56,13 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
       for (const key of keys) {
         if (value == key) {
           found = true;
-          const tasksConfig = this.config.cases[key];
-          tasksToExecute.push(...(Array.isArray(tasksConfig) ? tasksConfig : [tasksConfig]).map((t) => new Task(t)));
+          tasksToExecute.push(...Task.getTasksFromSingleOrArraySchema(this.config.cases[key]));
         }
       }
     }
 
     if (!found && this.config.default) {
-      tasksToExecute.push(
-        ...(Array.isArray(this.config.default) ? this.config.default : [this.config.default]).map((t) => new Task(t))
-      );
+      tasksToExecute.push(...Task.getTasksFromSingleOrArraySchema(this.config.default));
     }
 
     const { changed, vars, exit } = await Task.runTasksInContext(context, tasksToExecute);

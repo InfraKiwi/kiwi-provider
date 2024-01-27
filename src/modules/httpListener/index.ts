@@ -43,7 +43,7 @@ export class ModuleHTTPListener extends AbstractModuleBase<ModuleHTTPListenerInt
         const address = server.address();
         context.logger.info('Server listening', { address });
         context.registerShutdownHook({
-          label: `ModuleHTTPListener server on ${JSON.stringify(address)}`,
+          name: `ModuleHTTPListener server on ${JSON.stringify(address)}`,
           fn: () => ModuleHTTPListener.#shutdownServer(context, server),
         });
         resolve(server);

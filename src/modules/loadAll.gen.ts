@@ -27,4 +27,5 @@ import './stat';
 import './switch';
 import './temp';
 import './test';
+import './try';
 import './write';

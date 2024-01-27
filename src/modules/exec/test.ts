@@ -11,7 +11,7 @@ import { getTestRunContext } from '../../components/inventory.testutils';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { fsPromiseTmpFile, fsPromiseWriteFile } from '../../util/fs';
 import { testExamples } from '../../util/testUtils';
-import { platformIsWin, platformNewLine } from '../../util/constants';
+import { platformIsWin } from '../../util/constants';
 
 describe('exec module', () => {
   testExamples(__dirname);
@@ -30,7 +30,7 @@ describe('exec module', () => {
 
     const expected: ModuleRunResult<ModuleExecResultInterface> = {
       vars: {
-        stdout: `Hello${platformNewLine}`,
+        stdout: `Hello` + '\n',
         stderr: '',
         exitCode: 0,
       },

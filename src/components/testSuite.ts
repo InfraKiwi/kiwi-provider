@@ -114,7 +114,7 @@ export class TestSuite {
 
     for (let i = 0; i < this.config.tests.length; i++) {
       const testConfig = this.config.tests[i];
-      const id = Recipe.cleanId(testConfig.testId ?? testConfig.label ?? `test_${i}`);
+      const id = Recipe.cleanId(testConfig.testId ?? testConfig.name ?? `test_${i}`);
       const recipeConfig: RecipeInterface = joiKeepOnlyKeysInJoiSchema(testConfig, RecipeMinimalSchema);
       const recipe = new Recipe(context, recipeConfig, {
         id,
@@ -140,6 +140,7 @@ export class TestSuite {
 
     const archiveDir = await fsPromiseTmpDir({});
     const archive = await Archive.create(context, {
+      includeTestAssets: true,
       archiveDir,
       recipes,
     });

@@ -5,13 +5,9 @@
 
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
-import { joiMetaClassName, joiObjectWithPattern, joiValidateValidIfTemplate } from '../../util/joi';
-import { TaskSchema } from '../../components/task.schema';
-
-const SwitchThenSchema = Joi.alternatives([
-  TaskSchema.description('The task to be executed.'),
-  Joi.array().items(TaskSchema).min(1).description('An array of tasks to be executed.'),
-]).description('The task configuration');
+import { joiMetaClassName, joiObjectWithPattern } from '../../util/joi';
+import { TaskSingleOrArraySchema } from '../../components/task.schema';
+import { joiValidateValidIfTemplate } from '../../util/tpl';
 
 export const ModuleSwitchCaseFullSchema = Joi.object({
   if: Joi.string().custom(joiValidateValidIfTemplate).description(`
@@ -22,7 +18,7 @@ export const ModuleSwitchCaseFullSchema = Joi.object({
   If true, the evaluation will proceed also to the next case.
   `),
 
-  task: SwitchThenSchema.required(),
+  task: TaskSingleOrArraySchema.required(),
 }).meta(joiMetaClassName('ModuleSwitchCaseFullInterface'));
 
 export const ModuleSwitchSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
@@ -31,7 +27,7 @@ export const ModuleSwitchSchema = moduleRegistryEntryFactory.createJoiEntrySchem
     value: Joi.any().description('The value to evaluate.'),
     cases: Joi.alternatives([
       // key -> task
-      joiObjectWithPattern(SwitchThenSchema).description(`
+      joiObjectWithPattern(TaskSingleOrArraySchema).description(`
       An object, where each key represents a case match and the value the task config.
       `),
       // condition
@@ -41,7 +37,7 @@ export const ModuleSwitchSchema = moduleRegistryEntryFactory.createJoiEntrySchem
     ]).required().description(`
     The definition of all cases to evaluate.
     `),
-    default: SwitchThenSchema.description(`
+    default: TaskSingleOrArraySchema.description(`
     The default case, which is executed if no other cases match successfully.
     `),
   })

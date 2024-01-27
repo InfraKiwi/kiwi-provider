@@ -174,4 +174,15 @@ describe('task', () => {
       }
     }
   });
+
+  it('should ignore some templates', async () => {
+    const taskConfig: TaskInterface = {
+      test: 'hello == "Another {% raw %}${{ template }}{% endraw %}!"',
+    };
+
+    const runContext = getTestRunContext({ vars: { hello: 'Another ${{ template }}!' } });
+
+    const task = new Task(taskConfig);
+    await task.run(runContext);
+  });
 });

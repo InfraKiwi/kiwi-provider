@@ -2,7 +2,7 @@ runner:
   local: {}
 
 tests:
-  - label: test 1
+  - name: test 1
     tasks:
       - set:
           myVar: hello

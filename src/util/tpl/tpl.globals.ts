@@ -27,6 +27,12 @@ function fnProcess(this: NunjucksContext) {
 
 nunjucksAddGlobal('process', fnProcess);
 
+function env(this: NunjucksContext) {
+  return { ...process.env };
+}
+
+nunjucksAddGlobal('env', env);
+
 function fn10InfraInfo(this: NunjucksContext) {
   return get10InfraInfo();
 }
@@ -38,3 +44,12 @@ function pathJoin(this: NunjucksContext, ...params: string[]) {
 }
 
 nunjucksAddGlobal('pathJoin', pathJoin);
+
+function date(this: NunjucksContext, date?: number | string) {
+  if (date == null) {
+    return new Date();
+  }
+  return new Date(date);
+}
+
+nunjucksAddGlobal('date', date);

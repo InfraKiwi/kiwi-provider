@@ -81,7 +81,7 @@ describe('shortie', () => {
       expect: { dir: { path: 'examples' } },
     },
     {
-      args: 'dir={path=\'examples\'}',
+      args: "dir={path='examples'}",
       expect: { dir: { path: 'examples' } },
     },
   ];

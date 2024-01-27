@@ -17,6 +17,7 @@ import type { DataSourceContext } from '../abstractDataSource';
 import { AbstractMultiDataSource } from '../abstractDataSource';
 import type { ContextWorkDir } from '../../util/context';
 import { omit } from '../../util/object';
+import { getArrayFromSingleOrArray } from '../../util/array';
 
 const debug = newDebug(__dirname);
 
@@ -42,7 +43,7 @@ export class MultiDataSourceGlob<DataType> extends AbstractMultiDataSource<Multi
     options.nodir = true;
     options.cwd = this.#getWorkDir(context);
 
-    const globPaths = Array.isArray(this.globPath) ? this.globPath : [this.globPath];
+    const globPaths = getArrayFromSingleOrArray(this.globPath);
     const files = ((await glob.glob(globPaths, options)) as Path[])
       .sort((a, b) => naturalSortCompareFn(a.name, b.name))
       .map((f) => f.fullpath());

@@ -4,8 +4,9 @@
  */
 
 import Joi from 'joi';
-import { joiMetaClassName, joiValidateValidIfTemplate } from '../util/joi';
+import { joiMetaClassName } from '../util/joi';
 import { ModuleRunResultSchema } from '../modules/abstractModuleBase.schema';
+import { joiValidateValidIfTemplate } from '../util/tpl';
 
 export const ConditionSchema = Joi.string().custom(joiValidateValidIfTemplate);
 

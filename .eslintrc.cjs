@@ -12,6 +12,7 @@ module.exports = {
     'plugin:@stylistic/disable-legacy',
     'prettier',
   ],
+  reportUnusedDisableDirectives: true,
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: './tsconfig.json',
@@ -57,6 +58,7 @@ module.exports = {
       'error',
       'single',
       {
+        avoidEscape: true,
         allowTemplateLiterals: true,
       },
     ],

@@ -2,7 +2,7 @@ targets:
   - all
 
 tasks:
-  - label: Install nginx
+  - name: Install nginx
 
 vars:
   dump: ${{ __context | dump }}

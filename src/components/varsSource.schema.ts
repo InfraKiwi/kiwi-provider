@@ -7,8 +7,8 @@ import Joi from 'joi';
 import { joiMetaClassName, joiMetaUnknownType } from '../util/joi';
 
 export const VarsSourceSchema = Joi.object({
-  template: Joi.boolean().description(`
-  If true, extract templates from loaded variables
+  template: Joi.boolean().default(true).optional().description(`
+  If true, extract templates from loaded variables. Enabled by default.
   `),
   flatten: Joi.boolean().description(`
 If true and if the data source returns an object then strip out all keys and merge all values.

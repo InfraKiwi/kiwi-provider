@@ -18,7 +18,6 @@ import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
 import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ModuleEvalResult = VarsInterface;
 
 export class ModuleEval extends AbstractModuleBase<ModuleEvalInterface, ModuleEvalResult> {

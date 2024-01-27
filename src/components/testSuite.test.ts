@@ -25,7 +25,7 @@ describe('testing stack', () => {
         runner: { local: {} },
         tests: [
           {
-            label: 'my_test',
+            name: 'my_test',
             tasks: [{ debug: 'Hello' }],
           },
         ],
@@ -53,12 +53,12 @@ describe('testing stack', () => {
         runner: { local: {} },
         tests: [
           {
-            label: 'fail_1',
+            name: 'fail_1',
             tasks: [{ fail: 'My custom error!' }],
           },
 
           {
-            label: 'fail_2',
+            name: 'fail_2',
             tasks: [
               { set: { myVar: 'hello' } },
               {
@@ -100,7 +100,7 @@ describe('testing stack', () => {
       clean: true,
       tests: [
         {
-          label: 'test_1',
+          name: 'test_1',
           tasks: [
             {
               write: {
@@ -113,7 +113,7 @@ describe('testing stack', () => {
           ],
         },
         {
-          label: 'test_2',
+          name: 'test_2',
           tasks: [
             {
               stat: 'path=tmpFile',

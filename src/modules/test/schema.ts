@@ -5,7 +5,8 @@
 
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
-import { joiMetaClassName, joiObjectWithPattern, joiValidateValidIfTemplate } from '../../util/joi';
+import { joiMetaClassName, joiObjectWithPattern } from '../../util/joi';
+import { joiValidateValidIfTemplate } from '../../util/tpl';
 
 export const TestFunctionSchema = Joi.function()
   .meta({

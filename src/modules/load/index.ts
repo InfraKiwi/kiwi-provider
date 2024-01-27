@@ -12,6 +12,7 @@ import { VarsSource } from '../../components/varsSource';
 import { resolveTemplates } from '../../util/tpl';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
+import { getArrayFromSingleOrArray } from '../../util/array';
 
 export interface ModuleLoadResult {}
 
@@ -20,9 +21,7 @@ export class ModuleLoad extends AbstractModuleBase<ModuleLoadInterface, ModuleLo
     super(config);
   }
 
-  #varsSources: VarsSource[] = Array.isArray(this.config)
-    ? this.config.map((entry) => new VarsSource(entry))
-    : [new VarsSource(this.config)];
+  #varsSources: VarsSource[] = getArrayFromSingleOrArray(this.config).map((entry) => new VarsSource(entry));
 
   async run(context: RunContext): Promise<ModuleRunResult<ModuleLoadResult>> {
     const vars: VarsInterface = {};

@@ -50,7 +50,6 @@ export class DataSourceHTTP extends AbstractDataSource<DataSourceHTTPInterface, 
       const jsonPath = filters.jsonPath;
       const jsonPathResult = JSONPath.JSONPath({
         path: jsonPath,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         json: data,
         wrap: false,
       });

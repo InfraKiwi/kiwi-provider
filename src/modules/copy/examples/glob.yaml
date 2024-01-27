@@ -1,9 +1,9 @@
 tasks:
-  - label: Create a temporary dir
+  - name: Create a temporary dir
     tempDir: {}
     out: tempDir
 
-  - label: Copy all test assets
+  - name: Copy all test assets
     copy:
       from:
         workDir: ${{ __assetsDir }}
@@ -22,7 +22,7 @@ tasks:
   - test: >
       'sub2/sub2_3/five.txt' in copyVar.files
 
-  - label: Verify we copied the files
+  - name: Verify we copied the files
     load:
       fileRaw: path="${{ tempDir.path }}/sub2/sub2_3/five.txt"
     out: five

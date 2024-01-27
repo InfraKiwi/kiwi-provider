@@ -45,13 +45,16 @@ export class ModuleShell extends AbstractModuleBase<ModuleShellInterface, Module
       shell = this.config.shell;
     }
 
+    workDir ??= context.workDir;
+
     const options: ExecShellOptions = {
-      cwd: workDir ?? context.workDir,
+      cwd: workDir,
       ignoreBadExitCode: true,
       uid,
       gid,
       shell,
       env,
+      streamLogs: true,
     };
 
     const result = await execShell(context, cmd, options);

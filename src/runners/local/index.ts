@@ -7,7 +7,7 @@ import type { RunnerContext, RunnerRunRecipesResult } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
 import type { RunnerLocalInterface } from './schema.gen';
-import type { ExecCmdOptions, RunShellResult } from '../../util/exec';
+import type { ExecCmdOptions } from '../../util/exec';
 import { execCmd } from '../../util/exec';
 import type { ContextLogger } from '../../util/context';
 import { fsPromiseReadFile, fsPromiseTmpDir, fsPromiseTmpFile } from '../../util/fs';
@@ -33,8 +33,8 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
 
   async #prepareEnvironment(context: ContextLogger) {
     /*
-     *We need to set up the environment inside the container, meaning that we need a properly working
-     *nodejs executable.
+     * We need to set up the environment inside the container, meaning that we need a properly working
+     * nodejs executable.
      */
     const nodePlatform = getCurrentNodeJSExecutablePlatform();
     const nodeBin = await downloadNodeDist(context, {
@@ -74,6 +74,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
       archiveDir,
       ids,
     });
+
     const logFile = await fsPromiseTmpFile({
       keep: false,
       discardDescriptor: true,
@@ -87,9 +88,13 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
 
     const args: string[] = [
       'runRecipesFromArchive',
+
+      '--logStyle',
+      'json',
       '--logFile',
       logFile,
-      '--logNoConsole',
+
+      /* '--logNoConsole', */
       '--statsFileName',
       statsFileName,
       '--archiveDir',
@@ -102,15 +107,21 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
 
     args.push(...ids);
 
-    let result: RunShellResult;
-    try {
-      result = await this.#runnerExec(context, args);
-    } finally {
-      const logs = this.parseRunRecipesFromArchiveLogs(context, await fsPromiseReadFile(logFile, 'utf-8'));
-      for (const entry of logs) {
-        context.logger.log(entry);
-      }
-    }
+    const result = await this.#runnerExec(context, args, {
+      onLog: (l, i) => this.printRunnerLogs(context, l),
+    });
+
+    /*
+     * let result: RunShellResult;
+     * try {
+     *   result = await this.#runnerExec(context, args);
+     * } finally {
+     *   const logs = this.parseRunnerLogs(context, await fsPromiseReadFile(logFile, 'utf-8'));
+     *   for (const entry of logs) {
+     *     context.logger.log(entry);
+     *   }
+     * }
+     */
 
     let statistics: Record<string, RunStatistics>;
     try {
@@ -157,7 +168,7 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
   async #nodeExec(context: ContextLogger, args: string[]) {
     const nodeBin = this.#assertNodeBin();
     context.logger.verbose('Executing NodeJS command', { args });
-    return await execCmd(context, nodeBin, args);
+    return await execCmd(context, nodeBin, args, { streamLogs: true });
   }
 
   async #runnerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {

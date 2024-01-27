@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: 'npm' # See documentation for possible values
-    open-pull-requests-limit: 20
+    open-pull-requests-limit: 50
     directory: '/' # Location of package manifests
     schedule:
       interval: 'daily'
@@ -14,3 +14,5 @@ updates:
       # Pinned because p-limit 4 breaks all the types for some reason
       # https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c
       - dependency-name: 'p-limit'
+      # Pinned because chalk 5 is ESM
+      - dependency-name: 'chalk'

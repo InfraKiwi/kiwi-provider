@@ -78,14 +78,3 @@ function isDate(this: NunjucksContext, value: any) {
 }
 
 nunjucksAddFilter('isDate', isDate);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-/*
- * function lookup(this: NunjucksContext, value: string, lookupMap: any) {
- *   if(typeof lookupMap == 'object') {
- *
- *   }
- * }
- *
- * nunjucksAddFilter('lookup', lookup);
- */

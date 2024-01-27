@@ -3,19 +3,19 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import type { Schema, ValidationOptions } from 'joi';
+import type { Description, Schema, ValidationOptions } from 'joi';
 import Joi from 'joi';
-import { IfTemplate } from './tpl';
 import semver from 'semver/preload';
 import { setDifference } from './set';
 import { shortieToObject } from './shortie';
 import { existsSync } from 'node:fs';
 import { getEnumValuesArray } from './enum';
+import traverse from 'traverse';
 
 export const joiMetaExternalImportKey = 'externalImport';
 export const joiMetaRegistrySchemaObjectKey = 'registrySchemaObject';
 
-function joiCustomErrorMessage<T>(helpers: Joi.CustomHelpers<T>, message: string) {
+export function joiCustomErrorMessage<T>(helpers: Joi.CustomHelpers<T>, message: string) {
   return helpers.message({ custom: message });
 }
 
@@ -92,7 +92,6 @@ export function joiObjectWithPattern(
   return joiObjectAddPattern(Joi.object(), value, keyPattern);
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function joiObjectFromInstanceOf(constructorName: string, importPath: string): Joi.ObjectSchema {
   /*
    * if (!path.isAbsolute(importPath)) {
@@ -108,6 +107,44 @@ export function joiObjectFromInstanceOf(constructorName: string, importPath: str
       })
     )
     .meta(joiMetaClassName(constructorName));
+}
+
+export function joiFindMeta<T>(d: Description, key: string, depthAny?: boolean): T | undefined {
+  if (depthAny) {
+    let found: T | undefined;
+    traverse(d).forEach(function (p) {
+      if (typeof p == 'object' && 'metas' in p) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const meta = p.metas?.find((m: any) => key in m)?.[key];
+        if (meta != undefined) {
+          found ||= meta;
+        }
+      }
+    });
+    return found;
+  }
+  return d.metas?.find((m) => key in m)?.[key];
+}
+
+export function joiFindMetaValuePaths<T>(d: Description, key: string, value: T, depthAny?: boolean): string[][] {
+  const paths: string[][] = [];
+  if (depthAny) {
+    traverse(d).forEach(function (p) {
+      if (typeof p == 'object' && 'metas' in p) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((p.metas ?? []).indexOf((m: any) => key in m && m[key] == value) > -1) {
+          paths.push(this.path);
+        }
+      }
+    });
+    return paths;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((d.metas ?? []).indexOf((m: any) => key in m && m[key] == value) > -1) {
+    // Root node
+    paths.push([]);
+  }
+  return paths;
 }
 
 /**
@@ -170,15 +207,6 @@ export function joiValidateValidJoiSchema(
   return val;
 }
 
-export function joiValidateValidIfTemplate(val: string, helpers: Joi.CustomHelpers<string>): Joi.ErrorReport | string {
-  try {
-    new IfTemplate(val);
-  } catch (err) {
-    return joiCustomErrorMessage(helpers, 'The string must be a valid nunjucks condition');
-  }
-  return val;
-}
-
 export function joiValidateShortieObject(val: string, helpers: Joi.CustomHelpers<string>): Joi.ErrorReport | object {
   try {
     return shortieToObject(val);
@@ -212,8 +240,8 @@ export function joiValidateSyncFSExists(
     Error.captureStackTrace(targetObject);
 
     /*
-     *at Object.attempt (D:\devel\10infra-config\node_modules\joi\lib\index.js:107:26)
-     *at main (D:\devel\10infra-config\cmd\pkg.ts:48:79)
+     * at Object.attempt (D:\devel\10infra-config\node_modules\joi\lib\index.js:107:26)
+     * at main (D:\devel\10infra-config\cmd\pkg.ts:48:79)
      */
     const lines = targetObject.stack.split('\n');
     let firstFound = false;
@@ -270,7 +298,6 @@ export function joiKeepOnlyKeysInJoiSchema<T>(
     if (!(key in val)) {
       return acc;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     acc[key] = val[key];
     return acc;
   }, {});
@@ -295,7 +322,6 @@ export function joiKeepOnlyKeysNotInJoiObjectDiff(
         if (diff.has(key)) {
           return acc;
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         acc[key] = val[key];
         return acc;
       }, {})
@@ -328,10 +354,10 @@ export function joiAttemptRequired<TSchema extends Schema>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any,
   schema: TSchema,
-  message?: string | Error,
+  message: string | Error = 'Validation failed:',
   options?: ValidationOptions
 ): TSchema extends Schema<infer Value> ? Value : never {
-  return Joi.attempt(value, schema.required(), message ?? 'Validation failed:', options);
+  return Joi.attempt(value, schema.required(), message, options);
 }
 
 export function joiSchemaDump(schema: Joi.Schema): string {

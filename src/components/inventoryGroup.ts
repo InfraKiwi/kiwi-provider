@@ -10,6 +10,7 @@ import type { InventoryGroupInterface } from './inventory.schema.gen';
 import { InventoryGroupSchema } from './inventory.schema';
 import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema } from '../util/joi';
 import { InventoryEntrySchema } from './inventoryEntry.schema';
+import { getArrayFromSingleOrArray } from '../util/array';
 
 export class InventoryGroup extends InventoryEntry {
   readonly pattern: string[];
@@ -17,7 +18,7 @@ export class InventoryGroup extends InventoryEntry {
   constructor(id: string, config: InventoryGroupInterface) {
     config = joiAttemptRequired(config, InventoryGroupSchema, 'Error validating inventory group config: ');
     super(id, joiKeepOnlyKeysInJoiSchema(config, InventoryEntrySchema));
-    this.pattern = config.pattern ? (Array.isArray(config.pattern) ? config.pattern : [config.pattern]) : [];
+    this.pattern = config.pattern ? getArrayFromSingleOrArray(config.pattern) : [];
   }
 
   protected async internalLoadVars(context: DataSourceContext): Promise<void> {

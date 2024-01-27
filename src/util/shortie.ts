@@ -15,9 +15,9 @@ export class Shortie {
   readonly #debug: boolean;
   readonly #inArray: boolean;
 
-  constructor(string: string, inArray: boolean, debug?: boolean) {
+  constructor(string: string, inArray: boolean, debug = false) {
     this.string = string;
-    this.#debug = debug ?? false;
+    this.#debug = debug;
     this.#inArray = inArray;
   }
 

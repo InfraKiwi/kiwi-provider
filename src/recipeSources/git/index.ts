@@ -11,6 +11,7 @@ import { AbstractRecipeSource } from '../abstractRecipeSource';
 import { recipeSourceRegistryEntryFactory } from '../registry';
 import type { Recipe, RecipeCtorContext } from '../../components/recipe';
 import { fsPromiseExists, fsPromiseTmpDir, fsPromiseWriteFile } from '../../util/fs';
+import type { ExecCmdOptions } from '../../util/exec';
 import { execCmd, ExecCmdErrorThrow } from '../../util/exec';
 import path from 'node:path';
 import { sha256Hex } from '../../util/crypto';
@@ -54,7 +55,10 @@ export class RecipeSourceGit extends AbstractRecipeSource<RecipeSourceGitInterfa
     const tmpDir = await fsPromiseTmpDir({ keep: false });
     context.logger.debug(`Checking out ${this.configId} (sparse checkout) into ${tmpDir}`);
 
-    const options = { cwd: tmpDir };
+    const options: ExecCmdOptions = {
+      cwd: tmpDir,
+      streamLogs: true,
+    };
     const execGitCmd = async (...args: string[]) => execCmd(context, 'git', args, options);
 
     await execGitCmd('init');
@@ -64,11 +68,11 @@ export class RecipeSourceGit extends AbstractRecipeSource<RecipeSourceGitInterfa
     await execGitCmd('config', 'core.sparseCheckout', 'true');
 
     /*
-     *# Create a file in the path: .git/info/sparse-checkout
-     *# That is inside the hidden .git directory that was created
-     *# by running the command: git init
-     *# And inside it enter the name of the sub directory you only want to clone
-     *echo 'files' >> .git/info/sparse-checkout
+     * # Create a file in the path: .git/info/sparse-checkout
+     * # That is inside the hidden .git directory that was created
+     * # by running the command: git init
+     * # And inside it enter the name of the sub directory you only want to clone
+     * echo 'files' >> .git/info/sparse-checkout
      */
     const sparseCheckoutFile = path.join(tmpDir, '.git', 'info', 'sparse-checkout');
     const recipesPathRoot = this.config.rootPath.replaceAll(path.sep, '/');

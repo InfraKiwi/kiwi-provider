@@ -15,9 +15,7 @@ async function tpl(this: NunjucksContext, value: string) {
 
 nunjucksAddAsyncFilter('tpl', tpl);
 
-async function evalCodeFn(this: NunjucksContext, code: string, context?: Record<string, unknown>) {
-  context ??= { ...this.ctx };
-
+async function evalCodeFn(this: NunjucksContext, code: string, context: Record<string, unknown> = { ...this.ctx }) {
   return await evalCodeWithSetResult(code, context);
 }
 

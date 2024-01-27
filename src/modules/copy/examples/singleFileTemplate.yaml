@@ -2,11 +2,11 @@ vars:
   hello: world
 
 tasks:
-  - label: Create a temporary file
+  - name: Create a temporary file
     temp: {}
     out: temp
 
-  - label: Copy one asset
+  - name: Copy one asset
     copy:
       from: ${{ __assetsDir }}/sub1/tpl1.txt
       to: ${{ temp.path }}
@@ -23,7 +23,7 @@ tasks:
   - test: >
       '/tpl1.txt' in copyVar.templated[0]
 
-  - label: Verify we copied the file and processed the template
+  - name: Verify we copied the file and processed the template
     load:
       fileRaw: path="${{ temp.path }}"
     out: tpl1

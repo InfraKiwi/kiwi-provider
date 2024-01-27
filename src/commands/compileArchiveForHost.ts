@@ -20,14 +20,13 @@ export async function compileArchiveForHost(
 ): Promise<CompileArchiveForHostResultInterface> {
   args = joiAttemptRequired(args, CompileArchiveForHostArgsSchema);
 
-  let { logger } = context;
-  logger ??= newLogger();
+  const { logger = newLogger() } = context;
 
-  const { hostname, inventory, archive, implicitHosts } = args;
+  const { hostname, inventory, archive, implicitHosts = [] } = args;
 
   logger.info('Compiling archive for host', { hostname });
 
-  for (const implicitHost of [...(implicitHosts ?? []), hostname]) {
+  for (const implicitHost of [...implicitHosts, hostname]) {
     if (inventory.hasHost(implicitHost)) {
       continue;
     }

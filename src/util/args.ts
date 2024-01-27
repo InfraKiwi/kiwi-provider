@@ -11,9 +11,13 @@ export function getArgDefault(argsConfig: ParseArgsConfig, key: string): any {
   return argsConfig.options![key].default;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getArgDefaultFromOptions(options: ParseArgsOptionsConfig, key: string, _default?: any): any {
-  return _default ?? options![key].default;
+export function getArgDefaultFromOptions(
+  options: ParseArgsOptionsConfig,
+  key: string,
+  _default = options![key].default
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
+  return _default;
 }
 
 export function checkVersionCommand() {

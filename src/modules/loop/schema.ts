@@ -5,7 +5,7 @@
 
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
-import { TaskSchema } from '../../components/task.schema';
+import { TaskSingleOrArraySchema } from '../../components/task.schema';
 
 export const ModuleLoopSchemaVarDefault = '__loop';
 
@@ -37,9 +37,6 @@ export const ModuleLoopSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
       )
       .optional(),
 
-    task: Joi.alternatives([
-      TaskSchema.description('The task to be executed.'),
-      Joi.array().items(TaskSchema).min(1).description('An array of tasks to be executed.'),
-    ]).required(),
+    task: TaskSingleOrArraySchema.required(),
   })
 );

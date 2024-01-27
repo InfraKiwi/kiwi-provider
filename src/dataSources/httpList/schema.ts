@@ -42,5 +42,5 @@ used also to extract the data related to each entry.
 export const MultiDataSourceHTTPListSchema = multiDataSourceRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
   MultiDataSourceHTTPListArgsSchema,
-  { label: 'MultiDataSourceHTTPListInterface' }
+  { name: 'MultiDataSourceHTTPListInterface' }
 );

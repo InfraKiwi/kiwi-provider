@@ -24,9 +24,7 @@ export interface CreateCJSRunnerBundleArgs {
 
 export async function createCJSRunnerBundle(context: ContextLogger, args: CreateCJSRunnerBundleArgs): Promise<string> {
   if (isPartOfESBuildBundle) {
-    /*
-     * TODO download a prebuilt CJS bundle?
-     */
+    /* TODO download a prebuilt CJS bundle? */
     throw new Error('Not yet implemented');
   }
 
@@ -45,7 +43,7 @@ export async function createCJSRunnerBundle(context: ContextLogger, args: Create
     return cachedBundle;
   }
 
-  context.logger.info('Preparing CJS bundle');
+  context.logger.info('Preparing CJS bundle', args);
   await runESBuild(args.entryPoint, cachedBundle);
 
   return cachedBundle;

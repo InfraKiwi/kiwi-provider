@@ -4,5 +4,5 @@ docs_dir: ../../src/assetsDistribution
 nav:
   - README.md
   ### REPLACE NAV BEGIN
-  - "dir": ./dir/README.md
+  - 'dir': ./dir/README.md
   ### REPLACE NAV END

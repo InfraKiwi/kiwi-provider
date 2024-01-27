@@ -16,9 +16,7 @@ import { fsPromiseMkdir, fsPromiseRm } from '../src/util/fs';
 import { setupUncaughtHandler } from '../src/util/uncaught';
 import { joiAttemptRequired } from '../src/util/joi';
 
-/*
- *This program should generate an archive of recipes that each host can download.
- */
+/* This program should generate an archive of recipes that each host can download. */
 const argsConfig: ParseArgsConfig = {
   allowPositionals: true,
   strict: true,

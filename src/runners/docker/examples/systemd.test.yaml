@@ -14,17 +14,22 @@ runner:
       - /run/lock
       # Needed by systemd
       - -v
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
 
     # The container already comes with systemd,
     # a process that never stops
     sleepCommand: false
+    # Before the runner can run tests, we need to make
+    # sure systemd is fully booted
+    ready:
+      command:
+        - systemd-notify
+        - --booted
 
 tests:
-  - label: Test systemd existence
+  - name: Test systemd existence
     tasks:
-
-      - label: Check if the system was booted using systemd
+      - name: Check if the system was booted using systemd
         exec:
           - systemd-notify
           - --booted

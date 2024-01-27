@@ -28,5 +28,5 @@ Indicates the type of data that the server will respond with.
 export const DataSourceHTTPSchema = dataSourceRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
   DataSourceHTTPRawSchema,
-  { label: 'DataSourceHTTPInterface' }
+  { name: 'DataSourceHTTPInterface' }
 );

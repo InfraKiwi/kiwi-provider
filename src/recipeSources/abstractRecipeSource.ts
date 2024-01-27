@@ -27,8 +27,8 @@ export abstract class AbstractRecipeSource<
   }
 
   /*
-   *Returns and id that depends on the config of the source and can be safely
-   *used to identify the same source, even if defined independently in multiple places.
+   * Returns and id that depends on the config of the source and can be safely
+   * used to identify the same source, even if defined independently in multiple places.
    */
 
   get uniqueId(): string {

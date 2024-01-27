@@ -97,6 +97,34 @@ export interface RunnerDockerInterface {
     | string;
 
   /**
+   * If provided, defines a command the runner uses to verify the Docker container
+   * has started and is ready to accept commands.
+   */
+  ready?: {
+    /**
+     * The command/args array to use to check if the Docker container is ready
+     * to accept commands.
+     */
+    command: string[];
+
+    /**
+     * How many milliseconds to wait before declaring the runner invalid.
+     * When the timeout expires, the test suite execution will fail.
+     */
+    timeout?:
+      | 60000
+      | number;
+
+    /**
+     * How frequently, in milliseconds, to check for the runner readiness
+     * using the `ready.command` command.
+     */
+    interval?:
+      | 1000
+      | number;
+  };
+
+  /**
    * If provided, defines which command the runner uses to block the container.
    *
    * Defaults to:

@@ -54,15 +54,15 @@ export class ModuleLoop extends AbstractModuleBase<ModuleLoopInterface, ModuleLo
       ? []
       : {};
 
-    const tasksToExecute = (Array.isArray(this.config.task) ? this.config.task : [this.config.task]).map(
-      (t) => new Task(t)
-    );
+    const tasksToExecute = Task.getTasksFromSingleOrArraySchema(this.config.task);
     let exit = false;
     let changed = false;
     for (const loopItem of loopItems) {
-      const loopContext = context
-        .withLabel(`Loop[${loopItem.key}]`)
-        .withVars({ [this.config.var ?? ModuleLoopSchemaVarDefault]: loopItem });
+      const loopVar = this.config.var ?? ModuleLoopSchemaVarDefault;
+      if (loopVar in context.vars) {
+        context.logger.warn(`Loop variable ${loopVar} already defined in context, overwriting it`);
+      }
+      const loopContext = context.withName(`Loop[${loopItem.key}]`).withVars({ [loopVar]: loopItem });
       const result = await Task.runTasksInContext(loopContext, tasksToExecute);
       exit ||= result.exit == true;
       changed ||= result.changed;

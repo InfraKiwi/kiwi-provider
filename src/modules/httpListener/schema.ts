@@ -88,5 +88,5 @@ E.g. /hello:
 The definition of all available routes. Each object key represents a route path, e.g. \`/hello\`.
 `),
   }),
-  { label: 'ModuleHTTPListenerInterface' }
+  { name: 'ModuleHTTPListenerInterface' }
 );

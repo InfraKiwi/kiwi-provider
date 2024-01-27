@@ -32,7 +32,7 @@ describe('docker runner', () => {
         runner: { docker: { image: 'debian:bookworm' } },
         tests: [
           {
-            label: 'my_test',
+            name: 'my_test',
             tasks: [{ debug: 'Hello' }],
           },
         ],

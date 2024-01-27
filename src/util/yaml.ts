@@ -250,7 +250,6 @@ const yamlTypeError = new Type('!error', {
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   construct: (data: any): any => {
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     return new Error(data);
   },
   predicate: (data: object): boolean => {
@@ -258,7 +257,6 @@ const yamlTypeError = new Type('!error', {
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   represent: (date: any): any => {
-    // eslint-disable-next-line @typescript-eslint/ban-types
     return (date as Error).toString();
   },
 });

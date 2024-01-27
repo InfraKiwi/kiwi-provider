@@ -45,12 +45,15 @@ export class ModuleExec extends AbstractModuleBase<ModuleExecInterface, ModuleEx
       env = this.config.env;
     }
 
+    workDir ??= context.workDir;
+
     const options: ExecCmdOptions = {
-      cwd: workDir ?? context.workDir,
+      cwd: workDir,
       ignoreBadExitCode: true,
       uid,
       gid,
       env,
+      streamLogs: true,
     };
 
     const result = await execCmd(context, cmd, args, options);

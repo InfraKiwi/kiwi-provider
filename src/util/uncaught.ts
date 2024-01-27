@@ -5,7 +5,13 @@
 
 import type { Logger } from 'winston';
 
+let hasUncaughtHandler = false;
+
 export function setupUncaughtHandler(logger: Logger) {
+  if (hasUncaughtHandler) {
+    logger.warn('Uncaught handler already set, skipping.');
+    return;
+  }
   process
     .on('unhandledRejection', (reason, p) => {
       logger.error('Unhandled rejection', { reason });
@@ -17,4 +23,5 @@ export function setupUncaughtHandler(logger: Logger) {
       logger.end();
       process.exit(1);
     });
+  hasUncaughtHandler = true;
 }

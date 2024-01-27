@@ -1,9 +1,9 @@
 tasks:
-  - label: Create a temporary file
+  - name: Create a temporary file
     temp: {}
     out: temp
 
-  - label: Copy one asset
+  - name: Copy one asset
     copy:
       from: ${{ __assetsDir }}/one.txt
       to: ${{ temp.path }}
@@ -17,7 +17,7 @@ tasks:
   - test: >
       '/one.txt' in copyVar.files[0]
 
-  - label: Verify we copied the files
+  - name: Verify we copied the files
     load:
       fileRaw: path="${{ temp.path }}"
     out: one

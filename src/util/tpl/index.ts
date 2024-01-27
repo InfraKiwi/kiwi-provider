@@ -9,3 +9,4 @@ import './tpl.globals';
 
 export * from './tpl';
 export * from './abstractTemplate';
+export * from './tpl.joi';

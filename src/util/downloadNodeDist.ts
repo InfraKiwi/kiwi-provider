@@ -67,14 +67,13 @@ export interface DownloadNodeDistArgs {
 
 export async function downloadNodeDist(
   context: ContextLogger,
-  { platform, arch, client, cacheDir, unsigned }: DownloadNodeDistArgs
+  { platform, arch, client, cacheDir = unsignedNodeDistCacheDirDefault, unsigned }: DownloadNodeDistArgs
 ): Promise<string> {
   if (client == null) {
     client = axios.create({});
     addDefaultInterceptors(context, client, 'DownloadUnsignedNodeDist');
   }
 
-  cacheDir ??= unsignedNodeDistCacheDirDefault;
   await mkdirp(cacheDir);
 
   const version = process.version;

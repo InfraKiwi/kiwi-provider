@@ -6,10 +6,10 @@
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 import type { RecipeSourceListInterface } from '../recipeSources/recipeSourceList.schema.gen';
+import type { TaskInterface } from './task.schema.gen';
 import type { ModuleRunResultInterface } from '../modules/abstractModuleBase.schema.gen';
 
 import type { VarsInterface, VarsSourcesInterface } from './varsContainer.schema.gen';
-import type { TaskInterface } from './task.schema.gen';
 
 // [block HostVarsBlockInterface begin]
 export interface HostVarsBlockInterface {
@@ -175,9 +175,9 @@ export interface RecipeInterface {
   recipeSources?: RecipeSourceListInterface; //typeRef:RecipeSourceListInterface:{"relPath":"../recipeSources/recipeSourceList.schema.gen.ts","isRegistryExport":false}
 
   /**
-   * A friendly label, used to describe the recipe.
+   * A friendly name, used to describe the recipe.
    */
-  label?: string;
+  name?: string;
 
   /**
    * Inputs validation config.
@@ -226,9 +226,9 @@ export interface RecipeInterface {
 // [block RecipeMinimalInterface begin]
 export interface RecipeMinimalInterface {
   /**
-   * A friendly label, used to describe the recipe.
+   * A friendly name, used to describe the recipe.
    */
-  label?: string;
+  name?: string;
 
   /**
    * Inputs validation config.

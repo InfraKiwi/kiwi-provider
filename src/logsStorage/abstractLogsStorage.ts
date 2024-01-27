@@ -114,9 +114,7 @@ export abstract class AbstractLogsStorage<ConfigType> extends AbstractRegistryEn
     appForAdmin.get('/downloadUrl/:hash', async (req, res) => {
       const hash = req.params.hash;
 
-      /*
-       * TODO proper schema validation
-       */
+      /* TODO proper schema validation */
       let downloadUrl = await logsStorage.getDownloadUrl(context, hash);
       if (downloadUrl.startsWith('.')) {
         // Move back one path level (:hash)

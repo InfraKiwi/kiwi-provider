@@ -44,6 +44,7 @@ import type { RecipePhase } from './recipe.schema';
 import { normalizePathToUnix } from '../util/path';
 
 interface BuildRecipeDependenciesTreeContext extends ContextLogger, ContextRecipeSourceList, ContextWorkDir {
+  includeTestAssets: boolean;
   visitedAssetsDirs: Record<string, string>;
   trusted: boolean;
 }
@@ -155,7 +156,7 @@ export class Archive {
       Joi.array().items(Joi.string().valid(...Object.keys(this.config.rootRecipes))),
       'Invalid root recipes ids'
     );
-    for (const recipeId of ids ?? Object.keys(this.config.rootRecipes)) {
+    for (const recipeId of ids) {
       const archiveEntry = this.config.rootRecipes[recipeId];
       if (archiveEntry == null) {
         throw new Error(`Internal error: null archive entry found for recipe id ${recipeId}`);
@@ -242,11 +243,9 @@ export class Archive {
     context: DataSourceContext,
     inventory: Inventory,
     hostname: string,
-    visitedCache?: VisitedCache
+    visitedCache: VisitedCache = { groups: {} }
   ): Promise<GetArchiveForHostResult> {
     const stats = new Stats();
-
-    visitedCache ??= { groups: {} };
 
     const host = await stats.measureBlock('host data loading', () => inventory.getHostAndLoadVars(context, hostname));
     const archive: ArchiveInterface = deepcopy(this.config);
@@ -302,7 +301,7 @@ export class Archive {
     const dependenciesBySourceArchiveConfigs: Record<string, ArchiveRecipesMapInterface> = {};
 
     for (const rootRecipeId of rootRecipesForHost) {
-      const archiveEntry = archive.rootRecipes[rootRecipeId]!;
+      const archiveEntry = archive.rootRecipes[rootRecipeId];
 
       const recipe = await stats.measureBlock(`root recipe init: ${rootRecipeId}`, () =>
         this.instantiateRecipe(context, rootRecipeId, archiveEntry, true)
@@ -342,8 +341,7 @@ export class Archive {
   static async create(context: RecipeCtorContext, args: CreateArchiveArgsInterface): Promise<Archive> {
     args = joiAttemptRequired(args, CreateArchiveArgsSchema, 'Failed to validate Archive.create args: ');
 
-    let { logger } = context;
-    logger ??= newLogger();
+    const { logger = newLogger() } = context;
 
     const archiveDir = args.archiveDir ?? (await fsPromiseTmpDir({ keep: true }));
 
@@ -366,6 +364,7 @@ export class Archive {
 
     const buildRecipeDependenciesTreeContext: BuildRecipeDependenciesTreeContext = {
       ...context,
+      includeTestAssets: args.includeTestAssets ?? false,
       visitedAssetsDirs: {},
       trusted: true,
     };
@@ -421,10 +420,8 @@ export async function generateRecipeForArchiveEntry(
   if (recipeId == null) {
     throw new Error(`Dependency recipe found with unknown id: ${recipeId}`);
   }
-  const recipeOriginalAssetsDir = await recipe.getAssetsDir();
-  const assetsArchive = recipeOriginalAssetsDir
-    ? await copyAssets(context, recipeId, recipeOriginalAssetsDir, archiveDir)
-    : undefined;
+
+  const assetsArchive = recipe.meta?.fileName ? await archiveRecipeAssets(context, recipe, archiveDir) : undefined;
   const dependenciesBySourceId = await buildRecipeDependenciesTree(context, archive, recipe, archiveDir);
 
   for (const sourceId in dependenciesBySourceId) {
@@ -516,34 +513,48 @@ async function buildRecipeDependenciesTree(
 
 let copyAssetsCounter = 0;
 
-async function copyAssets(
-  { logger, visitedAssetsDirs }: BuildRecipeDependenciesTreeContext,
-  recipeId: string,
-  recipeAssetsDir: string,
+async function archiveRecipeAssets(
+  context: BuildRecipeDependenciesTreeContext,
+  recipe: Recipe,
   archiveDir: string
 ): Promise<string | undefined> {
-  if (recipeAssetsDir in visitedAssetsDirs) {
-    return visitedAssetsDirs[recipeAssetsDir];
+  const recipeId = recipe.standaloneId!;
+  if (recipe.meta.fileName == null) {
+    return;
+  }
+
+  const assetsDirs = (await recipe.getAssetsDirs(context.includeTestAssets)) ?? [];
+  if (assetsDirs.length == 0) {
+    return;
+  }
+
+  const assetsDirsHash = JSON.stringify(assetsDirs);
+  if (assetsDirsHash in context.visitedAssetsDirs) {
+    return context.visitedAssetsDirs[assetsDirsHash];
+  }
+
+  const tmpAssetsDir = await recipe.temporaryCloneAssets(context);
+  if (tmpAssetsDir == null) {
+    throw new Error(`The previous check returned more than 0 assets directories!`);
   }
 
   const assetsRootDir = path.join(archiveDir, 'assets');
   await mkdirp(assetsRootDir);
 
-  logger?.info(`Packing assets for folder ${recipeAssetsDir}`);
   const counterPadded = (copyAssetsCounter++).toString(10).padStart(4, '0');
   const archiveFile = path.join(assetsRootDir, `${counterPadded}_${Recipe.cleanId(recipeId).slice(-16)}.tar.gz`);
 
-  const files = await getAllFiles(recipeAssetsDir);
+  const files = await getAllFiles(tmpAssetsDir);
   await tar.c(
     {
       gzip: true,
-      cwd: recipeAssetsDir,
+      cwd: tmpAssetsDir,
       file: archiveFile,
     },
     files
   );
   const relative = normalizePathToUnix(path.relative(archiveDir, archiveFile));
 
-  visitedAssetsDirs[recipeAssetsDir] = relative;
+  context.visitedAssetsDirs[assetsDirsHash] = relative;
   return relative;
 }

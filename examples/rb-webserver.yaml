@@ -19,7 +19,7 @@ vars:
   varFromRootRecipe: webserver
 
 tasks:
-  - label: Install nginx
+  - name: Install nginx
     recipe: id=nginx
-  - label: Hella me
+  - name: Hella me
     recipe: id=hella

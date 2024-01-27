@@ -46,6 +46,7 @@ export const RecipeSourceArchiveSchema = recipeSourceRegistryEntryFactory
   .meta(joiMetaClassName('RecipeSourceArchiveInterface'));
 
 export const CreateArchiveArgsSchema = Joi.object({
+  includeTestAssets: Joi.boolean(),
   archiveDir: Joi.string(),
   recipes: Joi.array()
     .items(joiObjectFromInstanceOf('Recipe', path.resolve(__dirname, 'recipe')))

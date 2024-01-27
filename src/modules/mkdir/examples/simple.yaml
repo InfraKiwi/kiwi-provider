@@ -1,5 +1,5 @@
 tasks:
-  - label: Create a temporary directory
+  - name: Create a temporary directory
     tempDir: {}
     out: tempDir
 
@@ -15,7 +15,7 @@ tasks:
       content: Hello world!
       raw: true
 
-  - label: Read back the text
+  - name: Read back the text
     load:
       fileRaw:
         path: ${{ mkdir.vars.path }}/hello.txt

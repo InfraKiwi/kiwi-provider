@@ -21,6 +21,7 @@ import type { FileTransportInstance } from 'winston/lib/winston/transports';
 import { envIsProduction } from './env';
 import type * as logform from 'logform';
 import { dumpYAML } from './yaml';
+import chalk from 'chalk';
 
 Error.stackTraceLimit = 100;
 
@@ -66,7 +67,7 @@ const maskSecrets = format(
   ({
     level,
     hostname,
-    label,
+    name,
     message,
     timestamp,
     statistics,
@@ -91,7 +92,7 @@ const maskSecrets = format(
     return {
       level,
       hostname,
-      label,
+      name,
       message,
       timestamp,
       statistics,
@@ -108,9 +109,11 @@ const getCompactFormat = (toYAML: boolean) =>
     ({
       level,
       hostname,
-      label,
+      name,
       message,
+      logPrefix,
       timestamp,
+      color,
       statistics,
       [LEVEL]: symLevel,
       [MESSAGE]: symMessage,
@@ -122,9 +125,10 @@ const getCompactFormat = (toYAML: boolean) =>
       const parts: string[] = [
         ...(s?.startTime ? ['[' + secondsToHMS((new Date().getTime() - s.startTime) / 1000) + ']'] : []),
         `[${level}]`,
+        ...(logPrefix ? [`[${logPrefix}]`] : []),
         ...(showHostname && hostname ? [`[${hostname}]`] : []),
         ...(s ? [`[${s.processedTasksCount}/${s.totalTasksCount}]`] : []),
-        ...(label ? [`[${label}]`] : []),
+        ...(name ? [`[${name}]`] : []),
       ];
       const errors: Error[] = [];
       traverse(rest).forEach(function (val) {
@@ -144,9 +148,11 @@ const getCompactFormat = (toYAML: boolean) =>
         }
       }
 
-      return `${ts} ${parts.join('')} ${message}${other}${
+      const fullLog = `${ts} ${parts.join('')} ${message}${other}${
         errors.length > 0 ? `, Errors (count ${errors.length}): ${util.inspect(errors, false, 5)}` : ''
       }`;
+
+      return color ? chalk.keyword(color)(fullLog) : fullLog;
     }
   );
 
@@ -179,7 +185,9 @@ function jsonReplacer(key: string, val: unknown) {
 
 export enum CustomFormatStyle {
   json = 'json',
+  // Normal msg and json-encode the rest of the args
   compactJSON = 'compactJSON',
+  // Normal msg and yaml-encode the rest of the args
   compactYAML = 'compactYAML',
 }
 
@@ -197,8 +205,15 @@ function getCustomFormat(style: CustomFormatStyle = CustomFormatStyle.compactJSO
   );
 }
 
-export function newLogger(args?: NewLoggerArgs) {
-  const { logLevel, logFile, logStyle, logNoConsole, logStackTraceDepth, defaultMeta } = args ?? {};
+export function newLogger(args: NewLoggerArgs = {}) {
+  const {
+    logLevel = globalLogLevel ?? (envIsProduction ? LogLevels.info : LogLevels.debug),
+    logFile,
+    logStyle,
+    logNoConsole,
+    logStackTraceDepth,
+    defaultMeta,
+  } = args;
 
   if (logStackTraceDepth != null) {
     Error.stackTraceLimit = logStackTraceDepth;
@@ -217,7 +232,7 @@ export function newLogger(args?: NewLoggerArgs) {
   }
 
   const logger = winston.createLogger({
-    level: logLevel ?? globalLogLevel ?? (envIsProduction ? LogLevels.info : LogLevels.debug),
+    level: logLevel,
     format: getCustomFormat(logStyle),
     transports,
     defaultMeta,
@@ -295,13 +310,13 @@ export interface TemporaryLogFileTransport {
   logFile: string;
 }
 
-async function getTemporaryLogFileTransport(context: ContextLogger, label: string): Promise<TemporaryLogFileTransport> {
+async function getTemporaryLogFileTransport(context: ContextLogger, name: string): Promise<TemporaryLogFileTransport> {
   const logFile = await fsPromiseTmpFile({
     discardDescriptor: true,
-    prefix: label,
+    prefix: name,
     postfix: '.log',
   });
-  context.logger.debug(`Storing temporary logs for ${label} in ${logFile}`);
+  context.logger.debug(`Storing temporary logs for ${name} in ${logFile}`);
   const logTransport = new winston.transports.File({
     filename: logFile,
     level: 'debug',
@@ -312,12 +327,9 @@ async function getTemporaryLogFileTransport(context: ContextLogger, label: strin
   };
 }
 
-export async function getChildLoggerWithLogFile(
-  context: ContextLogger,
-  label: string
-): Promise<ChildLoggerWithLogFile> {
+export async function getChildLoggerWithLogFile(context: ContextLogger, name: string): Promise<ChildLoggerWithLogFile> {
   const childLogger = newLogger({ defaultMeta: context.logger.defaultMeta });
-  const transport = await getTemporaryLogFileTransport(context, label);
+  const transport = await getTemporaryLogFileTransport(context, name);
   transport.transport.format = winston.format.combine(childLogger.format, winston.format.uncolorize());
   childLogger.configure({ transports: [...context.logger.transports, transport.transport] });
   return new ChildLoggerWithLogFile(childLogger, transport.logFile);

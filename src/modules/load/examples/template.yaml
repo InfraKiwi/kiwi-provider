@@ -3,7 +3,7 @@ vars:
   hello: world
 
 tasks:
-  - label: Loads a text file that contains templates
+  - name: Loads a text file that contains templates
     load:
       template: true
       fileRaw:

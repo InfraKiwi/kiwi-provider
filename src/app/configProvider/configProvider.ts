@@ -50,6 +50,7 @@ import { mountRoutesAgentDistribution } from './routes.agentDistribution';
 import { loadYAMLFromFile } from '../../util/yaml';
 import { joiAttemptRequired } from '../../util/joi';
 import { getNewDefaultRouter } from '../../util/expressRoutes';
+import { getArrayFromSingleOrArray } from '../../util/array';
 
 interface PreloadedHooks {
   config: ServerHookInterface;
@@ -254,7 +255,7 @@ export class ConfigProvider {
       context.logger.debug(`No hook found for ${key}`);
       return;
     }
-    const configs = Array.isArray(schema) ? schema : [schema];
+    const configs = getArrayFromSingleOrArray(schema);
     for (let i = 0; i < configs.length; i++) {
       const hookId = `${key}/${i}`;
       const configWithTemplates = extractAllTemplates(configs[i]);

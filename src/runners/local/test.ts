@@ -32,21 +32,37 @@ describe('local runner', () => {
         runner: { local: {} },
         tests: [
           {
-            label: 'my_test',
+            name: 'my_test',
             tasks: [{ debug: 'Hello' }],
+          },
+          {
+            name: 'failing',
+            tasks: [{ debug: 'I will soon fail' }, { fail: 'Buh!' }],
           },
         ],
       };
 
       const suite = new TestSuite(testSuiteConfig);
-      const result = await suite.run(context, ['my_test']);
+      const result = await suite.run(context);
 
-      const testResult = result.testResults['my_test']!;
-      expect(testResult).not.toBeUndefined();
-      expect(testResult.runOrder[0]).toEqual('my_test');
-      expect(testResult.tests['my_test']).not.toBeUndefined();
-      expect(testResult.tests['my_test'].processedTasksCount).toEqual(1);
-      expect(testResult.tests['my_test'].totalTasksCount).toEqual(1);
+      {
+        const testResult = result.testResults['my_test']!;
+        expect(testResult).not.toBeUndefined();
+        expect(testResult.runOrder[0]).toEqual('my_test');
+        expect(testResult.tests['my_test']).not.toBeUndefined();
+        expect(testResult.tests['my_test'].processedTasksCount).toEqual(1);
+        expect(testResult.tests['my_test'].totalTasksCount).toEqual(1);
+        expect(testResult.tests['my_test'].failed).toEqual(false);
+      }
+
+      {
+        const testResult = result.testResults['failing']!;
+        expect(testResult).not.toBeUndefined();
+        expect(testResult.tests['failing']).not.toBeUndefined();
+        expect(testResult.tests['failing'].processedTasksCount).toEqual(1);
+        expect(testResult.tests['failing'].totalTasksCount).toEqual(2);
+        expect(testResult.tests['failing'].failed).toEqual(true);
+      }
     },
     testTimeoutLong
   );

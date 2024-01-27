@@ -33,14 +33,13 @@ export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
     const data = await dataSourceList.loadVars(context);
 
     /*
-     *We accept different responses from the list call:
+     * We accept different responses from the list call:
      *
-     *- If the response is an array:
-     *  - If all items are strings, we treat those strings as IDs
-     *  - If the idPath is set we use that path as reference to extract IDs from each array entry, and
-     *    use the rest of the object as source for each entry object
-     *- If the response is an object, we treat the keys as IDs and each value as the entry object
-     *
+     * - If the response is an array:
+     *   - If all items are strings, we treat those strings as IDs
+     *   - If the idPath is set we use that path as reference to extract IDs from each array entry, and
+     *     use the rest of the object as source for each entry object
+     * - If the response is an object, we treat the keys as IDs and each value as the entry object
      */
     if (Array.isArray(data)) {
       if (responseSchemaArrayOfStrings.validate(data).error == null) {
@@ -59,7 +58,7 @@ export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
       }
 
       throw new Error(
-        'The HTTP data source list call returned an array of objects, but no `idField` path was configured to extract each object\'s id'
+        "The HTTP data source list call returned an array of objects, but no `idField` path was configured to extract each object's id"
       );
     }
 
@@ -79,7 +78,7 @@ export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
       return cacheEntry;
     }
 
-    const { idTag, http } = this.config.load ?? {};
+    const { idTag = MultiDataSourceHTTPListSchemaDefaultIdTag, http } = this.config.load ?? {};
 
     // Process all fields that may contain a template
     const config: DataSourceHTTPInterface = traverse({
@@ -89,7 +88,7 @@ export class MultiDataSourceHTTPList<DataType> extends AbstractMultiDataSource<
       if (this.notLeaf || typeof val != 'string') {
         return;
       }
-      this.update(val.replaceAll(idTag ?? MultiDataSourceHTTPListSchemaDefaultIdTag, entry));
+      this.update(val.replaceAll(idTag, entry));
     });
 
     const dataSourceLoad = new DataSourceHTTP(config);

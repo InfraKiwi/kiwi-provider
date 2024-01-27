@@ -1,5 +1,5 @@
 tasks:
-  - label: Load variables from a YAML file
+  - name: Load variables from a YAML file
     load:
       file:
         path: ${{ __assetsDir }}/vars.yaml
@@ -11,7 +11,7 @@ tasks:
 
   # ----
 
-  - label: Load a whole file's contents
+  - name: Load a whole file's contents
     load:
       fileRaw:
         path: ${{ __assetsDir }}/random.txt
