@@ -1,5 +1,5 @@
-# 10infra-config
+# kiwi-config
 
-`10infra-config` is a pull-based task execution system.
+`kiwi-config` is a pull-based task execution system.
 
-To get started, check out the [quickstart](./core-docs/quickstart.md) example.
+To get started, check out the [quickstart](./core/quickstart.md) example.

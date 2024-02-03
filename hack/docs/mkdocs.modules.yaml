@@ -6,6 +6,7 @@ nav:
   ### REPLACE NAV BEGIN
   - 'copy': ./copy/README.md
   - 'debug': ./debug/README.md
+  - 'debugger': ./debugger/README.md
   - 'download': ./download/README.md
   - 'eval': ./eval/README.md
   - 'exec': ./exec/README.md

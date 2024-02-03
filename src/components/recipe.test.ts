@@ -16,9 +16,6 @@ import { RunContext } from '../util/runContext';
 import { RecipeSourceList } from '../recipeSources/recipeSourceList';
 import path from 'node:path';
 import { testRecipe } from '../util/testUtils';
-import { newDebug } from '../util/debug';
-
-const debug = newDebug(__filename);
 
 const testDir = path.resolve(__dirname, 'test', 'recipe');
 
@@ -43,7 +40,11 @@ const sourceListTest = new RecipeSourceList(context, [{ dir: { path: testDir } }
 
 describe('recipe', () => {
   test('recipe sources chain', async () => {
-    const rsl = new RecipeSourceList(context, [{ dir: { path: path.join(testDir, 'recipeSourceChainTest', 'source1') } }]);
+    /* eslint-disable @stylistic/array-bracket-newline */
+    const rsl = new RecipeSourceList(context, [
+      { dir: { path: path.join(testDir, 'recipeSourceChainTest', 'source1') } },
+    ]);
+    //* eslint-enable @stylistic/array-bracket-newline */
     const recipe = await rsl.findAndLoadRecipe(context, 'recipe1', {});
     await testRecipe(context, recipe);
   });
@@ -227,7 +228,7 @@ describe('recipe aggregateHostVars', () => {
   ];
 
   test.each(tests)('$#', async (t) => {
-    debug(`test ${t.hostPattern}: ${t.matchFn.toString()}`);
+    logger.info(`test ${t.hostPattern}: ${t.matchFn.toString()}`);
 
     const inventory = new Inventory({
       hostSources: [{ raw: rawHosts }],

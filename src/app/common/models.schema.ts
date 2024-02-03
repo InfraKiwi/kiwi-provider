@@ -4,7 +4,7 @@
  */
 
 import Joi from 'joi';
-import { getJoiEnumValues, joiMetaClassName } from '../../util/joi';
+import { getJoiEnumKeys, joiMetaClassName } from '../../util/joi';
 
 export enum HostReportStatus {
   pending = 'pending',
@@ -21,8 +21,8 @@ export enum HostReportType {
 export const HostReportSchemaIdObject = {
   hostname: Joi.string().required(),
   release: Joi.string().required(),
-  status: getJoiEnumValues(HostReportStatus).required(),
-  type: getJoiEnumValues(HostReportType).required(),
+  status: getJoiEnumKeys(HostReportStatus).required(),
+  type: getJoiEnumKeys(HostReportType).required(),
   key: Joi.string().required(),
 };
 

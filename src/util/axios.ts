@@ -12,6 +12,9 @@ import { IncomingMessage } from 'node:http';
 import type { DataSourceContext } from '../dataSources/abstractDataSource';
 import type { ErrorLogConfig, RequestLogConfig, ResponseLogConfig } from 'axios-logger/lib/common/types';
 import type { AxiosRequestInterface } from './axios.schema.gen';
+import Joi from 'joi';
+import { joiAttemptRequired } from './joi';
+import type { CancelToken } from 'axios/index';
 
 export function addDefaultInterceptors({ logger }: ContextLogger, client: Axios, prefixText: string) {
   client.interceptors.request.use(
@@ -68,6 +71,7 @@ const axiosLoggingDefaultsError: ErrorLogConfig = {
 
 export interface AxiosRequestInterfaceAdditionalProperties {
   responseType?: 'json' | 'text' | 'stream';
+  cancelToken?: CancelToken;
 }
 
 export async function executeAxiosRequest(
@@ -81,6 +85,8 @@ export async function executeAxiosRequest(
     validStatusFn = (status) => {
       if (Array.isArray(validStatus)) {
         return validStatus.includes(status);
+      } else if (Joi.isSchema(validStatus)) {
+        return joiAttemptRequired(status, validStatus as Joi.Schema);
       }
       return new RegExp(validStatus).test(status.toString());
     };

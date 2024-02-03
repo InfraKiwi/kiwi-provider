@@ -5,12 +5,35 @@
 
 import Joi from 'joi';
 import { moduleRegistryEntryFactory } from '../registry';
-import { TaskSingleOrArraySchema } from '../../components/task.schema';
+import { TaskRunTasksInContextResultSchema, TaskSingleOrArraySchema } from '../../components/task.schema';
 import { joiMetaClassName } from '../../util/joi';
+import { VarsSchema } from '../../components/varsContainer.schema';
+const ModuleTryResultKeyFinally = 'finally';
+export const ModuleTryResultSchema = Joi.object({
+  vars: VarsSchema.required().description(`
+    The variables returned by the successful task, if any.
+    If the main task fails, and the \`catch\` block succeeds, these 
+    variables will contain the result of the \`catch\` block.
+  `),
+  lastError: Joi.string().description(`
+    A string description of the last caught error, if any.
+    If \`retries\` are enabled and the main task succeeds after retrying,
+    the \`lastError\` variable will be undefined.
+  `),
+  caught: Joi.boolean().required().description(`
+    True if an error has been caught.
+    If \`retries\` are enabled and the main task succeeds after retrying,
+    the \`caught\` variable will be \`false\`.
+  `),
+  [ModuleTryResultKeyFinally]: TaskRunTasksInContextResultSchema.description(`
+    The result of the recipe executed in the \`finally\` block, if any.
+  `),
+  retries: Joi.number().required().description(`
+    The amount of retries used for the task to succeed.
+    This number can be > 0 only if retries have been configured.
+  `),
+}).meta(joiMetaClassName('ModuleTryResultInterface'));
 
-export const ModuleTryResultKeyRetries = '__retries';
-export const ModuleTryResultKeyFinally = '__finally';
-export const ModuleTryResultKeyLastError = '__lastError';
 export const ModuleTryContextKeyRetry = '__retry';
 export const ModuleTryContextKeyLastError = '__lastError';
 

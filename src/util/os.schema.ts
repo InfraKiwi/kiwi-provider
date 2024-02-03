@@ -192,14 +192,14 @@ export const ProcessInfoSchema = Joi.object({
 
   argv: Joi.array().items(Joi.string()).required().description(`
    The \`process.argv\` property returns an array containing the command-line
-   arguments passed when the 10infra process was launched. The first element will
+   arguments passed when the kiwi process was launched. The first element will
    be {@link execPath}. The remaining elements will be any additional command-line
    arguments.
   `),
 
   execPath: Joi.string().required().description(`
    The \`process.execPath\` property returns the absolute pathname of the executable
-   that started the 10infraprocess. Symbolic links, if any, are resolved.
+   that started the kiwiprocess. Symbolic links, if any, are resolved.
   `),
 
   gid: Joi.number().description(`

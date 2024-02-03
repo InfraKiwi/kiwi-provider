@@ -5,13 +5,15 @@
 
 import type { NodeJSExecutableArch } from '../util/downloadNodeDist';
 import { NodeJSExecutablePlatform } from '../util/downloadNodeDist';
-import { getPackageVersion } from '../util/package';
+import { getBuildVersion } from '../util/package';
+import type { ContextLogger } from '../util/context';
 
 export async function getNodeJSBundleFileName(
+  context: ContextLogger,
   entryPointName: string,
   nodePlatform: NodeJSExecutablePlatform,
   nodeArch: NodeJSExecutableArch
 ) {
-  const bundleFileName = [entryPointName, nodePlatform, nodeArch, await getPackageVersion()].join('-');
+  const bundleFileName = [entryPointName, nodePlatform, nodeArch, await getBuildVersion(context)].join('-');
   return bundleFileName + (nodePlatform == NodeJSExecutablePlatform.win ? '.exe' : '');
 }

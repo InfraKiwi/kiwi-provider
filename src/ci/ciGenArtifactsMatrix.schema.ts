@@ -4,7 +4,7 @@
  */
 
 import Joi from 'joi';
-import { getJoiEnumValues, joiMetaClassName, joiObjectWithPattern } from '../util/joi';
+import { getJoiEnumKeys, joiMetaClassName, joiObjectWithPattern } from '../util/joi';
 import { NodeJSExecutableArch, NodeJSExecutablePlatform } from '../util/downloadNodeDist';
 
 /*
@@ -24,8 +24,8 @@ export const CmdCIGenArtifactsMatrixConfigSchema = Joi.object({
       variants: Joi.array()
         .items(
           Joi.object({
-            platform: getJoiEnumValues(NodeJSExecutablePlatform).required(),
-            arch: Joi.array().items(getJoiEnumValues(NodeJSExecutableArch)).required(),
+            platform: getJoiEnumKeys(NodeJSExecutablePlatform).required(),
+            arch: Joi.array().items(getJoiEnumKeys(NodeJSExecutableArch)).required(),
           }).required()
         )
         .min(1)

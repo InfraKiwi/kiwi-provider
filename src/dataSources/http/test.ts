@@ -14,6 +14,7 @@ import { newLogger } from '../../util/logger';
 
 import type { DataSourceContext } from '../abstractDataSource';
 import { testExamples } from '../../util/testUtils';
+import Joi from 'joi';
 
 const logger = newLogger();
 const context: DataSourceContext = {
@@ -76,6 +77,7 @@ interface DataSourceHTTPTest {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   expectData?: any;
   expectStatus?: number;
+  fail?: boolean;
 }
 
 describe('http dataSource', () => {
@@ -89,6 +91,13 @@ describe('http dataSource', () => {
     {
       config: {
         url: '/err',
+      },
+      expectData: 'Meh!',
+      fail: true,
+    },
+    {
+      config: {
+        url: '/err',
         validStatus: [400],
       },
       expectData: 'Meh!',
@@ -98,6 +107,14 @@ describe('http dataSource', () => {
       config: {
         url: '/err',
         validStatus: '4\\d{2}',
+      },
+      expectData: 'Meh!',
+      expectStatus: 400,
+    },
+    {
+      config: {
+        url: '/err',
+        validStatus: Joi.number().valid(400),
       },
       expectData: 'Meh!',
       expectStatus: 400,
@@ -126,9 +143,15 @@ describe('http dataSource', () => {
 
     const dataSource = new DataSourceHTTP(config);
     {
-      const result = await dataSource.load(context);
-      if (args.expectData) {
-        expect(result.data).toEqual(args.expectData);
+      const promise = dataSource.load(context);
+      if (args.fail) {
+        await expect(promise).rejects.toThrow();
+        return;
+      } else {
+        const result = await promise;
+        if (args.expectData) {
+          expect(result.data).toEqual(args.expectData);
+        }
       }
     }
     {

@@ -535,7 +535,8 @@ async function archiveRecipeAssets(
 
   const tmpAssetsDir = await recipe.temporaryCloneAssets(context);
   if (tmpAssetsDir == null) {
-    throw new Error(`The previous check returned more than 0 assets directories!`);
+    // After evaluating the asset dirs, there were no files to copy
+    return;
   }
 
   const assetsRootDir = path.join(archiveDir, 'assets');

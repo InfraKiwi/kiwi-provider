@@ -3,7 +3,6 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import { newDebug } from '../../util/debug';
 import { HostSourceGlobSchema } from './schema';
 import { hostSourceRegistryEntryFactory } from '../registry';
 import type { HostSourceGlobInterface, HostSourceGlobInterfaceConfigKey } from './schema.gen';
@@ -14,8 +13,6 @@ import { InventoryHost } from '../../components/inventoryHost';
 import type { HostSourceContext } from '../abstractHostSource';
 import { AbstractHostSource } from '../abstractHostSource';
 import { MultiDataSourceGlob } from '../../dataSources/glob';
-
-const debug = newDebug(__dirname);
 
 interface HostSourceGlobMetadata {
   originalFilename: string;

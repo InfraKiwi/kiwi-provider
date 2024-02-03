@@ -3,11 +3,9 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import { setupUncaughtHandler } from '../../src/util/uncaught';
-import { joiParseArgsLogOptionsSchema, newLoggerFromParseArgs, parseArgsLogOptions } from '../../src/util/logger';
+import { cliContextLoggerFromArgs, joiParseArgsLogOptionsSchema, parseArgsLogOptions } from '../../src/util/logger';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
-import { checkVersionCommand } from '../../src/util/args';
 import { joiAttemptRequired, joiValidateSyncFSExists } from '../../src/util/joi';
 import Joi from 'joi';
 import { loadYAMLFromFile } from '../../src/util/yaml';
@@ -16,8 +14,6 @@ import type { CmdCIGenArtifactsMatrixConfigInterface } from '../../src/ci/ciGenA
 import { setOutput } from '@actions/core';
 import { createNodeJSBundle } from '../../src/commands/createNodeJSBundle';
 import type { NodeJSExecutableArch, NodeJSExecutablePlatform } from '../../src/util/downloadNodeDist';
-
-import type { ContextLogger } from '../../src/util/context';
 
 const argsConfig: ParseArgsConfig = {
   allowPositionals: false,
@@ -31,9 +27,9 @@ const argsConfig: ParseArgsConfig = {
   },
 };
 
-async function main() {
-  checkVersionCommand();
+// NOTE: BUILD_VERSION_METHOD
 
+async function main() {
   const { values } = parseArgs(argsConfig);
   const { configFile, run, outDir, ...otherArgs } = joiAttemptRequired(
     values,
@@ -47,9 +43,7 @@ async function main() {
     }),
     'Error evaluating command args:'
   );
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
-  const context: ContextLogger = { logger };
+  const context = cliContextLoggerFromArgs(otherArgs);
 
   const config = Joi.attempt(
     await loadYAMLFromFile(configFile),
@@ -77,7 +71,9 @@ async function main() {
     }
   }
 
-  logger.info('Generated entries', { outEntries });
+  context.logger.info('Generated entries', {
+    outEntries,
+  });
   setOutput('matrix', JSON.stringify({ include: outEntries }));
 
   if (run) {

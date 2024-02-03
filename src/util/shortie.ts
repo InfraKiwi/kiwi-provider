@@ -4,9 +4,9 @@
  */
 
 import { load } from 'js-yaml';
-import { newDebug } from './debug';
+import winston from 'winston';
 
-const debug = newDebug(__filename);
+const logger = winston;
 
 // This is a rework of the wonderful https://github.com/rgov/node-shlex/ <3
 
@@ -117,7 +117,7 @@ export class Shortie {
     let prevCharWasEndOfNested = false;
 
     if (this.#debug) {
-      debug('full input', '>' + this.string + '<');
+      logger.debug('full input', '>' + this.string + '<');
     }
 
     const reset = () => {
@@ -149,7 +149,7 @@ export class Shortie {
       lastCharWasQuoted = false;
 
       if (this.#debug) {
-        debug('%o', {
+        logger.debug('%o', {
           pos,
           char,
           token,
@@ -173,7 +173,7 @@ export class Shortie {
         }
         if (!this.#inArray && inObjectKey) {
           // This is the closing case
-          this.#debug && debug('Closing case for object', { token });
+          this.#debug && logger.debug('Closing case for object', { token });
           if (token != undefined) {
             yield [token, undefined];
           }
@@ -187,7 +187,7 @@ export class Shortie {
         }
         const value = getValue(lastCharWasQuotedCache);
         this.#debug &&
-          debug('Closing case', {
+          logger.debug('Closing case', {
             currentObjectKey,
             value,
           });
@@ -203,7 +203,7 @@ export class Shortie {
         charIsEndOfNested = true;
         const objectValue = token == null ? {} : shortieToObject(token);
         this.#debug &&
-          debug('End of nested object', {
+          logger.debug('End of nested object', {
             currentObjectKey,
             objectValue,
           });
@@ -220,7 +220,7 @@ export class Shortie {
         charIsEndOfNested = true;
         const objectValue = token == null ? {} : shortieToArray(token, true);
         this.#debug &&
-          debug('End of nested array', {
+          logger.debug('End of nested array', {
             currentObjectKey,
             objectValue,
           });
@@ -248,7 +248,7 @@ export class Shortie {
           token = (token ?? '') + char;
         }
 
-        this.#debug && debug('End of escape', { token });
+        this.#debug && logger.debug('End of escape', { token });
         escaped = false;
         continue;
       }
@@ -259,7 +259,7 @@ export class Shortie {
            * We encountered an escape character, which is going to affect how
            * we treat the next character.
            */
-          this.#debug && debug('Begin of escape', { char });
+          this.#debug && logger.debug('Begin of escape', { char });
           escaped = char;
           continue;
         } else {
@@ -274,7 +274,7 @@ export class Shortie {
           token = this.processEscapes(token!, inQuote);
           inQuote = false;
           lastCharWasQuoted = true;
-          this.#debug && debug('End of string', { token });
+          this.#debug && logger.debug('End of string', { token });
           continue;
         }
 
@@ -287,7 +287,7 @@ export class Shortie {
       if (this.charsQuotes.includes(char)) {
         inQuote = char;
         token = token ?? ''; // fixes blank string
-        this.#debug && debug('Begin of string', { token });
+        this.#debug && logger.debug('Begin of string', { token });
         continue;
       }
 
@@ -306,7 +306,7 @@ export class Shortie {
         inObjectKey = false;
         currentObjectKey = token;
         token = undefined;
-        this.#debug && debug('Begin of object', { currentObjectKey });
+        this.#debug && logger.debug('Begin of object', { currentObjectKey });
         continue;
       }
 
@@ -315,7 +315,7 @@ export class Shortie {
           throw new Error('Got object beginning character while in an object key');
         }
 
-        this.#debug && debug('Begin of nested object');
+        this.#debug && logger.debug('Begin of nested object');
         inNestedObject = true;
         continue;
       }
@@ -325,7 +325,7 @@ export class Shortie {
           throw new Error('Got array beginning character while in an object key');
         }
 
-        this.#debug && debug('Begin of nested array');
+        this.#debug && logger.debug('Begin of nested array');
         inNestedArray = true;
         continue;
       }
@@ -334,7 +334,7 @@ export class Shortie {
       if (this.charsWhitespaces.includes(char)) {
         const value = getValue(lastCharWasQuotedCache);
         this.#debug &&
-          debug('Whitespace', {
+          logger.debug('Whitespace', {
             currentObjectKey,
             value,
             prevCharWasEndOfNested,

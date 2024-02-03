@@ -17,7 +17,7 @@ Let's assume we have a `./vars/someVars.yaml` file with this content:
 hello: world
 ```
 
-We can load the variables ([at compile-time](../../10infra-config/variables.md#compile-time-variables)) stored in the file with:
+We can load the variables ([at compile-time](../../kiwi-config/variables.md#compile-time-variables)) stored in the file with:
 
 ```yaml
 varsSources:
@@ -28,7 +28,7 @@ tasks:
   - debug: Hello ${{ hello }}
 ```
 
-or [at run-time](../../10infra-config/variables.md#run-time-variables) with:
+or [at run-time](../../kiwi-config/variables.md#run-time-variables) with:
 
 ```yaml
 tasks:

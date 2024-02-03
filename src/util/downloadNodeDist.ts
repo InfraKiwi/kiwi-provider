@@ -13,7 +13,7 @@ import { downloadFile } from './download';
 import { fsPromiseExists } from './fs';
 import { defaultCacheDir } from './constants';
 
-const unsignedNodeDistBaseUrl = 'https://github.com/10infra/node-unsigned/releases/download';
+const unsignedNodeDistBaseUrl = 'https://github.com/infrakiwi/node-unsigned/releases/download';
 const unsignedNodeDistCacheDirDefault = path.join(defaultCacheDir, '.nodeBinCache');
 
 /*
@@ -87,7 +87,7 @@ export async function downloadNodeDist(
   }
 
   const url = `${unsignedNodeDistBaseUrl}/${version}/${fileName}`;
-  // E.g. https://github.com/10infra/node-unsigned/releases/download/v20.9.0/node-v20.9.0-darwin-arm64
+  // E.g. https://github.com/infrakiwi/node-unsigned/releases/download/v20.9.0/node-v20.9.0-darwin-arm64
   await downloadFile(url, downloadedFileName, client);
 
   return downloadedFileName;

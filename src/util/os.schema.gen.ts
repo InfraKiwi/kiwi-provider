@@ -308,7 +308,7 @@ export interface ProcessInfoInterface {
 
   /**
    * The `process.argv` property returns an array containing the command-line
-   * arguments passed when the 10infra process was launched. The first element will
+   * arguments passed when the kiwi process was launched. The first element will
    * be {@link execPath}. The remaining elements will be any additional command-line
    * arguments.
    */
@@ -316,7 +316,7 @@ export interface ProcessInfoInterface {
 
   /**
    * The `process.execPath` property returns the absolute pathname of the executable
-   * that started the 10infraprocess. Symbolic links, if any, are resolved.
+   * that started the kiwiprocess. Symbolic links, if any, are resolved.
    */
   execPath: string;
 

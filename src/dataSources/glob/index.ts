@@ -3,7 +3,6 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import { newDebug } from '../../util/debug';
 import { multiDataSourceRegistryEntryFactory } from '../registry';
 import type { MultiDataSourceGlobInterface } from './schema.gen';
 import type { GlobOptions } from 'glob';
@@ -18,8 +17,6 @@ import { AbstractMultiDataSource } from '../abstractDataSource';
 import type { ContextWorkDir } from '../../util/context';
 import { omit } from '../../util/object';
 import { getArrayFromSingleOrArray } from '../../util/array';
-
-const debug = newDebug(__dirname);
 
 export class MultiDataSourceGlob<DataType> extends AbstractMultiDataSource<MultiDataSourceGlobInterface, DataType> {
   readonly globPath: string | string[];

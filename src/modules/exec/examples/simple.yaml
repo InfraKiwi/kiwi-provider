@@ -13,7 +13,7 @@ tasks:
   - name: Download a hello world binary archive and extract it to a temporary directory
     download:
       http:
-        url: https://github.com/10infra/minimal-hello/releases/download/v1.0.1/minimal-hello_${{ platform }}_${{ arch }}.${{ ext }}
+        url: https://github.com/infrakiwi/minimal-hello/releases/download/v1.0.1/minimal-hello_${{ platform }}_${{ arch }}.${{ ext }}
       extract: ${{ ext }}
     out: download
   - debug: |

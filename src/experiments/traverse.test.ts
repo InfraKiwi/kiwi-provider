@@ -7,9 +7,9 @@ import { describe, test } from '@jest/globals';
 import type { TraverseContext } from 'traverse';
 import traverse from 'traverse';
 import { JSONPath } from 'jsonpath-plus';
-import { newDebug } from '../util/debug';
+import { newLogger } from '../util/logger';
 
-const debug = newDebug(__filename);
+const logger = newLogger();
 
 describe.skip('traverse', () => {
   const getPath = (p: string[]): string => {
@@ -32,14 +32,14 @@ describe.skip('traverse', () => {
       if (this.notLeaf) {
         return;
       }
-      debug('string iteration', getDebugObject(this, val));
+      logger.info('string iteration', getDebugObject(this, val));
     });
 
     traverse(['hello', 'world']).forEach(function (val) {
       if (this.notLeaf) {
         return;
       }
-      debug('array iteration', getDebugObject(this, val));
+      logger.info('array iteration', getDebugObject(this, val));
     });
 
     traverse({
@@ -50,7 +50,7 @@ describe.skip('traverse', () => {
       if (this.notLeaf) {
         return;
       }
-      debug('object iteration', getDebugObject(this, val));
+      logger.info('object iteration', getDebugObject(this, val));
     });
   });
 });

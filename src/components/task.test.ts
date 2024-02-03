@@ -108,9 +108,9 @@ describe('task', () => {
 
     const result = await task.run(getTestRunContext());
     if (test.expectExit) {
-      expect(result.exit).toEqual(true);
+      expect(result.moduleRunResult?.exit).toEqual(true);
     } else {
-      expect(result.exit).toBeUndefined();
+      expect(result.moduleRunResult?.exit).toBeUndefined();
     }
   });
 
@@ -184,5 +184,24 @@ describe('task', () => {
 
     const task = new Task(taskConfig);
     await task.run(runContext);
+  });
+
+  it('should preserve the previous task result', async () => {
+    const tasks: TaskInterface[] = [
+      {
+        set: { myVar: 'hello' },
+      },
+      {
+        test: '${{ __previousTaskResult.vars.myVar == "hello" }}',
+      },
+    ];
+
+    const runContext = getTestRunContext();
+
+    // Should not fail
+    await Task.runTasksInContext(
+      runContext,
+      tasks.map((t) => new Task(t))
+    );
   });
 });

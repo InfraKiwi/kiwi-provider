@@ -63,7 +63,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async runRecipes(context: RunnerContext, archiveDir: string, ids: string[]): Promise<RunnerRunRecipesResult> {
-    context.logger.verbose('Running recipes', {
+    context.logger.debug('Running recipes', {
       archiveDir,
       ids,
     });
@@ -133,7 +133,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async uploadFileToTmpFile(context: ContextLogger, src: string, extension?: string): Promise<string> {
-    context.logger.verbose('Uploading to tmp file', {
+    context.logger.debug('Uploading to tmp file', {
       src,
       extension,
     });
@@ -143,7 +143,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async uploadAndExtractTarGZArchive(context: ContextLogger, src: string): Promise<string> {
-    context.logger.verbose('Uploading and extracting archive', { src });
+    context.logger.debug('Uploading and extracting archive', { src });
     const tmpFile = await this.uploadFileToTmpFile(context, src);
     const tmpDir = await this.#dockerGetTmpDir(context);
     await this.#dockerExtractTarGZArchive(context, tmpFile, tmpDir);
@@ -248,12 +248,12 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       const tmpFileDocker = await this.uploadFileToTmpFile(context, runnerBundle, '.cjs');
 
       // Test
-      context.logger.verbose('Testing bundle');
+      context.logger.debug('Testing bundle');
       await this.#nodeExec(context, [tmpFileDocker, 'version']);
       this.#cjsBundle = tmpFileDocker;
     }
 
-    context.logger.verbose('Docker runner set up', {
+    context.logger.debug('Docker runner set up', {
       containerId: this.#assertContainerId(),
       cjsBundle: this.#assertCJSBundle(),
       nodeBin: this.#assertNodeBin(),
@@ -262,21 +262,21 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
   async #nodeExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
     const nodeBin = this.#assertNodeBin();
-    context.logger.verbose('Executing NodeJS command', { args });
+    context.logger.debug('Executing NodeJS command', { args });
     return await this.dockerExec(context, [nodeBin, ...args], options);
   }
 
   async #runnerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
     const nodeBin = this.#assertNodeBin();
     const cjsBundle = this.#assertCJSBundle();
-    context.logger.verbose('Executing runner command', { args });
+    context.logger.debug('Executing runner command', { args });
     return await this.dockerExec(context, [nodeBin, cjsBundle, ...args], options);
   }
 
   // -------- DOCKER SPECIFIC COMMANDS --------
 
-  #dockerLogVerbose(context: ContextLogger, msg: string, args?: object) {
-    context.logger.verbose(msg, {
+  #dockerLog(context: ContextLogger, msg: string, args?: object) {
+    context.logger.debug(msg, {
       cid: this.#assertContainerId(),
       ...args,
     });
@@ -292,7 +292,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     }
     const { context: dockerfileContext = context.workDir, inline, args = [] } = this.config.dockerfile;
 
-    const tag = `10infra-test-${randomUUID()}`;
+    const tag = `kiwi-test-${randomUUID()}`;
     const platform = this.#platform;
 
     const buildArgs: string[] = ['--platform', platform, '--tag', tag, ...args];
@@ -310,7 +310,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     if (contextDir == null) {
       throw new Error(`Docker runner context directory not defined`);
     }
-    context.logger.verbose(`Building test docker image with tag ${tag}`, {
+    context.logger.debug(`Building test docker image with tag ${tag}`, {
       platform,
     });
     const cwd = context.workDir ?? process.cwd();
@@ -336,11 +336,14 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     const platform = this.#platform;
     const image = await this.#buildDockerImage(context);
-    context.logger.verbose('Spinning up container', {
+    context.logger.debug('Spinning up container', {
       platform,
       image,
       sleepCommand,
     });
+
+    const envVarsArgs = (this.config.passEnv ?? []).map((v) => ['-e', v]);
+
     const result = await this.#execDockerBinCommand(context, [
       'run',
       '--platform',
@@ -352,6 +355,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
        */
       '-t',
       '-d',
+      ...envVarsArgs.flat(),
       ...(this.config.runArgs ?? []),
       image,
       ...(sleepCommand == false ? [] : sleepCommand),
@@ -417,13 +421,13 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async #dockerKill(context: ContextLogger) {
-    this.#dockerLogVerbose(context, 'Killing container');
+    this.#dockerLog(context, 'Killing container');
     await this.#execDockerBinCommand(context, ['kill', this.#assertContainerId()], { ignoreBadExitCode: true });
     this.#containerId = undefined;
   }
 
   async #dockerUpload(context: ContextLogger, src: string, dst: string) {
-    this.#dockerLogVerbose(context, 'Uploading file to container', {
+    this.#dockerLog(context, 'Uploading file to container', {
       src,
       dst,
     });
@@ -432,7 +436,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async #dockerDownload(context: ContextLogger, src: string, dst: string) {
-    this.#dockerLogVerbose(context, 'Downloading file from container', {
+    this.#dockerLog(context, 'Downloading file from container', {
       src,
       dst,
     });
@@ -441,7 +445,7 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   }
 
   async dockerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
-    this.#dockerLogVerbose(context, 'Executing command in container', {
+    this.#dockerLog(context, 'Executing command in container', {
       args,
       streamLogs: options?.streamLogs,
     });
@@ -490,7 +494,7 @@ $fullPath`,
   }
 
   async #dockerExtractTarGZArchive(context: ContextLogger, archiveFile: string, dst: string) {
-    this.#dockerLogVerbose(context, 'Extracting archive in container', {
+    this.#dockerLog(context, 'Extracting archive in container', {
       archiveFile,
       dst,
     });

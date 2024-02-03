@@ -7,8 +7,9 @@ import type { OnLoadArgs, Plugin, PluginBuild } from 'esbuild';
 import * as esbuild from 'esbuild';
 import path from 'node:path';
 import { fsPromiseReadFile } from '../util/fs';
-import { isPartOfESBuildBundleValue, version10InfraConfig, versionESBuild } from '../util/build';
-import { getPackageVersion } from '../util/package';
+import { isPartOfESBuildBundleValue, versionKiwiConfig, versionESBuild } from '../util/build';
+import { getBuildVersion } from '../util/package';
+import type { ContextLogger } from '../util/context';
 
 const nodeModules = new RegExp(/^(?:.*[\\/])?node_modules$/);
 
@@ -77,9 +78,9 @@ function getInjectorPlugin(pluginArgs: InjectorPluginArgs): Plugin {
         }
 
         // version
-        if (contents.includes(version10InfraConfig)) {
+        if (contents.includes(versionKiwiConfig)) {
           const version = pluginArgs.version ?? new Date().toISOString();
-          contents = contents.replaceAll(version10InfraConfig, version);
+          contents = contents.replaceAll(versionKiwiConfig, version);
         }
         if (contents.includes(versionESBuild)) {
           const version = esbuild.version;
@@ -98,12 +99,14 @@ function getInjectorPlugin(pluginArgs: InjectorPluginArgs): Plugin {
   };
 }
 
-export async function runESBuild(entryPoint: string, outFile: string) {
+export async function runESBuild(context: ContextLogger, entryPoint: string, outFile: string) {
+  context.logger.debug(`Running esBuild`, {
+    entryPoint,
+    outFile,
+  });
   await esbuild.build({
     entryPoints: [entryPoint],
     bundle: true,
-    minifyWhitespace: true,
-    minifySyntax: true,
     keepNames: true,
     sourcemap: false,
     outfile: outFile,
@@ -111,6 +114,6 @@ export async function runESBuild(entryPoint: string, outFile: string) {
     format: 'cjs',
     // Manually exclude https://github.com/evanw/esbuild/issues/3434 because yeah
     external: ['dtrace-provider'],
-    plugins: [getInjectorPlugin({ version: await getPackageVersion() })],
+    plugins: [getInjectorPlugin({ version: await getBuildVersion(context) })],
   });
 }

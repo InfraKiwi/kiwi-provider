@@ -14,7 +14,6 @@ RUN ls -al
 # https://github.com/yarnpkg/berry/issues/3972
 RUN yarn || yarn
 
-ADD sea-config.json .
 ADD tsconfig.json .
 
 ADD src ./src

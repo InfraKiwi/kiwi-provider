@@ -7,13 +7,12 @@ import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import Joi from 'joi';
 import { glob } from 'glob';
-import { joiParseArgsLogOptionsSchema, newLoggerFromParseArgs, parseArgsLogOptions } from '../src/util/logger';
+import { cliContextLoggerFromArgs, joiParseArgsLogOptionsSchema, parseArgsLogOptions } from '../src/util/logger';
 import { shortieToObject } from '../src/util/shortie';
 import { RecipeSourceList } from '../src/recipeSources/recipeSourceList';
 import { createArchiveFile } from '../src/commands/createArchiveFile';
 import type { ContextLogger, ContextWorkDir } from '../src/util/context';
 import { fsPromiseMkdir, fsPromiseRm } from '../src/util/fs';
-import { setupUncaughtHandler } from '../src/util/uncaught';
 import { joiAttemptRequired } from '../src/util/joi';
 
 /* This program should generate an archive of recipes that each host can download. */
@@ -56,8 +55,10 @@ async function main() {
     }),
     'Error evaluating command args:'
   );
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
+  const context: ContextLogger & ContextWorkDir = {
+    ...cliContextLoggerFromArgs(otherArgs),
+    workDir: process.cwd(),
+  };
 
   if (archiveDir) {
     await fsPromiseRm(archiveDir, {
@@ -70,10 +71,6 @@ async function main() {
   const recipeGlob: string[] = joiAttemptRequired(positionals, Joi.array<string[]>().items(Joi.string()).min(1));
 
   const recipesPaths = await glob(recipeGlob);
-  const context: ContextLogger & ContextWorkDir = {
-    logger,
-    workDir: process.cwd(),
-  };
 
   const recipeSources =
     (source as string[]).length > 0

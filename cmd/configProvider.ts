@@ -3,7 +3,7 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import { newLoggerFromParseArgs } from '../src/util/logger';
+import { cliContextLoggerFromArgs } from '../src/util/logger';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import { ConfigProvider } from '../src/app/configProvider/configProvider';
@@ -18,11 +18,10 @@ import type { ConfigProviderConfigInterface } from '../src/app/configProvider/co
 import type { AppConfigSchemaInterface } from '../src/app/common/server';
 import { appListen } from '../src/app/common/server';
 import { getAppConfigSchemaObject, newServer } from '../src/app/common/server';
-import { setupUncaughtHandler } from '../src/util/uncaught';
 import { localhost127 } from '../src/util/constants';
 import Joi from 'joi';
 import { joiAttemptRequired } from '../src/util/joi';
-import { set10InfraInfo } from '../src/util/10infra';
+import { setKiwiInfo } from '../src/util/kiwi';
 
 const argsConfig: ParseArgsConfig = {
   allowPositionals: false,
@@ -30,7 +29,7 @@ const argsConfig: ParseArgsConfig = {
   options: { ...parseArgsAppBaseOptions },
 };
 
-const appName = '10infra-configProvider';
+const appName = 'kiwi-configProvider';
 
 async function main() {
   const {
@@ -43,10 +42,9 @@ async function main() {
     parseArgsAppBaseJoiObject,
     'Error evaluating command args:'
   );
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
+  const context = cliContextLoggerFromArgs(otherArgs);
 
-  set10InfraInfo({
+  setKiwiInfo({
     appName,
     configPath,
   });
@@ -61,14 +59,14 @@ async function main() {
     Joi.string().uri(),
     'The externalUrl config option must be defined'
   );
-  const configProvider = new ConfigProvider(logger, config.app, externalUrl);
+  const configProvider = new ConfigProvider(context.logger, config.app, externalUrl);
 
-  const app = newServer({ logger }, {});
+  const app = newServer(context, {});
 
   await configProvider.initialize();
   configProvider.mountRoutes(app);
 
-  appListen({ logger }, app, config.listener);
+  appListen(context, app, config.listener);
 }
 
 void main();

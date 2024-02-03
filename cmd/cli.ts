@@ -6,7 +6,7 @@
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import Joi from 'joi';
-import { joiParseArgsLogOptionsSchema, newLoggerFromParseArgs, parseArgsLogOptions } from '../src/util/logger';
+import { cliContextLoggerFromArgs, joiParseArgsLogOptionsSchema, parseArgsLogOptions } from '../src/util/logger';
 import { checkVersionCommand, getArgDefault } from '../src/util/args';
 import * as os from 'node:os';
 import '../src/util/loadAllRegistryEntries.gen';
@@ -15,7 +15,6 @@ import type { RecipeSourceCtorContext } from '../src/recipeSources/recipeSourceL
 import { RecipeSourceList } from '../src/recipeSources/recipeSourceList';
 import type { RecipeCtorContext } from '../src/components/recipe';
 import { Recipe } from '../src/components/recipe';
-import { setupUncaughtHandler } from '../src/util/uncaught';
 import { shortieToObject } from '../src/util/shortie';
 import { runRecipesFromArchive } from '../src/commands/runRecipeFromArchive';
 import { getErrorCauseChain } from '../src/util/error';
@@ -32,7 +31,7 @@ import { Inventory } from '../src/components/inventory';
 import { runRecipe } from '../src/commands/runRecipe';
 
 import { loadYAMLFromFile } from '../src/util/yaml';
-import { set10InfraInfo } from '../src/util/10infra';
+import { setKiwiInfo } from '../src/util/kiwi';
 
 enum MainCommand {
   run = 'run',
@@ -41,12 +40,12 @@ enum MainCommand {
   test = 'test',
 }
 
-const appName = '10infra-cli';
+const appName = 'kiwi-cli';
 
 async function main() {
   checkVersionCommand();
 
-  set10InfraInfo({
+  setKiwiInfo({
     appName,
   });
 
@@ -141,16 +140,15 @@ async function main() {
 
     ...otherArgs
   } = joiAttemptRequired(values, argsValidation, 'Error evaluating command args:');
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
+  const context = cliContextLoggerFromArgs(otherArgs);
 
   const recipeSourceCtorContext: RecipeSourceCtorContext = {
-    logger,
+    ...context,
     workDir: process.cwd(),
   };
 
   const recipeSources = getRecipeSourcesFromSourceArg(recipeSourceCtorContext, source);
-  const context: RecipeCtorContext & Partial<MyPartialRunContextOmit> = {
+  const contextRecipe: RecipeCtorContext & Partial<MyPartialRunContextOmit> = {
     ...recipeSourceCtorContext,
     recipeSources,
     isTesting: testingMode,
@@ -159,7 +157,7 @@ async function main() {
   if (isArchive) {
     const recipeIds = positionals;
     await runRecipeFromArchiveDir(
-      context,
+      contextRecipe,
       recipeIds,
 
       archiveDir,
@@ -173,7 +171,7 @@ async function main() {
   }
 
   const fileNames = positionals;
-  await runRecipes(context, fileNames, inventoryPath, hostname, throwOnRecipeFailure, statsFileName, runner);
+  await runRecipes(contextRecipe, fileNames, inventoryPath, hostname, throwOnRecipeFailure, statsFileName, runner);
 }
 
 const runTestSuiteArgsConfig: ParseArgsConfig = {
@@ -189,9 +187,7 @@ async function runTestSuite(args: string[]) {
   });
 
   const { ...otherArgs } = joiAttemptRequired(values, joiParseArgsLogOptionsSchema, 'Error evaluating command args:');
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
-  const context: RecipeCtorContext = { logger };
+  const context = cliContextLoggerFromArgs(otherArgs);
 
   const testSuites: TestSuite[] = [];
 
@@ -204,13 +200,13 @@ async function runTestSuite(args: string[]) {
   for (const testSuite of testSuites) {
     try {
       const result = await testSuite.run(context);
-      logger.info('Test suite finished', {
+      context.logger.info('Test suite finished', {
         fileName: testSuite.meta?.fileName,
         result,
       });
       TestSuite.printTestSuiteResult(result);
     } catch (ex) {
-      logger.error('Failed to run test suite', {
+      context.logger.error('Failed to run test suite', {
         fileName: testSuite.meta?.fileName,
         ex,
       });
@@ -291,6 +287,7 @@ async function runRecipes(
         recipe,
         hostname,
         runContextPartial: { statistics },
+        executeShutdownHooks: false,
       });
     } catch (ex) {
       handleRunError(context, ex, throwOnRecipeFailure);

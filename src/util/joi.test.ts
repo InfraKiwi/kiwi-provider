@@ -5,7 +5,7 @@
 
 import { describe, test } from '@jest/globals';
 import Joi from 'joi';
-import { joiKeepOnlyKeysNotInJoiObjectDiff, joiSchemaAcceptsString } from './joi';
+import { joiFindMetaValuePaths, joiKeepOnlyKeysNotInJoiObjectDiff, joiSchemaAcceptsString } from './joi';
 
 describe('joi utils', () => {
   test('keys diff', () => {
@@ -73,6 +73,57 @@ describe('joi utils', () => {
 
     test.each(tests)('%#', (t) => {
       expect(joiSchemaAcceptsString(t.schema)).toEqual(t.expect);
+    });
+  });
+
+  describe('joiFindMetaValuePaths', () => {
+    const metaFindMe = { findMe: true };
+    const tests: {
+      schema: Joi.Schema;
+      expect: string[][];
+    }[] = [
+      {
+        schema: Joi.alternatives([
+          Joi.number(),
+          Joi.object({
+            str: Joi.string().meta(metaFindMe),
+          }),
+        ]),
+        expect: [['str']],
+      },
+      {
+        schema: Joi.object({
+          hello: Joi.string().meta(metaFindMe),
+        }),
+        expect: [['hello']],
+      },
+      {
+        schema: Joi.object({
+          hello: Joi.object({
+            lower: Joi.string().meta(metaFindMe),
+          }),
+        }),
+        expect: [['hello', 'lower']],
+      },
+      {
+        schema: Joi.object({
+          hello: Joi.array().items(Joi.number().meta(metaFindMe)),
+        }),
+        expect: [['hello', '0']],
+      },
+      {
+        schema: Joi.alternatives([Joi.number(), Joi.string()]).meta(metaFindMe),
+        expect: [[]],
+      },
+      {
+        schema: Joi.alternatives([Joi.number(), Joi.string().meta(metaFindMe)]),
+        expect: [[]],
+      },
+    ];
+
+    test.each(tests)('%#', (t) => {
+      const paths = joiFindMetaValuePaths(t.schema.describe(), 'findMe', true, true);
+      expect(paths).toEqual(t.expect);
     });
   });
 });

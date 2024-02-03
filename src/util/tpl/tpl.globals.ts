@@ -7,7 +7,7 @@ import type { NunjucksContext } from './tpl';
 import { nunjucksAddGlobal } from './tpl';
 import path from 'node:path';
 import { getOSInfo, getProcessInfo } from '../os';
-import { get10InfraInfo } from '../10infra';
+import { getKiwiInfo } from '../kiwi';
 
 function getVars(this: NunjucksContext) {
   return this.getVariables();
@@ -33,11 +33,11 @@ function env(this: NunjucksContext) {
 
 nunjucksAddGlobal('env', env);
 
-function fn10InfraInfo(this: NunjucksContext) {
-  return get10InfraInfo();
+function fnKiwiInfo(this: NunjucksContext) {
+  return getKiwiInfo();
 }
 
-nunjucksAddGlobal('tenInfraInfo', fn10InfraInfo);
+nunjucksAddGlobal('kiwiInfo', fnKiwiInfo);
 
 function pathJoin(this: NunjucksContext, ...params: string[]) {
   return path.join(...params);

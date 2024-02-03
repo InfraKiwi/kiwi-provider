@@ -7,6 +7,7 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/test.yaml # self
       # Code paths
       - cmd
       - prisma
@@ -18,7 +19,6 @@ on:
       - jest.config.cjs
       - package.json
       - tsconfig.json
-      - sea-config.json
       - yarn.lock
   push:
     branches:
@@ -35,7 +35,6 @@ on:
       - jest.config.cjs
       - package.json
       - tsconfig.json
-      - sea-config.json
       - yarn.lock
 
 concurrency:

@@ -7,6 +7,7 @@
 
 import './copy';
 import './debug';
+import './debugger';
 import './download';
 import './eval';
 import './exec';

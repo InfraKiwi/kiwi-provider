@@ -90,6 +90,7 @@ export class TestSuite {
       const recipe = new Recipe(context, this.config.beforeAll, {
         id: testSuiteRecipeIdBeforeAll,
         testMocks: extractTestMocks(this.config.beforeAll),
+        fileName: this.meta?.fileName,
       });
       recipes.push(recipe);
       testRecipes.push({ recipeId: recipe.fullId! });
@@ -100,6 +101,7 @@ export class TestSuite {
         new Recipe(context, this.config.beforeEach, {
           id: testSuiteRecipeIdBeforeEach,
           testMocks: extractTestMocks(this.config.beforeEach),
+          fileName: this.meta?.fileName,
         })
       );
     }
@@ -108,6 +110,7 @@ export class TestSuite {
         new Recipe(context, this.config.afterEach, {
           id: testSuiteRecipeIdAfterEach,
           testMocks: extractTestMocks(this.config.afterEach),
+          fileName: this.meta?.fileName,
         })
       );
     }
@@ -119,6 +122,7 @@ export class TestSuite {
       const recipe = new Recipe(context, recipeConfig, {
         id,
         testMocks: extractTestMocks(testConfig),
+        fileName: this.meta?.fileName,
       });
       recipes.push(recipe);
 
@@ -133,6 +137,7 @@ export class TestSuite {
       const recipe = new Recipe(context, this.config.afterAll, {
         id: testSuiteRecipeIdAfterAll,
         testMocks: extractTestMocks(this.config.afterAll),
+        fileName: this.meta?.fileName,
       });
       recipes.push(recipe);
       testRecipes.push({ recipeId: recipe.fullId! });

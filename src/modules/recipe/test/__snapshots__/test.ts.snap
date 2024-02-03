@@ -1,0 +1,73 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`recipe module 0 1`] = `
+{
+  "changed": false,
+  "vars": {
+    "__recipeResult": {
+      "changed": false,
+      "exit": undefined,
+      "vars": {
+        "set1": {
+          "hello": "world",
+        },
+        "set2": {
+          "hello2": "world2",
+        },
+      },
+    },
+    "set1": {
+      "hello": "world",
+    },
+    "set2": {
+      "hello2": "world2",
+    },
+  },
+}
+`;
+
+exports[`recipe module 1 1`] = `
+{
+  "changed": false,
+  "vars": {
+    "__recipeResult": {
+      "changed": false,
+      "exit": undefined,
+      "vars": {
+        "set1": {
+          "hello": "world",
+        },
+        "set2": {
+          "hello2": "world2",
+        },
+      },
+    },
+    "set1": {
+      "hello": "world",
+    },
+    "set2": {
+      "hello2": "world2",
+    },
+  },
+}
+`;
+
+exports[`recipe module 2 1`] = `
+{
+  "changed": false,
+  "vars": {
+    "__recipeResult": {
+      "changed": false,
+      "exit": true,
+      "vars": {
+        "set1": {
+          "hello": "world",
+        },
+      },
+    },
+    "set1": {
+      "hello": "world",
+    },
+  },
+}
+`;

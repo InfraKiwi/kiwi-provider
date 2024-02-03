@@ -121,11 +121,33 @@ export interface DataSourceHTTPInterface {
 
   /**
    * Defines a list of status codes that will cause the request to be marked as
-   * successful, or in alternative a RegExp to perform the same validation.
+   * successful.
    */
   validStatus?:
+    | '^2\\d\\d$'
+
+    /**
+     * A plain array of valid status codes.
+     */
     | number[]
-    | string;
+
+    /**
+     * A RegExp to validate the status code.
+     */
+    | string
+
+    /**
+     * A Joi validation schema in form of JS code.
+     *
+     * Must be defined using the `!joi` YAML tag, which makes the `Joi`
+     * namespace available to use and automatically prepends a `return` keyword
+     * to the provided code.
+     *
+     * You can check out more examples of Joi validation at: https://joi.dev/api
+     *
+     * @example validStatus: !joi Joi.number().min(200).max(299)
+     */
+    | any;
 
   /**
    * Defines the maximum number of redirects to follow.
@@ -370,11 +392,33 @@ export interface DataSourceHTTPRawInterface {
 
   /**
    * Defines a list of status codes that will cause the request to be marked as
-   * successful, or in alternative a RegExp to perform the same validation.
+   * successful.
    */
   validStatus?:
+    | '^2\\d\\d$'
+
+    /**
+     * A plain array of valid status codes.
+     */
     | number[]
-    | string;
+
+    /**
+     * A RegExp to validate the status code.
+     */
+    | string
+
+    /**
+     * A Joi validation schema in form of JS code.
+     *
+     * Must be defined using the `!joi` YAML tag, which makes the `Joi`
+     * namespace available to use and automatically prepends a `return` keyword
+     * to the provided code.
+     *
+     * You can check out more examples of Joi validation at: https://joi.dev/api
+     *
+     * @example validStatus: !joi Joi.number().min(200).max(299)
+     */
+    | any;
 
   /**
    * Defines the maximum number of redirects to follow.

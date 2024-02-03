@@ -30,21 +30,40 @@ describe('recipe module', () => {
     {
       args: { id: 'echo' },
       expect: {
-        vars: {
-          set1: { hello: 'world' },
-          set2: { hello2: 'world2' },
-        },
         changed: false,
+        vars: {
+          set1: {
+            hello: 'world',
+          },
+          set2: {
+            hello2: 'world2',
+          },
+        },
       },
     },
     {
       args: 'echo',
       expect: {
-        vars: {
-          set1: { hello: 'world' },
-          set2: { hello2: 'world2' },
-        },
         changed: false,
+        vars: {
+          set1: {
+            hello: 'world',
+          },
+          set2: {
+            hello2: 'world2',
+          },
+        },
+      },
+    },
+    {
+      args: 'exit',
+      expect: {
+        changed: false,
+        vars: {
+          set1: {
+            hello: 'world',
+          },
+        },
       },
     },
   ];
@@ -57,6 +76,6 @@ describe('recipe module', () => {
     const module = new ModuleRecipe(t.args);
 
     const result = await module.run(runContext);
-    expect(result).toEqual(t.expect);
+    expect(result).toMatchSnapshot();
   });
 });

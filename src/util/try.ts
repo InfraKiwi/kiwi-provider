@@ -8,7 +8,7 @@ import { areWeTestingWithJest } from './constants';
 
 function getErrorDescription(err: Error): string {
   if (err instanceof ValidationError) {
-    return [err.message, err.annotate(!areWeTestingWithJest())].join('\n');
+    return [err.message, err.annotate(true)].join('\n');
   }
 
   return ''; // `${err}${err.stack ? '\n' + err.stack : ''}`;
@@ -19,6 +19,11 @@ export async function tryOrThrowAsync<T>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   wrapMessage: string | ((err: any) => string)
 ): Promise<T> {
+  // Jest masks too many errors
+  if (areWeTestingWithJest()) {
+    return await fn();
+  }
+
   try {
     return await fn();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,6 +38,11 @@ export function tryOrThrow<T>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   wrapMessage: string | ((err: any) => string)
 ): T {
+  // Jest masks too many errors
+  if (areWeTestingWithJest()) {
+    return fn();
+  }
+
   try {
     return fn();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

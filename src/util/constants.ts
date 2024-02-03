@@ -12,7 +12,7 @@ export const localhost127 = '127.0.0.1';
 export const hostnameSetLocalhost = new Set(['127.0.0.1', localhost, '::1']);
 
 export const defaultCacheDir = isPartOfESBuildBundle
-  ? path.join(os.homedir(), '.10InfraCache')
+  ? path.join(os.homedir(), '.KiwiCache')
   : path.join(__dirname, '..', '..', '.cache');
 
 export function areWeTestingWithJest() {
@@ -27,4 +27,7 @@ export const platformIsMacOS = process.platform === 'darwin';
 export const platformNewLine = (platformIsWin ? '\r' : '') + '\n';
 
 // Cache directory used e.g. to download esbuild binaries
-export const globalCacheDir = path.join(platformIsWin ? process.env.LOCALAPPDATA! : process.env.HOME!, '.10infra');
+export const globalCacheDir = path.join(
+  (platformIsWin ? process.env.LOCALAPPDATA : process.env.HOME) ?? os.tmpdir(),
+  '.kiwi'
+);

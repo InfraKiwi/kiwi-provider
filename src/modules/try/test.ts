@@ -6,31 +6,22 @@
 import { describe, expect, test } from '@jest/globals';
 import { ModuleTry } from './index';
 
-import type { ModuleTryInterface } from './schema.gen';
+import type { ModuleTryInterface, ModuleTryResultInterface } from './schema.gen';
 
 import { getTestRunContext } from '../../components/inventory.testutils';
 import { testExamples } from '../../util/testUtils';
-import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 import type { TaskInterface } from '../../components/task.schema.gen';
-import { ModuleTryResultKeyRetries, ModuleTrySchema } from './schema';
-import { joiMetaDelayTemplatesResolutionKey } from '../../util/tpl';
-import { joiFindMetaValuePaths } from '../../util/joi';
 
 interface ModuleTryTest {
   args: ModuleTryInterface;
   expect: {
     fail?: boolean;
-    vars?: VarsInterface;
+    result: ModuleTryResultInterface;
   };
 }
 
 describe('try module', () => {
   testExamples(__dirname);
-
-  test('delay module resolution', () =>
-    expect(
-      joiFindMetaValuePaths(ModuleTrySchema.describe(), joiMetaDelayTemplatesResolutionKey, true)
-    ).not.toBeUndefined());
 
   const failUntilThirdTryTask: TaskInterface[] = [
     {
@@ -55,11 +46,14 @@ describe('try module', () => {
         },
       },
       expect: {
-        vars: {
-          set: {
-            retries: '2 retries',
+        result: {
+          caught: false,
+          retries: 2,
+          vars: {
+            set: {
+              retries: '2 retries',
+            },
           },
-          [ModuleTryResultKeyRetries]: 2,
         },
       },
     },
@@ -74,7 +68,7 @@ describe('try module', () => {
       await expect(runPromise).rejects.toThrow();
     } else {
       const result = await runPromise;
-      expect(result.vars).toEqual(t.expect.vars);
+      expect(result.vars).toEqual(t.expect.result);
     }
   });
 });

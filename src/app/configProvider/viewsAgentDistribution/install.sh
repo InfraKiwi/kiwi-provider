@@ -9,7 +9,7 @@ set -e
 configProviderUrl='{{ configProviderUrl }}'
 downloadUrlBase='{{ downloadUrl }}'
 
-agentInstallDir='/opt/10infra'
+agentInstallDir='/opt/kiwi'
 agentInstallPath="$agentInstallDir/agent"
 
 # Parse args
@@ -77,7 +77,7 @@ main () {
       return
     fi
 
-    echo "The 10infra installer requires at least curl or wget."
+    echo "The kiwi installer requires at least curl or wget."
     exit 1
   }
 

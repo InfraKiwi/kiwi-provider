@@ -17,7 +17,7 @@ import Joi from 'joi';
 describe('debug module', () => {
   testExamples(__dirname);
 
-  test('DEBUG', async () => {
+  test('debug', async () => {
     const runContext = getTestRunContext();
 
     const config: ModuleDebugInterface = {};

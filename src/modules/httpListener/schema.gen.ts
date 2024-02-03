@@ -94,6 +94,81 @@ export interface ModuleHTTPListenerRouteHandlerJSONInterface {
 // [block ModuleHTTPListenerRouteHandlerJSONInterface end]
 //meta:ModuleHTTPListenerRouteHandlerJSONInterface:[{"className":"ModuleHTTPListenerRouteHandlerJSONInterface"}]
 
+// [block ModuleHTTPListenerRouteHandlerProxyForWebSocketInterface begin]
+/**
+ * A url to proxy the traffic to
+ */
+export interface ModuleHTTPListenerRouteHandlerProxyForWebSocketInterface {
+  /**
+   * The proxy target url
+   */
+  target: string;
+
+  /**
+   * If true, follows redirects
+   */
+  followRedirects?:
+    | true
+    | boolean;
+
+  /**
+   * If true, adds x-forward headers
+   */
+  xfwd?: boolean;
+
+  /**
+   * If true, verifies SSL Certs
+   */
+  secure?: boolean;
+
+  /**
+   * If true, changes the origin of the host header to the target url
+   */
+  changeOrigin?: boolean;
+}
+// [block ModuleHTTPListenerRouteHandlerProxyForWebSocketInterface end]
+//meta:ModuleHTTPListenerRouteHandlerProxyForWebSocketInterface:[{"className":"ModuleHTTPListenerRouteHandlerProxyForWebSocketInterface"}]
+
+// [block ModuleHTTPListenerRouteHandlerProxyInterface begin]
+/**
+ * A url to proxy the traffic to
+ */
+export interface ModuleHTTPListenerRouteHandlerProxyInterface {
+  /**
+   * The proxy target url
+   */
+  target: string;
+
+  /**
+   * If true, follows redirects
+   */
+  followRedirects?:
+    | true
+    | boolean;
+
+  /**
+   * If true, adds x-forward headers
+   */
+  xfwd?: boolean;
+
+  /**
+   * If true, verifies SSL Certs
+   */
+  secure?: boolean;
+
+  /**
+   * If true, changes the origin of the host header to the target url
+   */
+  changeOrigin?: boolean;
+
+  /**
+   * If true, allows proxying websockets
+   */
+  ws?: boolean;
+}
+// [block ModuleHTTPListenerRouteHandlerProxyInterface end]
+//meta:ModuleHTTPListenerRouteHandlerProxyInterface:[{"className":"ModuleHTTPListenerRouteHandlerProxyInterface"}]
+
 // [block ModuleHTTPListenerRouteHandlerRawInterface begin]
 /**
  * Any static string value the route should return verbatim
@@ -123,6 +198,11 @@ export interface ModuleHTTPListenerRouteInterface {
   put?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
 
   patch?: ModuleHTTPListenerRouteHandlerInterface; //typeRef:ModuleHTTPListenerRouteHandlerInterface:{"relPath":"self","isRegistryExport":false}
+
+  /**
+   * A special method that enables a reverse proxy for this route.
+   */
+  proxy?: ModuleHTTPListenerRouteHandlerProxyInterface; //typeRef:ModuleHTTPListenerRouteHandlerProxyInterface:{"relPath":"self","isRegistryExport":false}
 }
 // [block ModuleHTTPListenerRouteInterface end]
 //meta:ModuleHTTPListenerRouteInterface:[{"className":"ModuleHTTPListenerRouteInterface"}]

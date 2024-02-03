@@ -9,6 +9,7 @@ import type { RunContext } from '../util/runContext';
 import {
   extractAllTemplates,
   IfTemplate,
+  joiMetaDelayTemplatesResolutionKey,
   objectContainsTemplates,
   resolveTemplates,
   resolveTemplatesWithJoiSchema,
@@ -19,7 +20,12 @@ import {
   TaskSchema,
   TaskTestMockSchema,
 } from './task.schema';
-import type { TaskInterface, TaskSingleOrArrayInterface, TaskTestMockInterface } from './task.schema.gen';
+import type {
+  TaskInterface,
+  TaskRunTasksInContextResultInterface,
+  TaskSingleOrArrayInterface,
+  TaskTestMockInterface,
+} from './task.schema.gen';
 import traverse from 'traverse';
 import { maskSensitiveValue } from '../util/logger';
 import type {
@@ -27,7 +33,12 @@ import type {
   ModuleRunResult,
   ModuleRunResultBaseType,
 } from '../modules/abstractModuleBase';
-import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema, joiKeepOnlyKeysNotInJoiObjectDiff } from '../util/joi';
+import {
+  joiAttemptRequired,
+  joiFindMetaValuePaths,
+  joiKeepOnlyKeysInJoiSchema,
+  joiKeepOnlyKeysNotInJoiObjectDiff,
+} from '../util/joi';
 import { tryOrThrowAsync } from '../util/try';
 import type { VarsInterface } from './varsContainer.schema.gen';
 import { getErrorPrintfClass } from '../util/error';
@@ -46,16 +57,9 @@ import { omit } from '../util/object';
 export interface TaskRunResult<ResultType extends ModuleRunResultBaseType> {
   moduleRunResult?: ModuleRunResult<ResultType>;
   skipped: boolean;
-  exit?: boolean;
   out?: string;
   outRaw?: string;
   global?: boolean;
-}
-
-export interface TaskRunTasksInContextResult {
-  changed: boolean;
-  exit?: boolean;
-  vars: VarsInterface;
 }
 
 export const TaskErrorFailedWithIfCondition = getErrorPrintfClass(
@@ -152,20 +156,39 @@ export class Task {
     let moduleConfig = this.config[registryEntry.entryName];
 
     if (this.templated) {
-      await tryOrThrowAsync(async () => {
-        const vars = context.varsForTemplate;
+      const vars = context.varsForTemplate;
 
+      try {
         /*
          * We split the configs this way because we're using the joi schema to find templates
          * that should NOT be resolved
          */
-        moduleConfig = await resolveTemplatesWithJoiSchema(
-          this.config[registryEntry.entryName],
+        moduleConfig = await resolveTemplatesWithJoiSchema(moduleConfig, vars, registryEntry.schema);
+      } catch (ex) {
+        context.logger.error(`Failed to resolve templates for module config`, {
+          ex,
+          moduleConfig,
           vars,
-          registryEntry.schema
-        );
+          skipPaths: joiFindMetaValuePaths(
+            registryEntry.schema.describe(),
+            joiMetaDelayTemplatesResolutionKey,
+            true,
+            true
+          ),
+        });
+        throw new Error('Failed to resolve templates for module config', { cause: ex });
+      }
+
+      try {
         taskConfig = await resolveTemplates(taskConfig, vars);
-      }, 'Failed to initialize task config while resolving templates');
+      } catch (ex) {
+        context.logger.error(`Failed to resolve templates for task config`, {
+          ex,
+          taskConfig,
+          vars,
+        });
+        throw new Error('Failed to resolve templates for task config', { cause: ex });
+      }
     }
 
     const module = new registryEntry.clazz(moduleConfig);
@@ -256,7 +279,7 @@ export class Task {
           postRunChecksContext.varsForTemplate
         );
         const failResult = await new ModuleFail(
-          typeof failedIfConfigResolved == 'string'
+          typeof failedIfConfigResolved == 'string' || failedIfConfigResolved === true
             ? 'failedIf condition was true'
             : joiKeepOnlyKeysInJoiSchema(failedIfConfigResolved, ModuleFailFullSchema)
         ).run(postRunChecksContext);
@@ -274,16 +297,15 @@ export class Task {
       throw new TaskErrorFailedWithExecutionError(result.failed);
     }
 
-    let forceExit = false;
     if (this.exitIfTemplate) {
       if (await this.exitIfTemplate.isTrue(postRunChecksContext.varsForTemplate)) {
         const exitIfConfigResolved = await resolveTemplates(this.config.exitIf, postRunChecksContext.varsForTemplate);
         const exitResult = await new ModuleExit(
-          typeof exitIfConfigResolved == 'string'
+          typeof exitIfConfigResolved == 'string' || exitIfConfigResolved === true
             ? 'exitIf condition was true'
             : joiKeepOnlyKeysInJoiSchema(exitIfConfigResolved, ModuleExitFullSchema)
         ).run(postRunChecksContext);
-        forceExit = exitResult.exit == true;
+        result.exit = exitResult.exit;
 
         result.vars ??= {};
         Object.assign(result.vars, exitResult.vars);
@@ -294,12 +316,10 @@ export class Task {
       config: context.isTesting ? module.config : undefined,
       mock: mock != null,
       result,
-      forceExit,
     });
 
     return {
       moduleRunResult: result,
-      exit: forceExit || result.exit,
       skipped: false,
       out: taskConfig.out,
       outRaw: taskConfig.outRaw,
@@ -307,7 +327,7 @@ export class Task {
     };
   }
 
-  static async runTasksInContext(context: RunContext, tasks: Task[]): Promise<TaskRunTasksInContextResult> {
+  static async runTasksInContext(context: RunContext, tasks: Task[]): Promise<TaskRunTasksInContextResultInterface> {
     context.statistics.totalTasksCount += tasks.length;
 
     let changed = false;
@@ -350,7 +370,7 @@ export class Task {
       }
 
       if (task.config.keepPreviousTaskResult != true) {
-        context.previousTaskResult = resultVars;
+        context.previousTaskResult = taskResult.moduleRunResult;
       }
 
       if (taskResult.outRaw) {
@@ -362,7 +382,7 @@ export class Task {
         changed = true;
       }
 
-      if (taskResult.exit) {
+      if (taskResult.moduleRunResult?.exit) {
         return {
           exit: true,
           changed,

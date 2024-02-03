@@ -11,7 +11,7 @@ tasks:
         # One retry every 500ms
         delay: 500
     out: tryResult
-  - test: tryResult.__retries == 2
+  - test: tryResult.retries == 2
 
   # Retry with exponential backoff
   - try:
@@ -30,7 +30,7 @@ tasks:
           # The startingDelay is multiplied by the timeMultiple to increase the delay between reattempts.
           timeMultiple: 2
     out: tryResult
-  - test: tryResult.__retries == 2
+  - test: tryResult.retries == 2
 
   # Catch
   - try:
@@ -40,4 +40,4 @@ tasks:
         debug: |
           We caught an error: ${{ __lastError }}
     out: try
-  - test: try.__lastError.includes('This is an error!')
+  - test: try.lastError.includes('This is an error!')

@@ -8,13 +8,11 @@
  * https://nodejs.org/docs/latest-v20.x/api/single-executable-applications.html
  */
 
-import { setupUncaughtHandler } from '../src/util/uncaught';
-import { joiParseArgsLogOptionsSchema, newLoggerFromParseArgs, parseArgsLogOptions } from '../src/util/logger';
-import type { ContextLogger } from '../src/util/context';
+import { cliContextLoggerFromArgs, joiParseArgsLogOptionsSchema, parseArgsLogOptions } from '../src/util/logger';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import { checkVersionCommand } from '../src/util/args';
-import { getJoiEnumValues, joiAttemptRequired, joiValidateSyncFSExists } from '../src/util/joi';
+import { getJoiEnumKeys, joiAttemptRequired, joiValidateSyncFSExists } from '../src/util/joi';
 import Joi from 'joi';
 import { createNodeJSBundle } from '../src/commands/createNodeJSBundle';
 import {
@@ -50,16 +48,14 @@ async function main() {
   } = joiAttemptRequired(
     values,
     joiParseArgsLogOptionsSchema.append({
-      nodeArch: getJoiEnumValues(NodeJSExecutableArch),
-      nodePlatform: getJoiEnumValues(NodeJSExecutablePlatform),
+      nodeArch: getJoiEnumKeys(NodeJSExecutableArch),
+      nodePlatform: getJoiEnumKeys(NodeJSExecutablePlatform),
       outDir: Joi.string().custom(joiValidateSyncFSExists).required(),
       entryPoint: Joi.string().custom(joiValidateSyncFSExists).required(),
     }),
     'Error evaluating command args:'
   );
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
-  const context: ContextLogger = { logger };
+  const context = cliContextLoggerFromArgs(otherArgs);
 
   await createNodeJSBundle(context, {
     outDir,

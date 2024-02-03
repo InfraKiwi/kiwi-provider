@@ -4,7 +4,7 @@
  */
 
 import type { ParseArgsConfig } from 'node:util';
-import { version10InfraConfig } from './build';
+import { versionKiwiConfig } from './build';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getArgDefault(argsConfig: ParseArgsConfig, key: string): any {
@@ -23,7 +23,7 @@ export function getArgDefaultFromOptions(
 export function checkVersionCommand() {
   const args = process.argv.slice(2);
   if (args.length && args[0] == 'version') {
-    process.stdout.write(version10InfraConfig);
+    process.stdout.write(versionKiwiConfig);
     process.exit(0);
   }
 }

@@ -21,19 +21,19 @@ export async function agentBootstrapConfig(
 ): Promise<string> {
   config = joiAttemptRequired(config, AgentBootstrapConfigSchema, 'Failed to parse agent bootstrap config');
 
-  logger.info('Bootstrapping 10infra agent', config);
+  logger.info('Bootstrapping kiwi agent', config);
 
   const configPath = path.join(config.installDir, 'config.yaml');
   if (await fsPromiseExists(configPath)) {
     if (config.force != true) {
       throw new Error(
-        `10infra agent configuration already exists at ${configPath}. If you want to overwrite it, please use the --force flag.`
+        `kiwi agent configuration already exists at ${configPath}. If you want to overwrite it, please use the --force flag.`
       );
     }
 
-    logger.warn(`Overwriting existing 10infra agent configuration at ${configPath}`);
+    logger.warn(`Overwriting existing kiwi agent configuration at ${configPath}`);
   } else {
-    logger.info(`Generating new 10infra agent configuration at ${configPath}`);
+    logger.info(`Generating new kiwi agent configuration at ${configPath}`);
   }
 
   const databasePath = path.join(config.installDir, 'release.db.txt');

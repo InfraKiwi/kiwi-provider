@@ -122,6 +122,7 @@ export function mountRoutesAgentDistribution(
 
     const queryParams: AbstractAssetsDistributionGetDownloadUrlRequestInterface = {
       assetFile: await getNodeJSBundleFileName(
+        context,
         'agent',
         reqData.nodePlatform as NodeJSExecutablePlatform,
         reqData.nodeArch as NodeJSExecutableArch

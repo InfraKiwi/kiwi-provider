@@ -17,11 +17,12 @@ export interface RunRecipeArgs {
   inventory: Inventory;
   recipe: Recipe;
   runContextPartial?: Partial<MyPartialRunContextOmit>;
+  executeShutdownHooks?: boolean;
 }
 
 export async function runRecipe(
   context: DataSourceContext & Partial<MyPartialRunContextOmit>,
-  { hostname, inventory, recipe, runContextPartial }: RunRecipeArgs
+  { hostname, inventory, recipe, runContextPartial, executeShutdownHooks = true }: RunRecipeArgs
 ): Promise<void> {
   const hosts = inventory.getHostsByPattern(context, hostname);
   const hostnames = Object.keys(hosts);

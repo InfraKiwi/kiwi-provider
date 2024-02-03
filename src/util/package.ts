@@ -5,15 +5,80 @@
 
 import { fsPromiseReadFile } from './fs';
 import path from 'node:path';
-import { isPartOfESBuildBundle, version10InfraConfig, versionESBuild } from './build';
+import { isPartOfESBuildBundle, versionKiwiConfig, versionESBuild } from './build';
+import { execCmd } from './exec';
+import type { ContextLogger } from './context';
+import { joiAttemptRequired, joiValidateSyncFSExists } from './joi';
+import Joi from 'joi';
+import { createRequire } from 'node:module';
 
-export async function getPackageVersion(): Promise<string> {
+const requireOnDemand = createRequire(__filename);
+
+export const BuildVersionMethodEnv = 'BUILD_VERSION_METHOD';
+export const BuildVersionMethodEnvMethodVersionFile = 'BUILD_VERSION_VERSION_FILE';
+export const BuildVersionMethodEnvMethodEnv = 'BUILD_VERSION_ENV';
+
+export enum BuildVersionMethod {
+  package = 'package',
+  git = 'git',
+  timestamp = 'timestamp',
+  versionFile = 'versionFile',
+  env = 'env',
+  arg = 'arg',
+}
+
+export async function getBuildVersion(
+  context: ContextLogger,
+  method?: BuildVersionMethod,
+  versionArg?: string
+): Promise<string> {
   if (isPartOfESBuildBundle) {
-    return version10InfraConfig;
+    return versionKiwiConfig;
   }
 
-  const packageInfo = JSON.parse(await fsPromiseReadFile(path.join(__dirname, '..', '..', 'package.json'), 'utf-8'));
-  return packageInfo.version;
+  let version: string;
+  method ??= (process.env[BuildVersionMethodEnv] as BuildVersionMethod) ?? BuildVersionMethod.package;
+
+  if (versionArg != null && method != BuildVersionMethod.arg) {
+    throw new Error(`Unexpected argument \`versionArg\` for build version method ${method}`);
+  }
+
+  switch (method) {
+    case BuildVersionMethod.git:
+      version = (await execCmd(context, 'git', ['rev-parse', '--short', 'HEAD'])).stdout.trim();
+      break;
+    case BuildVersionMethod.timestamp:
+      version = new Date().getTime().toString();
+      break;
+    case BuildVersionMethod.versionFile:
+      {
+        const fileName = joiAttemptRequired(
+          process.env[BuildVersionMethodEnvMethodVersionFile],
+          Joi.string().custom(joiValidateSyncFSExists)
+        );
+        version = await fsPromiseReadFile(fileName, 'utf-8');
+      }
+      break;
+    case BuildVersionMethod.env:
+      version = process.env[BuildVersionMethodEnvMethodEnv]!;
+      break;
+    case BuildVersionMethod.package:
+      version = (await getPackageJSON()).version;
+      break;
+    case BuildVersionMethod.arg:
+      version = versionArg!;
+      break;
+    default:
+      throw new Error(`Unsupported package version method: ${method}`);
+  }
+  if (version == null) {
+    throw new Error(`Null version for method ${method}`);
+  }
+  return version;
+}
+
+export async function getPackageJSON() {
+  return requireOnDemand(path.join(__dirname, '..', '..', 'package.json'));
 }
 
 export async function getESBuildVersion(): Promise<string> {

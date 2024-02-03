@@ -43,7 +43,7 @@ export const createNodeJSBundle: fnSignatureCreateNodeJSBundle = async (
     output: blobFile,
     disableExperimentalSEAWarning: true,
     useSnapshot: false,
-    useCodeCache: true,
+    useCodeCache: false, // true
   };
   const seaConfigFile = await fsPromiseTmpFile({
     discardDescriptor: true,
@@ -63,7 +63,7 @@ export const createNodeJSBundle: fnSignatureCreateNodeJSBundle = async (
 
   // Generate bin package
   const entryPointName = path.basename(entryPoint, path.extname(entryPoint));
-  bundleFileName ??= await getNodeJSBundleFileName(entryPointName, nodePlatform, nodeArch);
+  bundleFileName ??= await getNodeJSBundleFileName(context, entryPointName, nodePlatform, nodeArch);
   const bundleFile = path.join(outDir, bundleFileName);
   context.logger.info(`Generating binary at ${bundleFile}`, { bundleFileName });
 

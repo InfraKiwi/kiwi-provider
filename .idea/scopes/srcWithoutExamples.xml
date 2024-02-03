@@ -1,3 +1,3 @@
 <component name="DependencyValidationManager">
-  <scope name="srcWithoutExamples" pattern="(file[10infra-config]:cmd//*||file[10infra-config]:src//*)&amp;&amp;!file[10infra-config]:src/**/examples//*.js&amp;&amp;!file[10infra-config]:.idea//*&amp;&amp;!file[10infra-config]:docs/.idea//*||file[10infra-config]:.github//*||file[10infra-config]:hack//*||file[10infra-config]:prisma//*||file[10infra-config]:*" />
+  <scope name="srcWithoutExamples" pattern="(file[10infra-config]:cmd//*||file[10infra-config]:src//*)&amp;&amp;!file[10infra-config]:src/**/examples//*.js&amp;&amp;!file[10infra-config]:.idea//*&amp;&amp;!file[10infra-config]:docs/.idea//*||file[kiwi-provider]:.github//*||file[kiwi-provider]:hack//*||file[kiwi-provider]:prisma//*||file[kiwi-provider]:*" />
 </component>

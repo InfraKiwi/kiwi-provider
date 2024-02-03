@@ -1,0 +1,21 @@
+tasks:
+  # Set up a temporary HTTP server
+  - httpListener:
+      routes:
+        '/helloRaw':
+          get:
+            raw: World
+    out: listener
+
+  # Set up a proxy HTTP server
+  - httpListener:
+      routes:
+        '/':
+          proxy:
+            target: http://${{ listener.address }}
+    out: proxy
+
+  - http:
+      url: http://${{ proxy.address }}/helloRaw
+    out: resp
+  - test: resp.data == "World"

@@ -63,7 +63,7 @@ export function nunjucksAddAsyncFilter(key: string, promiseFn: (...args: any[]) 
   };
 }
 
-function initNunjucksEnvFor10infraConfig() {
+function initNunjucksEnvForkiwiConfig() {
   const nunjucksEnv = nunjucks.configure([], {
     autoescape: false,
     tags: { variableStart: '${{' },
@@ -108,7 +108,7 @@ export class Template extends AbstractTemplate {
 
     // Delay the initialization so that all globals and filters will be loaded
     if (Template.#nunjucksEnv == null) {
-      Template.#nunjucksEnv = initNunjucksEnvFor10infraConfig();
+      Template.#nunjucksEnv = initNunjucksEnvForkiwiConfig();
     }
 
     // TODO support at-render-time environment, e.g. to fetch the inventory

@@ -7,6 +7,7 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/docs.yaml # self
       # Docs paths
       - docs
       - hack/docs
@@ -33,6 +34,7 @@ jobs:
           path: site
 
   deploy:
+    if: github.event.repository.owner.login == 'kiwi'
     needs: build
     runs-on: ubuntu-latest
     permissions:

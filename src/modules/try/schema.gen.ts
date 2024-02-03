@@ -6,6 +6,8 @@
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
 import type { TaskSingleOrArrayInterface } from '../../components/task.schema.gen';
+import type { VarsInterface } from '../../components/varsContainer.schema.gen';
+import type { TaskRunTasksInContextResultInterface } from '../../components/task.schema.gen';
 
 // [block ModuleTryInterface begin]
 export interface ModuleTryInterface {
@@ -26,7 +28,7 @@ export interface ModuleTryInterface {
    * A task to execute independently on the result of the main task.
    * If the main task has failed, the `finally` task will be executed but the
    * overall module will still be considered as failed.
-   * Note: the result of the `finally` task will be available under the `__finally`
+   * Note: the result of the `finally` task will be available under the `finally`
    * variable, contained in the overall module result.
    */
   finally?: TaskSingleOrArrayInterface; //typeRef:TaskSingleOrArrayInterface:{"relPath":"../../components/task.schema.gen.ts","isRegistryExport":false}
@@ -40,6 +42,43 @@ export interface ModuleTryInterface {
 }
 // [block ModuleTryInterface end]
 //meta:ModuleTryInterface:[{"className":"ModuleTryInterface","entryNames":["try"]}]
+
+// [block ModuleTryResultInterface begin]
+export interface ModuleTryResultInterface {
+  /**
+   * The variables returned by the successful task, if any.
+   * If the main task fails, and the `catch` block succeeds, these
+   * variables will contain the result of the `catch` block.
+   */
+  vars: VarsInterface; //typeRef:VarsInterface:{"relPath":"../../components/varsContainer.schema.gen.ts","isRegistryExport":false}
+
+  /**
+   * A string description of the last caught error, if any.
+   * If `retries` are enabled and the main task succeeds after retrying,
+   * the `lastError` variable will be undefined.
+   */
+  lastError?: string;
+
+  /**
+   * True if an error has been caught.
+   * If `retries` are enabled and the main task succeeds after retrying,
+   * the `caught` variable will be `false`.
+   */
+  caught: boolean;
+
+  /**
+   * The result of the recipe executed in the `finally` block, if any.
+   */
+  finally?: TaskRunTasksInContextResultInterface; //typeRef:TaskRunTasksInContextResultInterface:{"relPath":"../../components/task.schema.gen.ts","isRegistryExport":false}
+
+  /**
+   * The amount of retries used for the task to succeed.
+   * This number can be > 0 only if retries have been configured.
+   */
+  retries: number;
+}
+// [block ModuleTryResultInterface end]
+//meta:ModuleTryResultInterface:[{"className":"ModuleTryResultInterface"}]
 
 // [block ModuleTryRetryInterface begin]
 export interface ModuleTryRetryInterface {

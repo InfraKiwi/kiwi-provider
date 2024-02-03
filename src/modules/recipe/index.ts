@@ -9,10 +9,10 @@ import type { ModuleRecipeFullInterface, ModuleRecipeInterface } from './schema.
 import { moduleRegistryEntryFactory } from '../registry';
 import { tryOrThrowAsync } from '../../util/try';
 import type { Recipe } from '../../components/recipe';
-import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
 import { getErrorPrintfClass } from '../../util/error';
+import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 
 export const ModuleRecipeErrorRecipeSourcesNotDefined = getErrorPrintfClass(
   'ModuleRecipeErrorRecipeSourcesNotDefined',
@@ -42,7 +42,10 @@ export class ModuleRecipe extends AbstractModuleBase<ModuleRecipeInterface, Vars
     const runResult = await tryOrThrowAsync(() => recipe.run(context), `Failed running recipe: ${this.fullConfig.id}`);
 
     return {
-      vars: runResult.vars,
+      vars: {
+        ...runResult.vars,
+        __recipeResult: runResult,
+      },
       changed: runResult.changed,
     };
   }

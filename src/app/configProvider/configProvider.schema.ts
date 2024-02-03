@@ -5,13 +5,13 @@
 
 import Joi from 'joi';
 import { CompileArchiveForHostResultSchema } from '../../commands/compileArchiveForHost.schema';
-import { getJoiEnumValues, joiMetaClassName, joiMetaUnknownType, joiObjectSchemaKeys } from '../../util/joi';
+import { getJoiEnumKeys, joiMetaClassName, joiMetaUnknownType, joiObjectSchemaKeys } from '../../util/joi';
 import { ServerHookWithArraySchema } from '../common/server.schema';
 import { NodeJSExecutableArch, NodeJSExecutablePlatform } from '../../util/downloadNodeDist';
 
 export const ConfigProviderListenerDefaultPort = 13900;
 
-export const ConfigProviderHeaderHostname = 'X-10INFRA-HOSTNAME';
+export const ConfigProviderHeaderHostname = 'X-KIWI-HOSTNAME';
 export const ConfigProviderRoutesHostPath = '/host';
 export const ConfigProviderRoutesAdminPath = '/admin';
 export const ConfigProviderRoutesBootstrapPath = '/bootstrap';
@@ -83,8 +83,8 @@ export const ConfigProviderRouteGetConfigForHostnameResultSchema = Joi.object({
 // --- ROUTES
 
 export const AgentDistributionGetDownloadRequestSchema = Joi.object({
-  nodePlatform: getJoiEnumValues(NodeJSExecutablePlatform).required(),
-  nodeArch: getJoiEnumValues(NodeJSExecutableArch).required(),
+  nodePlatform: getJoiEnumKeys(NodeJSExecutablePlatform).required(),
+  nodeArch: getJoiEnumKeys(NodeJSExecutableArch).required(),
 }).meta(joiMetaClassName('AgentDistributionGetDownloadRequestInterface'));
 
 export const AgentDistributionInstallShRequestSchema = Joi.object({

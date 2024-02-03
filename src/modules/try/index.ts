@@ -4,36 +4,25 @@
  */
 
 import type { RunContext } from '../../util/runContext';
-import {
-  ModuleTryContextKeyLastError,
-  ModuleTryContextKeyRetry,
-  ModuleTryResultKeyFinally,
-  ModuleTryResultKeyLastError,
-  ModuleTryResultKeyRetries,
-  ModuleTrySchema,
-} from './schema';
-import type { ModuleTryInterface } from './schema.gen';
+import { ModuleTryContextKeyLastError, ModuleTryContextKeyRetry, ModuleTrySchema } from './schema';
+import type { ModuleTryInterface, ModuleTryResultInterface } from './schema.gen';
 import { moduleRegistryEntryFactory } from '../registry';
 import type { ModuleRunResult } from '../abstractModuleBase';
 import { AbstractModuleBase } from '../abstractModuleBase';
-import type { TaskRunTasksInContextResult } from '../../components/task';
 import { Task } from '../../components/task';
-import type { VarsInterface } from '../../components/varsContainer.schema.gen';
 import type { BackoffOptions } from 'exponential-backoff';
 import { backOff } from 'exponential-backoff';
 import { getErrorCauseChain } from '../../util/error';
 
-export interface ModuleTryResult extends VarsInterface {
-  [ModuleTryResultKeyRetries]: number;
-  [ModuleTryResultKeyFinally]?: TaskRunTasksInContextResult;
-}
-
-export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryResult> {
-  async run(context: RunContext): Promise<ModuleRunResult<ModuleTryResult>> {
-    const moduleResult: ModuleRunResult<ModuleTryResult> = {
-      vars: {
-        [ModuleTryResultKeyRetries]: 0,
-      },
+export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryResultInterface> {
+  async run(context: RunContext): Promise<ModuleRunResult<ModuleTryResultInterface>> {
+    const tryResult: ModuleTryResultInterface = {
+      caught: false,
+      retries: 0,
+      vars: {},
+    };
+    const moduleResult: ModuleRunResult<ModuleTryResultInterface> = {
+      vars: tryResult,
     };
 
     let lastError: Error | undefined;
@@ -75,9 +64,9 @@ export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryR
 
           moduleResult.exit ||= result.exit;
           moduleResult.changed ||= result.changed;
-          Object.assign(moduleResult.vars!, result.vars);
+          Object.assign(tryResult.vars, result.vars);
 
-          moduleResult.vars![ModuleTryResultKeyRetries] = retryIndex;
+          tryResult.retries = retryIndex;
           lastError = undefined;
           return;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91,6 +80,7 @@ export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryR
     } catch (ex: any) {
       // This is the same as the previous lastError, but using it to keep track of the stack
       lastError = ex;
+      tryResult.caught = true;
       context.logger.warn('Backoff failed', { ex });
     }
 
@@ -106,8 +96,8 @@ export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryR
 
       moduleResult.exit ||= result.exit;
       moduleResult.changed ||= result.changed;
-      Object.assign(moduleResult.vars!, result.vars);
-      moduleResult.vars![ModuleTryResultKeyLastError] = causeChain;
+      Object.assign(tryResult.vars, result.vars);
+      tryResult.lastError = causeChain;
       lastError = undefined;
     }
 
@@ -123,7 +113,7 @@ export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryR
         }),
         tasksToExecute
       );
-      moduleResult.vars![ModuleTryResultKeyFinally] = result;
+      tryResult.finally = result;
     }
 
     if (lastError) {

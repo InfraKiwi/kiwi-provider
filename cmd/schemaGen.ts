@@ -15,12 +15,10 @@ import { asyncFilter } from '../src/util/async';
 import { registryGetClassNameFromJoiSchema, registryGetEntryNamesFromJoiSchema } from '../src/util/registry';
 import { ESLint } from 'eslint';
 import type Joi from 'joi';
-import { newDebug } from '../src/util/debug';
 import * as prettier from 'prettier';
 import { deIndentString, indentString } from '../src/util/indent';
 import { getTypeRefString } from '../src/util/schemaGenUtils';
-
-const debug = newDebug(__filename);
+import { newLogger } from '../src/util/logger';
 
 const generatedHeader = `/*
  * (c) 2024 Alberto Marchetti (info@cmaster11.me)
@@ -33,6 +31,8 @@ const rootDir = path.resolve(__dirname, '..');
 const srcDir = path.resolve(rootDir, 'src');
 const docsNavBasePath = path.join(rootDir, 'hack', 'docs');
 
+const logger = newLogger();
+
 /*
  * These are interfaces for which the docs will always point to a specific docs
  * page instead than embedding them
@@ -42,7 +42,7 @@ const hardcodedInterfaceDocsPaths: Record<string, string> = {
 };
 
 // const prismaPathGlob = path.resolve(rootDir, 'prisma', 'generated', 'schemas/**/*schema.ts').replaceAll(path.sep, '/');
-// debug(`Looking for Prisma schemas in ${prismaPathGlob}`);
+// logger.info(`Looking for Prisma schemas in ${prismaPathGlob}`);
 // const prismaGlobList = Array.from(globSync(prismaPathGlob));
 
 const schemaFileCache: Record<string, string> = {};
@@ -246,10 +246,10 @@ async function genRegistriesEntries() {
 const genSchemaFolders = async () => {
   // Scan for all object types that can generate a schema
   const pathGlob = path.resolve(srcDir, '**/*schema.ts').replaceAll(path.sep, '/');
-  debug(`Looking for schemas in ${pathGlob}`);
+  logger.info(`Looking for schemas in ${pathGlob}`);
   const globRaw = await glob(pathGlob);
   const globList = Array.from(new Set(globRaw.map((el) => el.substring(0, el.lastIndexOf(path.sep) + 1)))).sort();
-  debug('GlobList', {
+  logger.info('GlobList', {
     globRaw,
     globList,
   });
@@ -285,7 +285,7 @@ const newIntfRegex = () =>
 async function fixGenImports() {
   const files = globSync(path.resolve(srcDir, '**/*schema.gen.ts').replaceAll(path.sep, '/'));
 
-  debug('All files to be inspected', files);
+  logger.info('All files to be inspected', files);
 
   const fileCache: Record<string, string> = {};
   const fileCacheOriginal: Record<string, string> = {};
@@ -308,12 +308,12 @@ async function fixGenImports() {
         const match = exportedMatch.match(/export (?:interface|type) (\w+Interface) /);
         const intfName = match![1];
         interfacesDefinitionsMap[intfName] = file;
-        debug(`Found interface definition ${intfName} in ${file}`);
+        logger.info(`Found interface definition ${intfName} in ${file}`);
       }
     }
   }
 
-  debug('All definitions', interfacesDefinitionsMap);
+  logger.info('All definitions', interfacesDefinitionsMap);
 
   // Process all usages
   for (const file of files) {
@@ -329,7 +329,7 @@ async function fixGenImports() {
       }
     }
     if (imported.length > 0) {
-      debug(`Found imports in ${file}`, { imported });
+      logger.info(`Found imports in ${file}`, { imported });
     }
 
     // Process TS imports
@@ -339,7 +339,7 @@ async function fixGenImports() {
       const re = newIntfRegex();
       while ((intfMatch = re.exec(newContents)) != null) {
         const intfName = intfMatch[2];
-        debug(`File ${file} intf match`, { intfName });
+        logger.info(`File ${file} intf match`, { intfName });
 
         if (
           // Already added to imports in a previous loop
@@ -406,7 +406,7 @@ async function fixGenImports() {
             absolutePath = importPath;
           }
 
-          debug('Found external import', {
+          logger.info('Found external import', {
             name,
             path: absolutePath,
           });
@@ -444,7 +444,7 @@ export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
       const re = newIntfRegex();
       while ((intfMatch = re.exec(newContents)) != null) {
         const intfName = intfMatch[2];
-        debug(`File ${file} intf match`, { intfName });
+        logger.info(`File ${file} intf match`, { intfName });
 
         // Resolve the missing import
         const definitionPath = interfacesDefinitionsMap[intfName];
@@ -537,7 +537,7 @@ export const ${className + 'ConfigKeyFirst'} = ${JSON.stringify(entryNames[0])};
     }
 
     if (newContents != contentsOriginal) {
-      debug(`Editing file ${file}`);
+      logger.info(`Editing file ${file}`);
       await fsPromiseWriteFile(file, newContents);
     }
   }
@@ -667,7 +667,7 @@ async function genSchemaFolder(folderPath: string) {
 //   });
 //
 //   if (newContents != contents) {
-//     debug(`Editing file ${file}`);
+//     logger.info(`Editing file ${file}`);
 //     fs.writeFileSync(file, newContents);
 //   }
 // };
@@ -718,7 +718,7 @@ nav:
   const match = /^(\s+)### REPLACE NAV BEGIN\n(.*)### REPLACE NAV END/ms.exec(contents);
   if (match) {
     const [fullMatch, indent] = match;
-    debug('Found nav replace match', {
+    logger.info('Found nav replace match', {
       ymlFile,
       fullMatch,
     });
@@ -727,7 +727,7 @@ nav:
     contents = contents.replace(fullMatch, lines.map((line) => `${indent}${line}`).join('\n'));
   }
   if (originalContent != contents) {
-    debug('Editing docs nav file', { ymlFile });
+    logger.info('Editing docs nav file', { ymlFile });
     await fsPromiseWriteFile(ymlFile, contents);
   }
 }
@@ -741,7 +741,7 @@ async function genSystemInformationSchema(fnDescriptions: Record<string, string>
 
   const getRegex = () => /export function (?<name>\w+)\([\n\s]*(?:(?<args>[^\n]+?),\s*?)?cb[^)]+\)[^;]+?;/gms;
   const getSchemaObjectEntry = (fullMatch: string, functionName: string, argsString?: string): string | null => {
-    debug('Full match', {
+    logger.info('Full match', {
       fullMatch,
       name: functionName,
       argsString,

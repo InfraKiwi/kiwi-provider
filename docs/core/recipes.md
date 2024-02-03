@@ -1,6 +1,6 @@
 # Recipes
 
-Recipes define which tasks are executed on which hosts. They are a fundamental core block of the `10infra-config` project.
+Recipes define which tasks are executed on which hosts. They are a fundamental core block of the `kiwi-config` project.
 
 TODO 2
 TODO

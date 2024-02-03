@@ -29,7 +29,13 @@ export class ModuleEval extends AbstractModuleBase<ModuleEvalInterface, ModuleEv
 
     let code: string | EvalFunctionInterface;
     let evalContext;
-    if (this.config.code) {
+    if (typeof this.config == 'string') {
+      code = this.config;
+      evalContext = {
+        context,
+        result,
+      } as EvalContextInterface;
+    } else if (this.config.code) {
       code = this.config.code;
       evalContext = {
         context,

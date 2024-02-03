@@ -32,19 +32,24 @@ export const EvalFunctionSchema = Joi.function()
 
 export const ModuleEvalSchema = moduleRegistryEntryFactory.createJoiEntrySchema(
   __dirname,
-  Joi.object({
-    code: Joi.alternatives([
-      Joi.string().description(`
+  Joi.alternatives([
+    Joi.string().description(`
+      Some plain JS code.
+    `),
+    Joi.object({
+      code: Joi.alternatives([
+        Joi.string().description(`
         Some plain JS code.
       `),
-      EvalFunctionSchema.description(`
+        EvalFunctionSchema.description(`
         A JS function. This feature is only available when the recipe is a JS/TS file.
       `),
-    ]),
-    file: Joi.string().description(`
+      ]),
+      file: Joi.string().description(`
       The path to a JS file to execute. 
     `),
-  }).xor('code', 'file').description(`
+    }).xor('code', 'file').description(`
     Evaluates JS code. Only one of \`code\` and \`file\` can be specified at the same time.
-  `)
+  `),
+  ])
 );

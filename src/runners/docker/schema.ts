@@ -5,7 +5,7 @@
 
 import Joi from 'joi';
 import { runnerRegistryEntryFactory } from '../registry';
-import { getJoiEnumValues, joiMetaClassName } from '../../util/joi';
+import { getJoiEnumKeys, joiMetaClassName } from '../../util/joi';
 import { dumpYAML } from '../../util/yaml';
 
 export enum RunnerDockerSupportedPlatforms {
@@ -83,7 +83,12 @@ export const RunnerDockerSchema = runnerRegistryEntryFactory.createJoiEntrySchem
       If not provided, \`image\` must be used.
     `),
 
-    platform: getJoiEnumValues(RunnerDockerSupportedPlatforms).description(`
+    passEnv: Joi.array().items(Joi.string()).description(`
+      If defined, pass the specified list of environment variables from the host
+      machine to the Docker runner.
+    `),
+
+    platform: getJoiEnumKeys(RunnerDockerSupportedPlatforms).description(`
       If provided, overrides the platform to be used in the docker run command.
       
       Defaults to the local machine's platform.

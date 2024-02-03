@@ -13,7 +13,7 @@ import util from 'node:util';
 import type { SchemaMap } from 'joi';
 import Joi from 'joi';
 import { getArgDefaultFromOptions } from './args';
-import { getJoiEnumValues, joiKeepOnlyKeysInJoiSchema } from './joi';
+import { getJoiEnumKeys, joiKeepOnlyKeysInJoiSchema } from './joi';
 import type * as Transport from 'winston-transport';
 import type { ContextLogger } from './context';
 import { fsPromiseTmpFile } from './fs';
@@ -22,6 +22,8 @@ import { envIsProduction } from './env';
 import type * as logform from 'logform';
 import { dumpYAML } from './yaml';
 import chalk from 'chalk';
+import { $enum } from 'ts-enum-util';
+import { setupUncaughtHandler } from './uncaught';
 
 Error.stackTraceLimit = 100;
 
@@ -36,6 +38,8 @@ export enum LogLevels {
   debug = 'debug',
   silly = 'silly',
 }
+export const allLogLevels = $enum(LogLevels).getKeys();
+export type LogLevel = (typeof allLogLevels)[number];
 
 let globalLogLevel: LogLevels | undefined = undefined;
 
@@ -152,6 +156,14 @@ const getCompactFormat = (toYAML: boolean) =>
         errors.length > 0 ? `, Errors (count ${errors.length}): ${util.inspect(errors, false, 5)}` : ''
       }`;
 
+      if (color == null) {
+        switch (level as LogLevel) {
+          case 'error':
+            color = 'red';
+            break;
+        }
+      }
+
       return color ? chalk.keyword(color)(fullLog) : fullLog;
     }
   );
@@ -169,6 +181,13 @@ export interface NewLoggerArgs {
 
 export function newLoggerFromParseArgs(args: NewLoggerArgs) {
   return newLogger(joiKeepOnlyKeysInJoiSchema(args, joiParseArgsLogOptionsSchema));
+}
+
+export function cliContextLoggerFromArgs(args: NewLoggerArgs): ContextLogger {
+  const logger = newLoggerFromParseArgs(args);
+  setupUncaughtHandler(logger);
+  const context: ContextLogger = { logger };
+  return context;
 }
 
 function jsonReplacer(key: string, val: unknown) {
@@ -271,11 +290,11 @@ export const parseArgsLogOptions: ParseArgsOptionsConfig = {
 };
 
 export const joiParseArgsLogOptions: SchemaMap = {
-  logLevel: getJoiEnumValues(LogLevels).default(getArgDefaultFromOptions(parseArgsLogOptions, 'logLevel')),
+  logLevel: getJoiEnumKeys(LogLevels).default(getArgDefaultFromOptions(parseArgsLogOptions, 'logLevel')),
   logFile: Joi.string(),
   logNoConsole: Joi.boolean(),
   logStackTraceDepth: Joi.number(),
-  logStyle: getJoiEnumValues(CustomFormatStyle).default(getArgDefaultFromOptions(parseArgsLogOptions, 'logStyle')),
+  logStyle: getJoiEnumKeys(CustomFormatStyle).default(getArgDefaultFromOptions(parseArgsLogOptions, 'logStyle')),
 };
 
 export const joiParseArgsLogOptionsSchema = Joi.object(joiParseArgsLogOptions);

@@ -44,7 +44,7 @@ export async function createCJSRunnerBundle(context: ContextLogger, args: Create
   }
 
   context.logger.info('Preparing CJS bundle', args);
-  await runESBuild(args.entryPoint, cachedBundle);
+  await runESBuild(context, args.entryPoint, cachedBundle);
 
   return cachedBundle;
 }

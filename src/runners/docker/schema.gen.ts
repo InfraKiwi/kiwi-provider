@@ -75,6 +75,12 @@ export interface RunnerDockerInterface {
   };
 
   /**
+   * If defined, pass the specified list of environment variables from the host
+   * machine to the Docker runner.
+   */
+  passEnv?: string[];
+
+  /**
    * If provided, overrides the platform to be used in the docker run command.
    *
    * Defaults to the local machine's platform.

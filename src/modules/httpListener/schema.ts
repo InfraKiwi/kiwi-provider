@@ -41,6 +41,26 @@ export const ModuleHTTPListenerRouteHandlerRawSchema = Joi.object({
   .description('Any static string value the route should return verbatim')
   .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerRawInterface'));
 
+// Based on https://github.com/chimurai/http-proxy-middleware#options
+export const ModuleHTTPListenerRouteHandlerProxySchemaObject = {
+  target: Joi.string().required().description(`The proxy target url`),
+  followRedirects: Joi.boolean().default(true).optional().description(`If true, follows redirects`),
+  xfwd: Joi.boolean().description(`If true, adds x-forward headers`),
+  secure: Joi.boolean().description(`If true, verifies SSL Certs`),
+  changeOrigin: Joi.boolean().description(`If true, changes the origin of the host header to the target url`),
+};
+
+export const ModuleHTTPListenerRouteHandlerProxySchema = Joi.object(ModuleHTTPListenerRouteHandlerProxySchemaObject)
+  .append({ ws: Joi.boolean().description(`If true, allows proxying websockets`) })
+  .description('A url to proxy the traffic to')
+  .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerProxyInterface'));
+
+export const ModuleHTTPListenerRouteHandlerProxyForWebSocketSchema = Joi.object(
+  ModuleHTTPListenerRouteHandlerProxySchemaObject
+)
+  .description('A url to proxy the traffic to')
+  .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerProxyForWebSocketInterface'));
+
 export const ModuleHTTPListenerRouteHandlerSchema = Joi.alternatives([
   ModuleHTTPListenerRouteHandlerFunctionSchema,
   ModuleHTTPListenerRouteHandlerJSONSchema,
@@ -49,12 +69,15 @@ export const ModuleHTTPListenerRouteHandlerSchema = Joi.alternatives([
   .description('All possible types of route handlers supported by the listener')
   .meta(joiMetaClassName('ModuleHTTPListenerRouteHandlerInterface'));
 
-export const ModuleHTTPListenerRouteSchema = Joi.object(
-  validHTTPMethods.reduce((acc: Record<string, Joi.Schema>, el) => {
+export const ModuleHTTPListenerRouteSchema = Joi.object({
+  ...validHTTPMethods.reduce((acc: Record<string, Joi.Schema>, el) => {
     acc[el] = ModuleHTTPListenerRouteHandlerSchema.meta({ disableDescription: true });
     return acc;
-  }, {})
-)
+  }, {}),
+  proxy: ModuleHTTPListenerRouteHandlerProxySchema.description(`
+    A special method that enables a reverse proxy for this route.
+  `),
+})
   .description(
     `
 For each route, define which methods are supported, and for each method defined the route handler.
@@ -85,7 +108,7 @@ E.g. /hello:
       return (req, res) => res.send('Hello world!');
 `)
     ).description(`
-The definition of all available routes. Each object key represents a route path, e.g. \`/hello\`.
+    The definition of all available routes. Each object key represents a route path, e.g. \`/hello\`.
 `),
   }),
   { name: 'ModuleHTTPListenerInterface' }

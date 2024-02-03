@@ -8,4 +8,5 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   setupFilesAfterEnv: ['jest-expect-message', './src/util/jestSetup.ts'],
+  snapshotResolver: './src/util/jestSnapshotResolver.ts',
 };

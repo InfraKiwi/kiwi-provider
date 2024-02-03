@@ -4,7 +4,7 @@
  */
 
 import Joi from 'joi';
-import { joiObjectWithPattern, joiValidateValidRegex } from './joi';
+import { joiObjectWithPattern, joiValidateValidJoiSchema, joiValidateValidRegex } from './joi';
 
 const validHTTPMethods = ['get', 'delete', 'head', 'options', 'post', 'put', 'patch', 'purge', 'link', 'unlink'];
 
@@ -93,14 +93,29 @@ Defines the max size of the http response content in bytes allowed.
 Defines the max size of the http request content in bytes allowed
 `),
 
-  /*
-   * `validateStatus` defines a list of status codes that will cause the request to be
-   * marked as successful, or in alternative a RegExp to perform the same validation.
-   */
-  validStatus: Joi.alternatives([Joi.array().items(Joi.number()), Joi.string().custom(joiValidateValidRegex)])
-    .description(`
+  validStatus: Joi.alternatives([
+    Joi.array().items(Joi.number()).description(`
+    A plain array of valid status codes.
+  `),
+    Joi.string().custom(joiValidateValidRegex).description(`
+    A RegExp to validate the status code.
+  `),
+    Joi.custom(joiValidateValidJoiSchema).description(`
+    A Joi validation schema in form of JS code.
+     
+    Must be defined using the \`!joi\` YAML tag, which makes the \`Joi\` 
+    namespace available to use and automatically prepends a \`return\` keyword
+    to the provided code.
+    
+    You can check out more examples of Joi validation at: https://joi.dev/api
+    `).example(`
+    validStatus: !joi Joi.number().min(200).max(299)
+    `),
+  ])
+    .default('^2\\d\\d$')
+    .optional().description(`
 Defines a list of status codes that will cause the request to be marked as 
-successful, or in alternative a RegExp to perform the same validation.
+successful.
 `),
 
   maxRedirects: Joi.number().min(0).default(5).optional().description(`

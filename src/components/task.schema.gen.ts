@@ -125,6 +125,23 @@ export interface TaskInterface {
 // [block TaskInterface end]
 //meta:TaskInterface:[{"className":"TaskInterface","unknownType":{"type":"any","flags":{"description":"\n    The module to use in the task.\n    You can check the available task modules here: ##link#See all available task modules#/modules\n    "}}}]
 
+// [block TaskRunTasksInContextResultInterface begin]
+export interface TaskRunTasksInContextResultInterface {
+  changed: boolean;
+
+  /**
+   * True if the task chain exited on demand.
+   */
+  exit?: boolean;
+
+  /**
+   * The variables set in the task chain.
+   */
+  vars: VarsInterface; //typeRef:VarsInterface:{"relPath":"varsContainer.schema.gen.ts","isRegistryExport":false}
+}
+// [block TaskRunTasksInContextResultInterface end]
+//meta:TaskRunTasksInContextResultInterface:[{"className":"TaskRunTasksInContextResultInterface"}]
+
 // [block TaskSingleOrArrayInterface begin]
 export type TaskSingleOrArrayInterface =
 

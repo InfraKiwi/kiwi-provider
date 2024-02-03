@@ -24,6 +24,7 @@ import {
 } from '../../util/fs';
 import { finished } from 'node:stream/promises';
 import { UnarchiveArchiveType, unarchiveFile } from '../../util/unarchive';
+import type { AxiosError, AxiosResponse } from 'axios';
 
 export interface ModuleDownloadResult {
   path: string;
@@ -69,10 +70,20 @@ export class ModuleDownload extends AbstractModuleBase<ModuleDownloadInterface, 
       downloadPath = dest;
     }
 
-    const response = await executeAxiosRequest(context, {
-      ...http,
-      responseType: 'stream',
-    });
+    let response: AxiosResponse;
+    try {
+      response = await executeAxiosRequest(context, {
+        ...http,
+        responseType: 'stream',
+      });
+    } catch (ex) {
+      // We need to make sure to close the stream, which will otherwise hang!
+      if ((ex as AxiosError).isAxiosError) {
+        ((ex as AxiosError).response?.data as Writable)?.destroy(ex as Error);
+      }
+
+      throw ex;
+    }
 
     const writer = createWriteStream(downloadPath);
     (response.data as Writable).pipe(writer);

@@ -18,11 +18,11 @@ jobs:
         run: yarn ts-node cmd/ci/ciGenArtifactsMatrix.ts --configFile artifacts.yaml
 
   gen-artifacts:
-#    if: >
-#      github.event_name == 'workflow_dispatch' ||
-#      (
-#        github.event.repository.owner.login == '10infra' && github.event_name == 'push'
-#      )
+    #    if: >
+    #      github.event_name == 'workflow_dispatch' ||
+    #      (
+    #        github.event.repository.owner.login == 'kiwi' && github.event_name == 'push'
+    #      )
     needs:
       - build
     runs-on: ubuntu-latest

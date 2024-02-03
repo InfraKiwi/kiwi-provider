@@ -9,8 +9,11 @@ import semver from 'semver/preload';
 import { setDifference } from './set';
 import { shortieToObject } from './shortie';
 import { existsSync } from 'node:fs';
-import { getEnumValuesArray } from './enum';
+import type { TraverseContext } from 'traverse';
 import traverse from 'traverse';
+import { $enum } from 'ts-enum-util';
+import { inspect } from './inspect';
+import { arrayStartsWith, arraySubsetIterate } from './array';
 
 export const joiMetaExternalImportKey = 'externalImport';
 export const joiMetaRegistrySchemaObjectKey = 'registrySchemaObject';
@@ -126,15 +129,120 @@ export function joiFindMeta<T>(d: Description, key: string, depthAny?: boolean):
   return d.metas?.find((m) => key in m)?.[key];
 }
 
+/**
+ * Normally a Joi details contains paths that include the keywords "keys", "items", "matches".
+ * We want to get the path as if it belonged to a normal JS object, so by stripping away
+ * those joi-specific entries
+ */
+export function joiGetNodeObjectPath(this: TraverseContext): string[] {
+  const key = this.key;
+  if (key == null) {
+    if (this.isRoot) {
+      return [];
+    }
+    throw new Error(`Unexpected null key: ${inspect(this)}`);
+  }
+
+  const parent = this.parent;
+  if (parent == null) {
+    if (this.isRoot) {
+      return [];
+    }
+    throw new Error(`Unexpected null parent: ${inspect(this)}`);
+  }
+
+  switch (parent.key) {
+    case 'keys': {
+      // The parent is an object
+      const upperParent = parent.parent;
+      if (upperParent == null) {
+        throw new Error(`Unexpected null upper parent for object: ${inspect(this)}`);
+      }
+      return [...joiGetNodeObjectPath.call(upperParent), key];
+    }
+    case 'items': {
+      // The parent is an array
+      const upperParent = parent.parent;
+      if (upperParent == null) {
+        throw new Error(`Unexpected null upper parent for array: ${inspect(this)}`);
+      }
+      return [...joiGetNodeObjectPath.call(upperParent), key];
+    }
+    default: {
+      const parentPathLen = parent.path.length;
+
+      if (parentPathLen >= 2 && parent.path[parentPathLen - 2] == 'matches') {
+        // The parent is an alternatives
+        const upperParent = parent.parent?.parent;
+        if (upperParent == null) {
+          throw new Error(`Unexpected null upper parent for alternatives: ${inspect(this)}`);
+        }
+        return [
+          ...joiGetNodeObjectPath.call(upperParent),
+
+          /*
+           * We omit the key here because the key is always "schema". That is, the schema
+           * belonging to the alternative item
+           */
+        ];
+      }
+
+      if (
+        parentPathLen >= 2 &&
+        /^\d+$/.test(parent.path[parentPathLen - 1]) &&
+        parent.path[parentPathLen - 2] == 'patterns'
+      ) {
+        // The parent is a object with pattern
+        const upperParent = parent.parent?.parent;
+        if (upperParent == null) {
+          throw new Error(`Unexpected null upper parent for object with pattern: ${inspect(this)}`);
+        }
+        return [
+          ...joiGetNodeObjectPath.call(upperParent),
+
+          /*
+           * We omit the key here because the entry is just a potential pattern of an object
+           */
+        ];
+      }
+
+      throw new Error(`Unknown parent key: ${parent.key}`);
+    }
+  }
+}
+
 export function joiFindMetaValuePaths<T>(d: Description, key: string, value: T, depthAny?: boolean): string[][] {
   const paths: string[][] = [];
+  const fullMatchedPaths: string[][] = [];
   if (depthAny) {
     traverse(d).forEach(function (p) {
-      if (typeof p == 'object' && 'metas' in p) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((p.metas ?? []).indexOf((m: any) => key in m && m[key] == value) > -1) {
-          paths.push(this.path);
-        }
+      // Only look at actual schema items
+      if (p.type == null) {
+        return;
+      }
+
+      if (typeof p != 'object' || !('metas' in p)) {
+        return;
+      }
+
+      if (fullMatchedPaths.find((pa) => arrayStartsWith(pa, this.path))) {
+        // Do not process items where the parent already matches the definition
+        return;
+      }
+
+      if (
+        this.parent &&
+        arraySubsetIterate(this.parent.path, 2, (subset) => subset[0] == 'metas' && /^\d+$/.test(subset[1]))
+      ) {
+        // Skip nested metas
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((p.metas ?? []).findIndex((m: any) => key in m && m[key] === value) > -1) {
+        const nodePath = joiGetNodeObjectPath.call(this);
+        paths.push(nodePath);
+        fullMatchedPaths.push(this.path);
       }
     });
     return paths;
@@ -215,21 +323,6 @@ export function joiValidateShortieObject(val: string, helpers: Joi.CustomHelpers
   }
 }
 
-/*
- * export async function joiValidateAsyncFSExists(
- *   val: string | undefined,
- *   helpers: Joi.CustomHelpers<string>,
- * ): Promise<Joi.ErrorReport | string | undefined> {
- *   if (val == undefined) {
- *     return undefined;
- *   }
- *   if (!(await fsPromiseExists(val))) {
- *     return joiCustomErrorMessage(helpers, 'The file or dir must exist');
- *   }
- *   return val;
- * }
- */
-
 export function joiValidateSyncFSExists(
   val: string | undefined,
   helpers: Joi.CustomHelpers<string>
@@ -239,10 +332,6 @@ export function joiValidateSyncFSExists(
     const targetObject = { stack: '' };
     Error.captureStackTrace(targetObject);
 
-    /*
-     * at Object.attempt (D:\devel\10infra-config\node_modules\joi\lib\index.js:107:26)
-     * at main (D:\devel\10infra-config\cmd\pkg.ts:48:79)
-     */
     const lines = targetObject.stack.split('\n');
     let firstFound = false;
     for (const line of lines) {
@@ -330,8 +419,8 @@ export function joiKeepOnlyKeysNotInJoiObjectDiff(
 
 // https://github.com/microsoft/TypeScript/issues/30611
 
-export function getJoiEnumValues<TEnumValue extends string | number>(e: { [key in string]: TEnumValue }): Joi.Schema {
-  return Joi.string().valid(...getEnumValuesArray(e));
+export function getJoiEnumKeys<TEnumValue extends string | number>(e: { [key in string]: TEnumValue }): Joi.Schema {
+  return Joi.string().valid(...$enum(e).keys());
 }
 
 export function getJoiEnumValuesAsAlternatives<TEnumValue extends string | number>(
@@ -339,13 +428,13 @@ export function getJoiEnumValuesAsAlternatives<TEnumValue extends string | numbe
   getDescription: (value: TEnumValue) => string
 ): Joi.Schema {
   const entries: Joi.StringSchema[] = [];
-  const enumValues = getEnumValuesArray(e);
-  for (const enumValue of enumValues) {
-    const description = getDescription(enumValue as TEnumValue);
+  const enumKeys = $enum(e).keys();
+  for (const key of enumKeys) {
+    const description = getDescription(key as TEnumValue);
     if (description == null) {
-      throw new Error(`Missing description for enum value ${enumValue}`);
+      throw new Error(`Missing description for enum key ${key}`);
     }
-    entries.push(Joi.string().valid(enumValue).description(description));
+    entries.push(Joi.string().valid(key).description(description));
   }
   return Joi.alternatives(entries);
 }

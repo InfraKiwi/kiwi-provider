@@ -22,10 +22,9 @@ import type {
 } from './recipe.schema.gen';
 import { extractAllTemplates, resolveTemplates } from '../util/tpl';
 import type { VarsInterface } from './varsContainer.schema.gen';
-import type { TaskRunTasksInContextResult } from './task';
 import { Task } from './task';
 import path from 'node:path';
-import { fsPromiseCp, fsPromiseExists, fsPromiseStat, fsPromiseTmpDir } from '../util/fs';
+import { fsPromiseCp, fsPromiseExists, fsPromiseStat, fsPromiseTmpDir, getAllFiles } from '../util/fs';
 
 import type { InventoryHost } from './inventoryHost';
 import { DataSourceFile, DataSourceFileErrorFileNotFound } from '../dataSources/file';
@@ -45,6 +44,7 @@ import type { ConditionSetInterface } from './testingCommon.schema.gen';
 import { VarsContainer } from './varsContainer';
 import { VarsContainerSchema } from './varsContainer.schema';
 import { normalizePathToUnix } from '../util/path';
+import type { TaskRunTasksInContextResultInterface } from './task.schema.gen';
 
 export interface RecipeCtorContext extends ContextLogger, ContextRecipeSourceList, ContextWorkDir {}
 
@@ -60,6 +60,7 @@ export const RecipeErrorInputValidationFailedBasicType = getErrorPrintfClass(
 export interface RecipeRunResult {
   vars: VarsInterface;
   changed: boolean;
+  exit?: boolean;
 }
 
 export interface RecipeMetadata {
@@ -379,7 +380,7 @@ export class Recipe extends VarsContainer {
 
     context.logger.info('Running recipe');
 
-    let taskRunResult: TaskRunTasksInContextResult;
+    let taskRunResult: TaskRunTasksInContextResultInterface;
 
     try {
       taskRunResult = await Task.runTasksInContext(context, this.#tasks);
@@ -396,7 +397,8 @@ export class Recipe extends VarsContainer {
 
     return {
       changed,
-      vars: vars,
+      vars,
+      exit,
     };
   }
 
@@ -491,6 +493,10 @@ export class Recipe extends VarsContainer {
     const assetsRootDir = await fsPromiseTmpDir({ keep: false });
     for (const assetsDir of assetsDirs) {
       await fsPromiseCp(assetsDir, assetsRootDir, { recursive: true });
+    }
+
+    if ((await getAllFiles(assetsRootDir)).length == 0) {
+      return;
     }
 
     return assetsRootDir;

@@ -118,3 +118,13 @@ export const TaskSingleOrArraySchema = Joi.alternatives([
   ...joiMetaClassName('TaskSingleOrArrayInterface'),
   ...joiMetaDelayTemplatesResolution(),
 });
+
+export const TaskRunTasksInContextResultSchema = Joi.object({
+  changed: Joi.boolean().required(),
+  exit: Joi.boolean().description(`
+    True if the task chain exited on demand.
+  `),
+  vars: VarsSchema.required().description(`
+    The variables set in the task chain.
+  `),
+}).meta(joiMetaClassName('TaskRunTasksInContextResultInterface'));

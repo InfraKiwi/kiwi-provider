@@ -6,7 +6,7 @@
 import { moduleRegistryEntryFactory } from '../registry';
 import Joi from 'joi';
 import { AxiosRequestSchemaObject } from '../../util/axios.schema';
-import { getJoiEnumValues, joiMetaClassName } from '../../util/joi';
+import { getJoiEnumKeys, joiMetaClassName } from '../../util/joi';
 import { UnarchiveArchiveType } from '../../util/unarchive';
 
 export const ModuleDownloadHTTPRequestSchema = Joi.object(AxiosRequestSchemaObject)
@@ -24,7 +24,7 @@ export const ModuleDownloadSchema = moduleRegistryEntryFactory.createJoiEntrySch
     module's result \`path\` variable. 
     `),
 
-    extract: getJoiEnumValues(UnarchiveArchiveType).description(
+    extract: getJoiEnumKeys(UnarchiveArchiveType).description(
       'If an archive type is provided, treat the downloaded file as an archive and extract it to `dest`, which must be a directory.'
     ),
   }),

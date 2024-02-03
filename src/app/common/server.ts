@@ -3,7 +3,7 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import type { Express } from 'express';
+import type { Express, RequestHandler } from 'express';
 import express from 'express';
 import type { CommonOptions, ResponseOptions } from 'express-requests-logger';
 import audit from 'express-requests-logger';
@@ -16,10 +16,21 @@ import type { ServerListenerInterface, ServerListenerWrapperInterface } from './
 import { localhost127 } from '../../util/constants';
 import type { Server } from 'node:http';
 import { getRoutes } from '../../util/expressRoutes';
+import { getBuildVersion } from '../../util/package';
+import { lookpath } from 'lookpath';
+import { execCmd } from '../../util/exec';
+
+const NOTIFY_HEALTH_METHOD_ENV_VAR = 'NOTIFY_HEALTH_METHOD';
+
+enum NotifyHealthMethod {
+  'systemd-notify' = 'systemd-notify',
+}
 
 export interface NewServerArgs {
   auditRequestOptions?: CommonOptions;
   auditResponseOptions?: ResponseOptions;
+  middlewaresBeforeBodyParser?: RequestHandler[];
+  skipDefaultMiddlewares?: boolean;
 }
 
 class LoggerWrapper {
@@ -52,10 +63,18 @@ export interface AppConfigSchemaInterface<T> extends ServerListenerWrapperInterf
 export function newServer(context: ContextLogger, args: NewServerArgs): Express {
   const app = express();
 
-  const loggerWrapper = new LoggerWrapper(context.logger);
+  for (const mw of args.middlewaresBeforeBodyParser ?? []) {
+    app.use(mw);
+  }
+
+  if (args.skipDefaultMiddlewares) {
+    return app;
+  }
 
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
+
+  const loggerWrapper = new LoggerWrapper(context.logger);
 
   app.use(
     audit({
@@ -75,13 +94,49 @@ export function newServer(context: ContextLogger, args: NewServerArgs): Express 
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  app.use('/version', async (req, res) => {
+    res.status(200).json(await getBuildVersion(context));
+  });
+
   return app;
 }
 
-export function appListen({ logger }: ContextLogger, app: Express, config: ServerListenerInterface): Server {
+async function notifyHealthySystemDNotify(context: ContextLogger) {
+  if ((await lookpath('systemd-notify')) == null) {
+    throw new Error(`systemd-notify executable not found`);
+  }
+
+  const args: string[] = ['--ready', `--pid=${process.pid}`];
+  context.logger.info(`Notifying health with method ${NotifyHealthMethod['systemd-notify']}`, { args });
+
+  await execCmd(context, 'systemd-notify', args, {
+    logVerbose: true,
+    streamLogs: true,
+  });
+}
+
+async function notifyHealthy(context: ContextLogger) {
+  const method = process.env[NOTIFY_HEALTH_METHOD_ENV_VAR];
+  if (method == null) {
+    return;
+  }
+
+  switch (method as NotifyHealthMethod) {
+    case NotifyHealthMethod['systemd-notify']:
+      await notifyHealthySystemDNotify(context);
+      return;
+    default:
+      throw new Error(`Unsupported NotifyHealthMethod ${method}`);
+  }
+}
+
+export function appListen(context: ContextLogger, app: Express, config: ServerListenerInterface): Server {
   const server = app.listen(config.port, config.addr ?? localhost127, () => {
-    logger.info('Server listening', { address: server.address() });
-    getRoutes(app).forEach((route) => logger.info(`${route}`));
+    context.logger.info('Server listening', { address: server.address() });
+    getRoutes(app).forEach((route) => context.logger.info(`${route}`));
+
+    notifyHealthy(context).catch((ex) => context.logger.error('Failed to notify healthy server', ex));
   });
   return server;
 }

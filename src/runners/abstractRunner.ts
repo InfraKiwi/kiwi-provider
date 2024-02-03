@@ -52,7 +52,6 @@ export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<C
   protected printRunnerLogs(context: ContextLogger, line: string) {
     const logs = this.parseRunnerLogs(context, line);
     for (const entry of logs) {
-      entry.color = 'red';
       context.logger.log(entry);
     }
   }

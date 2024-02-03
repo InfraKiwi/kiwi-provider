@@ -5,13 +5,13 @@
 
 // Generated with: yarn gen -> cmd/schemaGen.ts
 
-// [block TenInfraInfoInterface begin]
+// [block KiwiInfoInterface begin]
 /**
- * An object containing some information about the current 10infra program.
+ * An object containing some information about the current kiwi program.
  */
-export interface TenInfraInfoInterface {
+export interface KiwiInfoInterface {
   /**
-   * The name of the running 10infra app.
+   * The name of the running kiwi app.
    */
   appName: string;
 
@@ -20,5 +20,5 @@ export interface TenInfraInfoInterface {
    */
   configPath?: string;
 }
-// [block TenInfraInfoInterface end]
-//meta:TenInfraInfoInterface:[{"className":"TenInfraInfoInterface"}]
+// [block KiwiInfoInterface end]
+//meta:KiwiInfoInterface:[{"className":"KiwiInfoInterface"}]

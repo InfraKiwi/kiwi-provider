@@ -61,29 +61,36 @@ export type EvalFunctionInterface = ((context: EvalContextInterface) => void | P
 //meta:EvalFunctionInterface:[{"baseType":"((context: EvalContextInterface) => void | Promise<void>)"},{"className":"EvalFunctionInterface"}]
 
 // [block ModuleEvalInterface begin]
-/**
- * Evaluates JS code. Only one of `code` and `file` can be specified at the same time.
- */
-export interface ModuleEvalInterface {
-  code?:
-
-    /**
-     * Some plain JS code.
-     */
-    | string
-
-    /**
-     * A JS function. This feature is only available when the recipe is a JS/TS file.
-     */
-    | EvalFunctionInterface; //typeRef:EvalFunctionInterface:{"relPath":"self","isRegistryExport":false}
+export type ModuleEvalInterface =
 
   /**
-   * The path to a JS file to execute.
+   * Some plain JS code.
    */
-  file?: string;
-}
+  | string
+
+  /**
+   * Evaluates JS code. Only one of `code` and `file` can be specified at the same time.
+   */
+  | ({
+    code?:
+
+      /**
+       * Some plain JS code.
+       */
+      | string
+
+      /**
+       * A JS function. This feature is only available when the recipe is a JS/TS file.
+       */
+      | EvalFunctionInterface; //typeRef:EvalFunctionInterface:{"relPath":"self","isRegistryExport":false}
+
+    /**
+     * The path to a JS file to execute.
+     */
+    file?: string;
+  });
 // [block ModuleEvalInterface end]
-//meta:ModuleEvalInterface:[{"className":"ModuleEvalInterface","entryNames":["eval"]}]
+//meta:ModuleEvalInterface:[{"className":"ModuleEvalInterface","entryNames":["eval"]},{"disableShortie":true}]
 
 export type ModuleEvalInterfaceConfigKey = 'eval';
 export const ModuleEvalInterfaceConfigKeyFirst = 'eval';

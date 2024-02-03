@@ -30,7 +30,7 @@ The `/load` endpoint returns, for each id, the full object. E.g. for `/load?id=h
 }
 ```
 
-We can load those variables ([at compile-time](../../10infra-config/variables.md#compile-time-variables)) with:
+We can load those variables ([at compile-time](../../kiwi-config/variables.md#compile-time-variables)) with:
 
 ```yaml
 varsSources:
@@ -50,7 +50,7 @@ tasks:
   - debug: It's ${{ its.text }}! Hello ${{ hello.text }}!
 ```
 
-or [at run-time](../../10infra-config/variables.md#run-time-variables) with:
+or [at run-time](../../kiwi-config/variables.md#run-time-variables) with:
 
 ```yaml
 tasks:

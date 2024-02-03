@@ -36,6 +36,15 @@ export const fsPromiseTmpDir = promisify<DirOptions, string>(tmp.dir);
 export const fsPromiseIsDir = async (dirPath: string) =>
   (await fsPromiseExists(dirPath)) && (await fsPromiseStat(dirPath)).isDirectory();
 
+/**
+ * Returns the list of all files contained in the directory, with their path starting
+ * from the directory itself.
+ *
+ * @param dirPath
+ * @param maxDepth
+ * @param prefix If defined, prepend this to every path.
+ * Define prefix = dirPath to have the full path for every file.
+ */
 export async function getAllFiles(dirPath: string, maxDepth?: number, prefix?: string): Promise<string[]> {
   const files = await fsPromiseReadDir(dirPath);
 

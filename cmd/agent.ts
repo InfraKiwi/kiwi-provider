@@ -4,12 +4,8 @@
  */
 
 import type { NewLoggerArgs } from '../src/util/logger';
-import {
-  joiParseArgsLogOptions,
-  joiParseArgsLogOptionsSchema,
-  newLoggerFromParseArgs,
-  parseArgsLogOptions,
-} from '../src/util/logger';
+import { cliContextLoggerFromArgs } from '../src/util/logger';
+import { joiParseArgsLogOptions, joiParseArgsLogOptionsSchema, parseArgsLogOptions } from '../src/util/logger';
 import type { ParseArgsConfig } from 'node:util';
 import { parseArgs } from 'node:util';
 import type { AppConfigSchemaInterface } from '../src/app/common/server';
@@ -19,7 +15,6 @@ import { loadConfig, parseArgsAppBaseJoiObject, parseArgsAppBaseOptions } from '
 import '../src/util/loadAllRegistryEntries.gen';
 import type { AgentConfigInterface } from '../src/app/agent/agent.schema.gen';
 import { AgentConfigSchema, AgentListenerDefaultPort } from '../src/app/agent/agent.schema';
-import { setupUncaughtHandler } from '../src/util/uncaught';
 import { checkVersionCommand } from '../src/util/args';
 import { agentBootstrapConfig } from '../src/app/agent/agent.bootstrap';
 import {
@@ -29,7 +24,7 @@ import {
 import { joiAttemptRequired, joiKeepOnlyKeysInJoiSchema } from '../src/util/joi';
 import type { AgentBootstrapConfigInterface } from '../src/app/agent/agent.bootstrap.schema.gen';
 import { RecipePhase } from '../src/components/recipe.schema';
-import { set10InfraInfo } from '../src/util/10infra';
+import { setKiwiInfo } from '../src/util/kiwi';
 
 const agentAppConfigSchema = getAppConfigSchemaObject(AgentConfigSchema, { port: AgentListenerDefaultPort });
 
@@ -38,7 +33,7 @@ enum MainCommand {
   serve = 'serve',
 }
 
-const appName = '10infra-agent';
+const appName = 'kiwi-agent';
 
 async function main() {
   checkVersionCommand();
@@ -78,23 +73,22 @@ async function commandBootstrap(args: string[]) {
     AgentBootstrapConfigSchema.append(joiParseArgsLogOptions),
     'Error evaluating command args:'
   );
-  const logArgs = joiKeepOnlyKeysInJoiSchema<NewLoggerArgs>(allArgs, joiParseArgsLogOptionsSchema);
-  const logger = newLoggerFromParseArgs(logArgs);
-  setupUncaughtHandler(logger);
+  const otherArgs = joiKeepOnlyKeysInJoiSchema<NewLoggerArgs>(allArgs, joiParseArgsLogOptionsSchema);
+  const context = cliContextLoggerFromArgs(otherArgs);
 
   const boostrapConfig = joiKeepOnlyKeysInJoiSchema<AgentBootstrapConfigInterface>(allArgs, AgentBootstrapConfigSchema);
-  const configPath = await agentBootstrapConfig({ logger }, boostrapConfig);
+  const configPath = await agentBootstrapConfig(context, boostrapConfig);
 
-  set10InfraInfo({
+  setKiwiInfo({
     appName,
     configPath,
   });
 
   const config = await loadConfig<AppConfigSchemaInterface<AgentConfigInterface>>(configPath, agentAppConfigSchema);
-  const agent = new Agent(logger, config.app);
+  const agent = new Agent(context.logger, config.app);
 
   const reloadResult = await agent.reloadRelease(RecipePhase.bootstrap, true);
-  logger.info('Processed first release', { result: reloadResult });
+  context.logger.info('Processed first release', { result: reloadResult });
 }
 
 async function commandServe(args: string[]) {
@@ -115,22 +109,21 @@ async function commandServe(args: string[]) {
     parseArgsAppBaseJoiObject,
     'Error evaluating command args:'
   );
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
+  const context = cliContextLoggerFromArgs(otherArgs);
 
   const config = await loadConfig<AppConfigSchemaInterface<AgentConfigInterface>>(configPath, agentAppConfigSchema);
 
-  set10InfraInfo({
+  setKiwiInfo({
     appName,
     configPath,
   });
 
-  const agent = new Agent(logger, config.app);
+  const agent = new Agent(context.logger, config.app);
 
-  const app = newServer({ logger }, {});
+  const app = newServer(context, {});
 
   agent.mountRoutes(app);
-  appListen({ logger }, app, config.listener);
+  appListen(context, app, config.listener);
 }
 
 void main();

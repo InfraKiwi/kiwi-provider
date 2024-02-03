@@ -176,6 +176,10 @@ export class RunContext
   }
 
   async executeShutdownHooks() {
+    if (this.shutdownHooks.length == 0) {
+      return;
+    }
+    defaultLogger.debug(`Running ${this.shutdownHooks.length} runContext shutdown hooks`);
     for (const hook of this.shutdownHooks) {
       try {
         await hook.fn();

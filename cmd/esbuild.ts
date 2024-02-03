@@ -9,8 +9,7 @@ import { parseArgs } from 'node:util';
 import { joiAttemptRequired, joiValidateSyncFSExists } from '../src/util/joi';
 import Joi from 'joi';
 import { runESBuild } from '../src/commands/esbuild';
-import { setupUncaughtHandler } from '../src/util/uncaught';
-import { joiParseArgsLogOptionsSchema, newLoggerFromParseArgs, parseArgsLogOptions } from '../src/util/logger';
+import { cliContextLoggerFromArgs, joiParseArgsLogOptionsSchema, parseArgsLogOptions } from '../src/util/logger';
 
 const argsConfig: ParseArgsConfig = {
   allowPositionals: false,
@@ -39,10 +38,9 @@ async function main() {
     }),
     'Error evaluating command args:'
   );
-  const logger = newLoggerFromParseArgs(otherArgs);
-  setupUncaughtHandler(logger);
+  const context = cliContextLoggerFromArgs(otherArgs);
 
-  await runESBuild(entryPoint, outFile);
+  await runESBuild(context, entryPoint, outFile);
 }
 
 void main();
