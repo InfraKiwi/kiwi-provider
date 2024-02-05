@@ -28,7 +28,7 @@ __metadata:
     "@types/traverse": "npm:^0.6.36"
     "@types/triple-beam": "npm:^1.3.5"
     "@types/unzipper": "npm:^0"
-    "@types/yauzl-promise": "npm:^2.1.4"
+    "@types/yauzl-promise": "npm:^2.1.5"
     "@typescript-eslint/eslint-plugin": "npm:^6.20.0"
     "@typescript-eslint/parser": "npm:^6.20.0"
     axios: "npm:^1.6.7"
@@ -1773,13 +1773,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/yauzl-promise@npm:^2.1.4":
-  version: 2.1.4
-  resolution: "@types/yauzl-promise@npm:2.1.4"
+"@types/yauzl-promise@npm:^2.1.5":
+  version: 2.1.5
+  resolution: "@types/yauzl-promise@npm:2.1.5"
   dependencies:
     "@types/node": "npm:*"
     "@types/yauzl": "npm:*"
-  checksum: 47e94e43263656ab9ad694f011b71ad76d7171cd3861f3caf122a9b1d581ddfb39dcfd087272222be5337283daa7bb1f7c9fd275b549f53da6cc350e373a7789
+  checksum: 4700b6c8c3f2f9ce0ec0ecb10d10b483d4717e492ea2d451954cfa8583c4e99b199a1d97bd63c41013b1892455063fe19f4441181ecffb2119ca1a36666e0f8a
   languageName: node
   linkType: hard
 
