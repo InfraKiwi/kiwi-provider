@@ -21,7 +21,7 @@ __metadata:
     "@types/jest": "npm:^29.5.11"
     "@types/js-yaml": "npm:^4.0.9"
     "@types/multer": "npm:^1.4.11"
-    "@types/node": "npm:^20.11.13"
+    "@types/node": "npm:^20.11.17"
     "@types/nunjucks": "npm:^3.2.6"
     "@types/tar": "npm:^6.1.11"
     "@types/tmp": "npm:^0.2.6"
@@ -1638,12 +1638,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.11.13":
-  version: 20.11.14
-  resolution: "@types/node@npm:20.11.14"
+"@types/node@npm:^20.11.17":
+  version: 20.11.17
+  resolution: "@types/node@npm:20.11.17"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 81a55ddf68811439e58bdc2e4b8e501c6c6ea3d5351aa6362a36f5829055f58195bc201b0992ffda306fcd848c84b1eca327befb71f12f24e0d356e997e17add
+  checksum: 1f30dae80b416cbf38f133a619ffb0e9fb9e7bc58f82d900bf73816ae5781740c4640892bf5971dd9c12570d5d05241646be3e7540bb4e059322ec6af4e51e15
   languageName: node
   linkType: hard
 
