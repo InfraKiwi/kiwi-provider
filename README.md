@@ -6,14 +6,18 @@
 instead of pushing config from one machine to n-others, the others run an agent that pulls the config from a centralized
 repo. Kinda like [Puppet](https://www.puppet.com/), but hopefully a bit more modern!
 
-The dream is for this project to configure some bare-metal machines around the world!
+The dream is for this project to configure some bare-metal machines worldwide!
+
+## Docs
+
+The docs are in a very early stage, and you can find them at: https://infrakiwi.github.io/kiwi-provider/
 
 ## Notes from the author
 
 The author of this project is [Alberto Marchetti](https://www.linkedin.com/in/albertomarchetti/).
 
-The code is (and will be for some good time) disorderly and in continuous evolution.
+The code is (and will be for some good time) disorderly and continuously evolving.
 I work on this project in my free time, so it may take uncountable days before it is in any ready/usable state.
-Also, commits may get squashed from time to time to clean up WIPs.
+Also, commits may get squashed occasionally to clean up WIPs.
 
-For the moment, if you want to support me, you can buy me an espresso on [ko-fi](https://ko-fi.com/cmaster11)!
+If you want to support me, you can buy me an espresso on [ko-fi](https://ko-fi.com/cmaster11)!

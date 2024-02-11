@@ -34,7 +34,7 @@ jobs:
           path: site
 
   deploy:
-    if: github.event.repository.owner.login == 'kiwi'
+    if: github.event.repository.owner.login == 'InfraKiwi'
     needs: build
     runs-on: ubuntu-latest
     permissions:
