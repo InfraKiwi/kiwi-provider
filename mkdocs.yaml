@@ -1,7 +1,7 @@
-site_name: kiwi-config
+site_name: kiwi-provider
 #strict: true
 
-site_url: https://kiwi.github.io/kiwi-config/
+site_url: https://kiwi.github.io/kiwi-provider/
 
 theme:
   name: material

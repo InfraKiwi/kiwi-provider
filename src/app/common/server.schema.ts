@@ -9,7 +9,7 @@ import { localhost127 } from '../../util/constants';
 import type { ServerListenerInterface } from './server.schema.gen';
 import { joiValidateValidIfTemplate } from '../../util/tpl';
 
-export const ServerHooksPrefix = 'kiwi-config:hooks';
+export const ServerHooksPrefix = 'kiwi-provider:hooks';
 
 export const ServerListenerSchema = Joi.object({
   addr: Joi.string().hostname().default(localhost127).description('The address to listen on').optional(),

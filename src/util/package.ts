@@ -5,7 +5,7 @@
 
 import { fsPromiseReadFile } from './fs';
 import path from 'node:path';
-import { isPartOfESBuildBundle, versionKiwiConfig, versionESBuild } from './build';
+import { isPartOfESBuildBundle, versionKiwiProvider, versionESBuild } from './build';
 import { execCmd } from './exec';
 import type { ContextLogger } from './context';
 import { joiAttemptRequired, joiValidateSyncFSExists } from './joi';
@@ -33,7 +33,7 @@ export async function getBuildVersion(
   versionArg?: string
 ): Promise<string> {
   if (isPartOfESBuildBundle) {
-    return versionKiwiConfig;
+    return versionKiwiProvider;
   }
 
   let version: string;

@@ -7,7 +7,7 @@ import type { OnLoadArgs, Plugin, PluginBuild } from 'esbuild';
 import * as esbuild from 'esbuild';
 import path from 'node:path';
 import { fsPromiseReadFile } from '../util/fs';
-import { isPartOfESBuildBundleValue, versionKiwiConfig, versionESBuild } from '../util/build';
+import { isPartOfESBuildBundleValue, versionKiwiProvider, versionESBuild } from '../util/build';
 import { getBuildVersion } from '../util/package';
 import type { ContextLogger } from '../util/context';
 
@@ -78,9 +78,9 @@ function getInjectorPlugin(pluginArgs: InjectorPluginArgs): Plugin {
         }
 
         // version
-        if (contents.includes(versionKiwiConfig)) {
+        if (contents.includes(versionKiwiProvider)) {
           const version = pluginArgs.version ?? new Date().toISOString();
-          contents = contents.replaceAll(versionKiwiConfig, version);
+          contents = contents.replaceAll(versionKiwiProvider, version);
         }
         if (contents.includes(versionESBuild)) {
           const version = esbuild.version;

@@ -40,7 +40,7 @@ beforeAll(async () => {
   await fsPromiseMkdir(tmpDirRootPath);
   await fsPromiseCp(testAssetsPath, tmpDirRootPath, { recursive: true });
   await execCmd(context, 'git', ['init'], { cwd: tmpDir });
-  await execCmd(context, 'git', ['config', 'user.email', 'test@kiwi-config.invalid'], { cwd: tmpDir });
+  await execCmd(context, 'git', ['config', 'user.email', 'test@kiwi-provider.invalid'], { cwd: tmpDir });
   await execCmd(context, 'git', ['config', 'user.name', 'test'], { cwd: tmpDir });
   await execCmd(context, 'git', ['add', '.'], { cwd: tmpDir });
   await execCmd(context, 'git', ['commit', '-m', 'commit for testing'], { cwd: tmpDir });

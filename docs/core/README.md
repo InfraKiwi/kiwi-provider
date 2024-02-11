@@ -1,6 +1,6 @@
 # Architecture
 
-`kiwi-config` is a pull-based task execution system, which works in 3 phases:
+`kiwi-provider` is a pull-based task execution system, which works in 3 phases:
 
 1. **Local development**: users create [recipes](./recipes.md) and [test](./testing.md) them, assigning to each recipe the [hosts](./inventory.md) it is supposed to run on.
 2. **Compilation**: recipes are packed together and "compiled" e.g. through a CI process, creating a finished package of [assets] that can be released.
@@ -8,7 +8,7 @@
 
 ## Chart
 
-Below is a chart that represents the high-level architecture of the development/deployment flow of a kiwi-config
+Below is a chart that represents the high-level architecture of the development/deployment flow of a kiwi-provider
 archive.
 
 Note: the yellow blocks are all kiwi executables.

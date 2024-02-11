@@ -4,7 +4,7 @@
  */
 
 import type { ParseArgsConfig } from 'node:util';
-import { versionKiwiConfig } from './build';
+import { versionKiwiProvider } from './build';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getArgDefault(argsConfig: ParseArgsConfig, key: string): any {
@@ -23,7 +23,7 @@ export function getArgDefaultFromOptions(
 export function checkVersionCommand() {
   const args = process.argv.slice(2);
   if (args.length && args[0] == 'version') {
-    process.stdout.write(versionKiwiConfig);
+    process.stdout.write(versionKiwiProvider);
     process.exit(0);
   }
 }

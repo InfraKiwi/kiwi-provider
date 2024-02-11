@@ -1,5 +1,5 @@
 {
-  "name": "kiwi-config",
+  "name": "kiwi-provider",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
@@ -94,7 +94,7 @@
     "gen": "prisma generate --schema prisma/schema.prisma && ts-node ./cmd/schemaGen.ts && yarn tsc:check",
     "test": "jest --config jest.config.cjs",
     "dist:esbuild": "ts-node cmd/esbuild.ts --entryPoint cmd/cli.ts --outFile dist/bundle.cjs",
-    "fix": "yarn prettier . --write && eslint --fix 'src/**/*.ts' 'cmd/**/*.ts'",
+    "fix": "yarn tsc:check && yarn prettier . --write && eslint --fix 'src/**/*.ts' 'cmd/**/*.ts'",
     "lint": "yarn tsc:check && eslint 'src/**/*.ts' 'cmd/**/*.ts'",
     "tsc:check": "tsc --noEmit",
     "test:apk": "docker run -h docker-nginx -i -t --rm --mount type=bind,source=\\\\\\\"$(pwd)/\\\\\\\",target=\\\\\\\"/config\\\\\\\" -w /config node:18-alpine node_modules/.bin/ts-node cmd/cli.ts examples/recipes/nginx",

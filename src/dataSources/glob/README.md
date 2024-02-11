@@ -20,7 +20,7 @@ hello: world
 its: my life
 ```
 
-We can load both of them ([at compile-time](../../kiwi-config/variables.md#compile-time-variables)) with:
+We can load both of them ([at compile-time](../../kiwi-provider/variables.md#compile-time-variables)) with:
 
 ```yaml
 varsSources:
@@ -32,7 +32,7 @@ tasks:
   - debug: It's ${{ its }}! Hello ${{ hello }}!
 ```
 
-or [at run-time](../../kiwi-config/variables.md#run-time-variables) with:
+or [at run-time](../../kiwi-provider/variables.md#run-time-variables) with:
 
 ```yaml
 tasks:

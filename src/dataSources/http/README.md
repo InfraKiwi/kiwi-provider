@@ -10,7 +10,7 @@ Let's assume we have an HTTP server listening on `http://127.0.0.1:8080/hello`, 
 { "hello": "world" }
 ```
 
-We can load those variables ([at compile-time](../../kiwi-config/variables.md#compile-time-variables)) with:
+We can load those variables ([at compile-time](../../kiwi-provider/variables.md#compile-time-variables)) with:
 
 ```yaml
 varsSources:
@@ -22,7 +22,7 @@ tasks:
   - debug: Hello ${{ hello }}!
 ```
 
-or [at run-time](../../kiwi-config/variables.md#run-time-variables) with:
+or [at run-time](../../kiwi-provider/variables.md#run-time-variables) with:
 
 ```yaml
 tasks:

@@ -10,7 +10,7 @@ The `dataSources` folder defines a list of sources that you can use when loading
 
 One of the main purposes of a data source is loading variables into a recipe's context.
 
-For example, we can load the variables ([at compile-time](../kiwi-config/variables.md#compile-time-variables)) stored in a file with:
+For example, we can load the variables ([at compile-time](../kiwi-provider/variables.md#compile-time-variables)) stored in a file with:
 
 ```yaml
 varsSources:
@@ -21,7 +21,7 @@ tasks:
   - debug: Hello ${{ hello }}
 ```
 
-or [at run-time](../kiwi-config/variables.md#run-time-variables) with:
+or [at run-time](../kiwi-provider/variables.md#run-time-variables) with:
 
 ```yaml
 tasks:

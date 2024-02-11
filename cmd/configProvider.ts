@@ -29,7 +29,7 @@ const argsConfig: ParseArgsConfig = {
   options: { ...parseArgsAppBaseOptions },
 };
 
-const appName = 'kiwi-configProvider';
+const appName = 'kiwi-provider';
 
 async function main() {
   const {
