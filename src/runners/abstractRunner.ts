@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -16,6 +16,9 @@ export interface RunnerContext extends ContextLogger {
 }
 
 export interface RunnerContextSetup extends ContextLogger, ContextWorkDir {}
+export interface RunnerSetupOptions {
+  skipKiwiSetup?: boolean;
+}
 
 export interface RunnerRunRecipesResult {
   statistics: Record<string, RunStatistics>;
@@ -25,7 +28,7 @@ export interface RunnerRunRecipesResult {
 /* By adding any of these runners, the whole system becomes also a push one. Heh. */
 export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<ConfigType> {
   // Used to execute commands before the test run
-  async setUp(context: RunnerContextSetup): Promise<void> {}
+  async setUp(context: RunnerContextSetup, options?: RunnerSetupOptions): Promise<void> {}
 
   // Used to execute commands after the test run
   async tearDown(context: ContextLogger): Promise<void> {}
@@ -40,7 +43,7 @@ export abstract class AbstractRunner<ConfigType> extends AbstractRegistryEntry<C
   abstract runRecipes(context: RunnerContext, archiveDir: string, id: string[]): Promise<RunnerRunRecipesResult>;
 
   protected get entryPointFileName() {
-    return path.join(__dirname, '..', '..', 'cmd', 'cli.ts');
+    return path.join(__dirname, '..', '..', 'cmd', 'kiwiCLI.ts');
   }
 
   protected assertNodeDistVersion(detectedVersion: string) {

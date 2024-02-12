@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -50,11 +50,11 @@ export interface RecipeCtorContext extends ContextLogger, ContextRecipeSourceLis
 
 export const RecipeErrorInputValidationFailed = getErrorPrintfClass(
   'RecipeErrorInputValidationFailed',
-  'The input variable "%s" does not satisfy the required validation rule'
+  'The input variable "%s" does not satisfy the required validation rule. Received value: %O'
 );
 export const RecipeErrorInputValidationFailedBasicType = getErrorPrintfClass(
   'RecipeErrorInputValidationFailedBasicType',
-  'The input variable "%s" does not satisfy the required validation rule. Expected type "%s", got "%s"'
+  'The input variable "%s" does not satisfy the required validation rule. Expected type "%s", got "%s". Received value: %O'
 );
 
 export interface RecipeRunResult {
@@ -329,9 +329,9 @@ export class Recipe extends VarsContainer {
       const validationResult = schema.validate(varValue);
       if (validationResult.error) {
         if (basicType) {
-          throw new RecipeErrorInputValidationFailedBasicType(key, basicType, typeof varValue);
+          throw new RecipeErrorInputValidationFailedBasicType(key, basicType, typeof varValue, varValue);
         } else {
-          throw new RecipeErrorInputValidationFailed(key);
+          throw new RecipeErrorInputValidationFailed(key, varValue);
         }
       }
     }

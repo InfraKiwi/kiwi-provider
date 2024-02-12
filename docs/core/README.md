@@ -11,7 +11,7 @@
 Below is a chart that represents the high-level architecture of the development/deployment flow of a kiwi-provider
 archive.
 
-Note: the yellow blocks are all kiwi executables.
+Note: the yellow blocks are all kiwi-provider executables.
 
 ```mermaid
 flowchart TD
@@ -45,17 +45,17 @@ flowchart TD
     end
 
     subgraph Deployment["Deployment (e.g. Kubernetes)"]
-        configProvider["Config provider"]
+        kiwiProvider["Config provider"]
         database["Database"]
-        configProvider -- Save reports --> database
-        class configProvider binary
+        kiwiProvider -- Save reports --> database
+        class kiwiProvider binary
     end
 
     subgraph Instance
-        agent["kiwi agent"]
+        kiwiAgent["kiwi-agent"]
         System
-        agent -- Run recipes --> System
-        class agent binary
+        kiwiAgent -- Run recipes --> System
+        class kiwiAgent binary
     end
 
 %% Dev phase
@@ -65,8 +65,8 @@ flowchart TD
     Sources -. Load vars .-> Compile
     Assets -- Upload --> objectStorage["Object storage (e.g. S3)"]
 %% Deployment phase
-    Config -- "GitOps deployment" --> configProvider
-    configProvider -- " Pull config " --> agent
-    objectStorage -- " Pull assets " --> agent
-    agent -- Report metrics --> configProvider
+    Config -- "GitOps deployment" --> kiwiProvider
+    kiwiProvider -- " Pull config " --> kiwiAgent
+    objectStorage -- " Pull assets " --> kiwiAgent
+    kiwiAgent -- Report metrics --> kiwiProvider
 ```

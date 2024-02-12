@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -25,7 +25,7 @@ export function addDefaultInterceptors({ logger }: ContextLogger, client: Axios,
       });
       return cfg;
     },
-    (err) =>
+    (err: AxiosError) =>
       errorLogger(err, {
         logger: logger.error.bind(logger),
         prefixText,
@@ -45,11 +45,17 @@ export function addDefaultInterceptors({ logger }: ContextLogger, client: Axios,
       }
       return res;
     },
-    (err) =>
-      errorLogger(err, {
+    (err: AxiosError) => {
+      let logData = true;
+      if (!['json', 'text'].includes(err.config?.responseType ?? '')) {
+        logData = false;
+      }
+      return errorLogger(err, {
         logger: logger.error.bind(logger),
         prefixText,
-      })
+        data: logData,
+      });
+    }
   );
 }
 

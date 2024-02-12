@@ -5,4 +5,5 @@ nav:
   - README.md
   ### REPLACE NAV BEGIN
   - 'dir': ./dir/README.md
+  - 's3': ./s3/README.md
   ### REPLACE NAV END

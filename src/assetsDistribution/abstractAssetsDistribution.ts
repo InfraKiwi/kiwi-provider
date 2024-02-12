@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -26,7 +26,7 @@ export abstract class AbstractAssetsDistribution<ConfigType> extends AbstractReg
   abstract getDownloadUrl(context: ContextLogger, assetsFile: string): Promise<string>;
 
   /* Mount any routes that may be needed to download the provided file */
-  abstract mountRoutes(context: ContextLogger, app: IRouter): void;
+  mountRoutes(context: ContextLogger, app: IRouter) {}
 
   static mountStaticRoutes(
     context: ContextLogger,

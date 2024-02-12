@@ -3,7 +3,7 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-// Generated with: yarn gen -> cmd/schemaGen.ts
+// Generated with: yarn gen -> cmd/ci/ciSchemaGen.ts
 
 // [block ModuleCopyInterface begin]
 export interface ModuleCopyInterface {

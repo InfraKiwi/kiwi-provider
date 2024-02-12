@@ -4,6 +4,10 @@ site_name: kiwi-provider
 site_url: https://kiwi.github.io/kiwi-provider/
 
 theme:
+  palette:
+    primary: green
+    accent: orange
+  logo: assets/kiwi-transparent-256.png
   name: material
   features:
     - navigation.tabs
@@ -23,12 +27,21 @@ extra_css:
 plugins:
   - search
   - monorepo
+  - macros:
+      j2_block_start_string: '{{#'
+      j2_block_end_string: '#}}'
+      j2_variable_start_string: '{{%'
+      j2_variable_end_string: '%}}'
+      on_error_fail: true
+      on_undefined: strict
+      module_name: hack/docs/hooks/macros
   - mkdocs-simple-hooks:
       hooks:
         on_page_read_source: 'hack.docs.hooks.hooks:on_page_read_source'
 
 nav:
   - Core docs: '!include ./hack/docs/mkdocs.core.yaml'
+  - Binaries: '!include ./hack/docs/mkdocs.binaries.yaml'
   - Task modules: '!include ./hack/docs/mkdocs.modules.yaml'
   - Data Sources: '!include ./hack/docs/mkdocs.dataSources.yaml'
   - Host Sources: '!include ./hack/docs/mkdocs.hostSources.yaml'

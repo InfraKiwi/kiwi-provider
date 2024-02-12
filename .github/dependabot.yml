@@ -16,3 +16,11 @@ updates:
       - dependency-name: 'p-limit'
       # Pinned because chalk 5 is ESM
       - dependency-name: 'chalk'
+    commit-message:
+      prefix: "[npm] "
+  - package-ecosystem: docker
+    schedule:
+      interval: 'daily'
+    directory: '/'
+    commit-message:
+      prefix: "[docker] "

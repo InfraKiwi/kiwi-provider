@@ -29,7 +29,7 @@ function split(thing: any): string {
   } else {
     const match = thing
       .toString()
-      .replace('\\/?', '')
+      .replace('(?:\\/(?=$))?', '')
       .replace('(?=\\/|$)', '$')
       .match(/^\/\^((?:\\[.*+?^${}()|[\]\\/]|[^.*+?^${}()|[\]\\/])*)\$\//);
     return match ? match[1].replace(/\\(.)/g, '$1') : '<complex:' + thing.toString() + '>';
@@ -40,7 +40,7 @@ export function getRoutes(app: Application): string[] {
   let routes: string[] = [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app._router.stack.forEach(function (layer: any) {
+  (app.router as any).stack.forEach(function (layer: any) {
     routes = routes.concat(getRoutesOfLayer('', layer));
   });
 

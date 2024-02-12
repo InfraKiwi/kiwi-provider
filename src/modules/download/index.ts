@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -91,9 +91,10 @@ export class ModuleDownload extends AbstractModuleBase<ModuleDownloadInterface, 
 
     const fileSize = (await fsPromiseStat(downloadPath)).size;
 
+    let extractResultPath: string | undefined;
     if (extract) {
       try {
-        await unarchiveFile(downloadPath, dest, UnarchiveArchiveType[extract]);
+        extractResultPath = await unarchiveFile(downloadPath, dest, UnarchiveArchiveType[extract]);
       } finally {
         await fsPromiseRm(downloadPath).catch((err) =>
           context.logger.error('Failed to delete temporary file', { err })
@@ -103,7 +104,7 @@ export class ModuleDownload extends AbstractModuleBase<ModuleDownloadInterface, 
 
     return {
       vars: {
-        path: dest,
+        path: extractResultPath ?? dest,
         size: fileSize,
       },
       changed: true,

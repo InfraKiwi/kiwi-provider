@@ -14,6 +14,7 @@ import type { CmdCIGenArtifactsMatrixConfigInterface } from '../../src/ci/ciGenA
 import { setOutput } from '@actions/core';
 import { createNodeJSBundle } from '../../src/commands/createNodeJSBundle';
 import type { NodeJSExecutableArch, NodeJSExecutablePlatform } from '../../src/util/downloadNodeDist';
+import { CommandCreateNodeJSBundleFormat } from '../../src/commands/createNodeJSBundle.schema';
 
 const argsConfig: ParseArgsConfig = {
   allowPositionals: false,
@@ -27,7 +28,12 @@ const argsConfig: ParseArgsConfig = {
   },
 };
 
-// NOTE: BUILD_VERSION_METHOD
+/*
+ * Generates a matrix that can be used to create binary artifacts in GitHub.
+ * Optionally also triggers the generation of binary artifacts, for local testing/development.
+ *
+ * To set the version: BUILD_VERSION_METHOD
+ */
 
 async function main() {
   const { values } = parseArgs(argsConfig);
@@ -54,19 +60,23 @@ async function main() {
     package: string;
     entryPoint: string;
     platform: string;
+    format: keyof typeof CommandCreateNodeJSBundleFormat;
     arch: string;
   }[] = [];
 
   for (const packageKey in config.packages) {
     const { entryPoint, variants } = config.packages[packageKey];
-    for (const { platform, arch } of variants) {
+    for (const { platform, arch, formats } of variants) {
       for (const archEntry of arch) {
-        outEntries.push({
-          package: packageKey,
-          entryPoint,
-          platform,
-          arch: archEntry,
-        });
+        for (const format of formats ?? [CommandCreateNodeJSBundleFormat.raw]) {
+          outEntries.push({
+            package: packageKey,
+            entryPoint,
+            platform,
+            arch: archEntry,
+            format,
+          });
+        }
       }
     }
   }
@@ -77,12 +87,13 @@ async function main() {
   setOutput('matrix', JSON.stringify({ include: outEntries }));
 
   if (run) {
-    for (const { entryPoint, platform, arch } of outEntries) {
+    for (const { entryPoint, platform, arch, format } of outEntries) {
       await createNodeJSBundle(context, {
         outDir,
         entryPoint,
         nodeArch: arch as NodeJSExecutableArch,
         nodePlatform: platform as NodeJSExecutablePlatform,
+        format: format as CommandCreateNodeJSBundleFormat,
       });
     }
   }

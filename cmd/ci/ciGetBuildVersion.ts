@@ -23,8 +23,11 @@ const argsConfig: ParseArgsConfig = {
   },
 };
 
-// NOTE: BUILD_VERSION_METHOD
-
+/**
+ * Outputs the current build version to be used in GHA.
+ *
+ * To set the version: BUILD_VERSION_METHOD
+ */
 async function main() {
   const { values } = parseArgs(argsConfig);
   const { outFile, ...otherArgs } = joiAttemptRequired(

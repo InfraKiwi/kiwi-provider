@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -113,4 +113,17 @@ export async function isWritable(filePath: string): Promise<boolean> {
     }
     throw err;
   }
+}
+
+export async function writeToTmpFile(
+  content: string,
+  options?: Omit<FileOptionsDiscardFd, 'keep' | 'discardDescriptor'>
+) {
+  const tmpFile = await fsPromiseTmpFile({
+    keep: false,
+    discardDescriptor: true,
+    ...options,
+  });
+  await fsPromiseWriteFile(tmpFile, content);
+  return tmpFile;
 }

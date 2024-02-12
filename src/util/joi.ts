@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -327,34 +327,6 @@ export function joiValidateSyncFSExists(
   val: string | undefined,
   helpers: Joi.CustomHelpers<string>
 ): Joi.ErrorReport | string | undefined {
-  // Make sure this function is always ever only called from a cli script main entrypoint
-  {
-    const targetObject = { stack: '' };
-    Error.captureStackTrace(targetObject);
-
-    const lines = targetObject.stack.split('\n');
-    let firstFound = false;
-    for (const line of lines) {
-      if (line.startsWith('    at joiAttemptRequired')) {
-        firstFound = true;
-        continue;
-      }
-      if (firstFound) {
-        // Support sub-commands
-        if (/^ {4}at command\w+ /.test(line)) {
-          continue;
-        }
-        if (line.startsWith('    at main')) {
-          break;
-        }
-      }
-      firstFound = false;
-    }
-    if (!firstFound) {
-      throw new Error('joiValidateSyncFSExists invoked not from main/joiAttemptRequired function');
-    }
-  }
-
   if (val == undefined) {
     return undefined;
   }

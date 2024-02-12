@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -44,7 +44,7 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
         }
 
         found = true;
-        tasksToExecute.push(...Task.getTasksFromSingleOrArraySchema(c.task));
+        tasksToExecute.push(...(await Task.getResolvedTasksFromSingleOrArraySchema(context, c.task)));
         if (c.fallthrough) {
           continue;
         }
@@ -56,13 +56,13 @@ export class ModuleSwitch extends AbstractModuleBase<ModuleSwitchInterface, Vars
       for (const key of keys) {
         if (value == key) {
           found = true;
-          tasksToExecute.push(...Task.getTasksFromSingleOrArraySchema(this.config.cases[key]));
+          tasksToExecute.push(...(await Task.getResolvedTasksFromSingleOrArraySchema(context, this.config.cases[key])));
         }
       }
     }
 
     if (!found && this.config.default) {
-      tasksToExecute.push(...Task.getTasksFromSingleOrArraySchema(this.config.default));
+      tasksToExecute.push(...(await Task.getResolvedTasksFromSingleOrArraySchema(context, this.config.default)));
     }
 
     const { changed, vars, exit } = await Task.runTasksInContext(context, tasksToExecute);

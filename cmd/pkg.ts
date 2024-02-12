@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -21,6 +21,7 @@ import {
   NodeJSExecutableArch,
   NodeJSExecutablePlatform,
 } from '../src/util/downloadNodeDist';
+import { CommandCreateNodeJSBundleFormat } from '../src/commands/createNodeJSBundle.schema';
 
 const argsConfig: ParseArgsConfig = {
   allowPositionals: false,
@@ -32,6 +33,9 @@ const argsConfig: ParseArgsConfig = {
     nodePlatform: { type: 'string' },
     outDir: { type: 'string' },
     entryPoint: { type: 'string' },
+    format: {
+      type: 'string',
+    },
   },
 };
 
@@ -42,6 +46,7 @@ async function main() {
   const {
     nodeArch = getCurrentNodeJSExecutableArch(),
     nodePlatform = getCurrentNodeJSExecutablePlatform(),
+    format = CommandCreateNodeJSBundleFormat.raw,
     outDir,
     entryPoint,
     ...otherArgs
@@ -50,6 +55,7 @@ async function main() {
     joiParseArgsLogOptionsSchema.append({
       nodeArch: getJoiEnumKeys(NodeJSExecutableArch),
       nodePlatform: getJoiEnumKeys(NodeJSExecutablePlatform),
+      format: getJoiEnumKeys(CommandCreateNodeJSBundleFormat),
       outDir: Joi.string().custom(joiValidateSyncFSExists).required(),
       entryPoint: Joi.string().custom(joiValidateSyncFSExists).required(),
     }),
@@ -62,6 +68,7 @@ async function main() {
     entryPoint,
     nodeArch,
     nodePlatform,
+    format,
   });
 }
 

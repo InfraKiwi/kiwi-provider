@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -135,7 +135,7 @@ async function runShellCommandInternal(
   let exitCode: number | null = null;
 
   const child = promise.child;
-  child.stdout?.on('data', function (data: string) {
+  const stdoutStream = child.stdout?.on('data', function (data: string) {
     data = stripCR(data);
     stdout += data;
     if (options.streamLogs) {
@@ -148,7 +148,7 @@ async function runShellCommandInternal(
     options?.onStdout?.(data.trimEnd());
     options?.onLog?.(data.trimEnd(), false);
   });
-  child.stderr?.on('data', function (data: string) {
+  const stderrStream = child.stderr?.on('data', function (data: string) {
     data = stripCR(data);
     if (options.streamLogs) {
       context.logger.error(data.trimEnd());
@@ -158,6 +158,8 @@ async function runShellCommandInternal(
   });
   child.on('close', function (code) {
     exitCode = code;
+    stdoutStream?.destroy();
+    stderrStream?.destroy();
   });
 
   try {

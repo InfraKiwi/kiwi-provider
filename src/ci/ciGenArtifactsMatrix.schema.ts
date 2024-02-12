@@ -6,10 +6,11 @@
 import Joi from 'joi';
 import { getJoiEnumKeys, joiMetaClassName, joiObjectWithPattern } from '../util/joi';
 import { NodeJSExecutableArch, NodeJSExecutablePlatform } from '../util/downloadNodeDist';
+import { CommandCreateNodeJSBundleFormat } from '../commands/createNodeJSBundle.schema';
 
 /*
- * cli:
- *  entrypoint: cmd/cli.ts
+ * kiwi-cli:
+ *  entrypoint: cmd/kiwiCLI.ts
  *  variants:
  *  - platform: linux
  *    arch:
@@ -25,6 +26,7 @@ export const CmdCIGenArtifactsMatrixConfigSchema = Joi.object({
         .items(
           Joi.object({
             platform: getJoiEnumKeys(NodeJSExecutablePlatform).required(),
+            formats: Joi.array().items(getJoiEnumKeys(CommandCreateNodeJSBundleFormat)),
             arch: Joi.array().items(getJoiEnumKeys(NodeJSExecutableArch)).required(),
           }).required()
         )

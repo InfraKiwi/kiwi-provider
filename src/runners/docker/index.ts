@@ -1,9 +1,9 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import type { RunnerContext, RunnerContextSetup, RunnerRunRecipesResult } from '../abstractRunner';
+import type { RunnerContext, RunnerContextSetup, RunnerRunRecipesResult, RunnerSetupOptions } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
 import type { DockerInspectPlatform } from './schema';
@@ -30,6 +30,8 @@ import { joiAttemptRequired } from '../../util/joi';
 import { getErrorPrintfClass } from '../../util/error';
 import { normalizePathToUnix } from '../../util/path';
 import { backOff } from 'exponential-backoff';
+import { inspect } from '../../util/inspect';
+import { DataSourceHTTP } from '../../dataSources/http';
 
 export const RunnerDockerErrorContainerDied = getErrorPrintfClass(
   'RunnerDockerErrorContainerDied',
@@ -44,9 +46,9 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   #cjsBundle?: string;
   #containerIsDead = false;
 
-  async setUp(context: RunnerContextSetup): Promise<void> {
+  async setUp(context: RunnerContextSetup, options?: RunnerSetupOptions): Promise<void> {
     await super.setUp(context);
-    await this.#prepareEnvironment(context);
+    await this.#prepareEnvironment(context, options);
   }
 
   async tearDown(context: ContextLogger): Promise<void> {
@@ -215,9 +217,16 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     return this.#platform.split('/')[0] as DockerInspectPlatform;
   }
 
-  async #prepareEnvironment(context: RunnerContextSetup) {
+  async #prepareEnvironment(context: RunnerContextSetup, options?: RunnerSetupOptions) {
     await this.#dockerRun(context);
     await this.#dockerWaitForReadyContainer(context);
+
+    if (options?.skipKiwiSetup) {
+      context.logger.debug('Docker runner set up (skipped kiwi setup)', {
+        containerId: this.#assertContainerId(),
+      });
+      return;
+    }
 
     /*
      * We need to set up the environment inside the container, meaning that we need a properly working
@@ -263,14 +272,14 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
   async #nodeExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
     const nodeBin = this.#assertNodeBin();
     context.logger.debug('Executing NodeJS command', { args });
-    return await this.dockerExec(context, [nodeBin, ...args], options);
+    return await this.dockerExec(context, [nodeBin, ...args], [], options);
   }
 
   async #runnerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
     const nodeBin = this.#assertNodeBin();
     const cjsBundle = this.#assertCJSBundle();
     context.logger.debug('Executing runner command', { args });
-    return await this.dockerExec(context, [nodeBin, cjsBundle, ...args], options);
+    return await this.dockerExec(context, [nodeBin, cjsBundle, ...args], [], options);
   }
 
   // -------- DOCKER SPECIFIC COMMANDS --------
@@ -290,7 +299,12 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     if (this.config.dockerfile == null) {
       throw new Error(`Undefined docker runner dockerfile context`);
     }
-    const { context: dockerfileContext = context.workDir, inline, args = [] } = this.config.dockerfile;
+    const {
+      context: dockerfileContext = context.workDir,
+      path: dockerfilePath,
+      inline,
+      args = [],
+    } = this.config.dockerfile;
 
     const tag = `kiwi-test-${randomUUID()}`;
     const platform = this.#platform;
@@ -304,6 +318,8 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
       });
       await fsPromiseWriteFile(tmp, inline);
       buildArgs.push('-f', tmp);
+    } else if (dockerfilePath) {
+      buildArgs.push('-f', dockerfilePath);
     }
 
     const contextDir = dockerfileContext;
@@ -370,21 +386,34 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
 
     const {
       command,
+      http,
       timeout = RunnerDockerReadyTimeoutDefault,
       interval = RunnerDockerReadyIntervalDefault,
     } = this.config.ready;
 
-    await backOff(
-      async () => {
+    let healthFn: () => Promise<void>;
+    if (command) {
+      healthFn = async () => {
         await this.dockerExec(context, command);
+      };
+    } else if (http) {
+      healthFn = async () => {
+        await this.#dockerVerifyContainerIsAlive(context);
+        await new DataSourceHTTP(http).load(context);
+      };
+    } else {
+      throw new Error(`Invalid docker container ready configuration: ${inspect(this.config.ready)}`);
+    }
+
+    await backOff(healthFn, {
+      timeMultiple: 1,
+      startingDelay: interval,
+      delayFirstAttempt: true,
+      retry: (err) => {
+        return !(err instanceof RunnerDockerErrorContainerDied);
       },
-      {
-        timeMultiple: 1,
-        startingDelay: interval,
-        delayFirstAttempt: true,
-        numOfAttempts: Math.floor(timeout / interval),
-      }
-    );
+      numOfAttempts: Math.floor(timeout / interval),
+    });
   }
 
   async #dockerVerifyContainerIsAlive(context: ContextLogger) {
@@ -444,13 +473,17 @@ export class RunnerDocker extends AbstractRunner<RunnerDockerInterface> {
     await this.#execDockerBinCommand(context, ['cp', `${this.#assertContainerId()}:${src}`, dst]);
   }
 
-  async dockerExec(context: ContextLogger, args: string[], options?: ExecCmdOptions) {
+  async dockerExec(context: ContextLogger, args: string[], argsBeforeCID?: string[], options?: ExecCmdOptions) {
     this.#dockerLog(context, 'Executing command in container', {
       args,
       streamLogs: options?.streamLogs,
     });
     await this.#dockerVerifyContainerIsAlive(context);
-    return await this.#execDockerBinCommand(context, ['exec', this.#assertContainerId(), ...args], options);
+    return await this.#execDockerBinCommand(
+      context,
+      ['exec', ...(argsBeforeCID ?? []), this.#assertContainerId(), ...args],
+      options
+    );
   }
 
   async #dockerGetTmpFile(context: ContextLogger, extension = '') {

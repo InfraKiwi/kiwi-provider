@@ -1,0 +1,26 @@
+app:
+  inventoryPath: examples/inventory.yaml
+  archiveFile: test_archive/config.yaml
+
+  assetsDistribution:
+    dir:
+      path: test_archive
+
+  agentDistribution:
+    dir:
+      path: dist
+
+  logsStorage:
+    dir:
+      path: test_logs
+#  hooks:
+#    report:
+#      if: status == "failure"
+#      http:
+#        url: https://webhook.site/xxx
+#        data: !json ${{ getVars() | toJson }}
+
+listener:
+  addr: 0.0.0.0
+  port: 13900
+  externalUrl: http://127.0.0.1:13900

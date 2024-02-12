@@ -3,7 +3,9 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-// Generated with: yarn gen -> cmd/schemaGen.ts
+// Generated with: yarn gen -> cmd/ci/ciSchemaGen.ts
+
+import type { DataSourceHTTPRawInterface } from '../../dataSources/http/schema.gen';
 
 // [block DockerInspectResultInterface begin]
 export type DockerInspectResultInterface = {
@@ -46,12 +48,19 @@ export interface RunnerDockerInterface {
    */
   dockerfile?: {
     /**
+     * The path to the dockerfile you want to use. The default is `${context}/Dockerfile`.
+     * Cannot be defined together with `inline`.
+     */
+    path?: string;
+
+    /**
      * The path to the docker context. Defaults to the test suite's file folder.
      */
     context?: string;
 
     /**
      * If provided, uses this text as the content of the Dockerfile.
+     * Cannot be defined together with `path`.
      */
     inline?: string;
 
@@ -61,6 +70,7 @@ export interface RunnerDockerInterface {
      * This list cannot contain any of the following, as they're already provided
      * by the runner's code:
      * --platform
+     * --file
      *
      * Ref: https://docs.docker.com/engine/reference/commandline/build/
      *
@@ -103,7 +113,7 @@ export interface RunnerDockerInterface {
     | string;
 
   /**
-   * If provided, defines a command the runner uses to verify the Docker container
+   * If provided, defines a command/http request the runner uses to verify the Docker container
    * has started and is ready to accept commands.
    */
   ready?: {
@@ -111,7 +121,15 @@ export interface RunnerDockerInterface {
      * The command/args array to use to check if the Docker container is ready
      * to accept commands.
      */
-    command: string[];
+    command?: string[];
+
+    /**
+     * An HTTP call to make to verify the health of the container.
+     *
+     * NOTE: it is your responsibility to use the right address:port combination
+     * when making the HTTP call, which will be executed from OUTSIDE the container.
+     */
+    http?: DataSourceHTTPRawInterface; //typeRef:DataSourceHTTPRawInterface:{"relPath":"../../dataSources/http/schema.gen.ts","isRegistryExport":false}
 
     /**
      * How many milliseconds to wait before declaring the runner invalid.

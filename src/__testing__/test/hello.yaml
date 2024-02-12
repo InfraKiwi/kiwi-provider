@@ -1,0 +1,5 @@
+targets:
+  - test-1
+
+tasks:
+  - shell: cat "${{ __assetsDir }}/hello.txt"

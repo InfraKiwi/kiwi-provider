@@ -1,10 +1,11 @@
-#  (c) 2023 Alberto Marchetti (info@cmaster11.me)
+#  (c) 2024 Alberto Marchetti (info@cmaster11.me)
 #  GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import json
 import os.path
 import logging, re
 from pathlib import Path
+from urllib.parse import urlparse
 
 from mkdocs.plugins import event_priority
 
@@ -15,7 +16,7 @@ from mkdocs.plugins import event_priority
 log = logging.getLogger('mkdocs')
 
 
-def load_code_block(visited_types, is_root, base_path, type_name, code_path_explicit):
+def load_code_block(config, visited_types, is_root, base_path, type_name, code_path_explicit):
     runtime_vars = {
         'annotation_counter': 1
     }
@@ -128,7 +129,7 @@ def load_code_block(visited_types, is_root, base_path, type_name, code_path_expl
                 f'{sorted_annotation_index}. [See the definition of `{loop_type_name}`]({href})')
             continue
 
-        log.info(f'importing {loop_type_name} from {loop_import_path_dir} with file {loop_import_path_file}')
+        log.debug(f'importing {loop_type_name} from {loop_import_path_dir} with file {loop_import_path_file}')
         # log.info(f'Context: code_path_dir={code_path_dir},loop_import_path={loop_import_path}')
         annotations_list.append(
             f'{sorted_annotation_index}. [See the definition of `{loop_type_name}`](#{loop_type_name.lower()})')
@@ -138,12 +139,16 @@ def load_code_block(visited_types, is_root, base_path, type_name, code_path_expl
         if loop_type_already_loaded is None:
             visited_types.append(loop_type_name)
             docs_to_append.append(
-                load_code_block(visited_types, False, loop_import_path_dir, loop_type_name, loop_import_path_file))
+                load_code_block(config, visited_types, False, loop_import_path_dir, loop_type_name,
+                                loop_import_path_file))
 
     def links_lambda(match):
         m_comment_prefix = match.group(1)
         m_link_text = match.group(2)
         m_url = match.group(3)
+        if m_url.startswith('/'):
+            # Make sure we always append the site base
+            m_url = urlparse(config.site_url).path.rstrip('/') + m_url
         annotation_idx = runtime_vars['annotation_counter']
         runtime_vars['annotation_counter'] = annotation_idx + 1
         annotations_list.append(
@@ -236,7 +241,7 @@ def list_modules(page, match):
             lines.append([f"`{sub_dir}`", "", "❌"])
             continue
 
-        module_link = f'[`{sub_dir}`](./{sub_dir})'
+        module_link = f'[`{sub_dir}`](./{sub_dir}/README.md)'
 
         with open(readme_path, 'r') as content_file:
             readme_lines = content_file.readlines()
@@ -261,8 +266,62 @@ def list_modules(page, match):
     return table
 
 
+# Produces a table of all available docs in the same folder
+def list_docs(page, match):
+    label = match[1]
+    path = os.path.dirname(page.file.abs_src_path)
+
+    lines = []
+
+    files = os.listdir(path)
+    for file in files:
+        if file.startswith('_'):
+            continue
+        sub_path = os.path.join(path, file)
+        if os.path.isdir(sub_path):
+            continue
+        if sub_path == page.file.abs_src_path:
+            continue
+
+        with open(sub_path, 'r') as content_file:
+            readme_lines = content_file.readlines()
+
+        title = ''
+        summary = ''
+        for line in readme_lines:
+            # NOTE the whitespace, main heading
+            if line.startswith('# '):
+                title = line[2:].strip()
+                continue
+            # Break on any following heading
+            if line.startswith('#'):
+                if summary != '':
+                    break
+                continue
+            if line.strip() == '':
+                if summary != '':
+                    break
+                continue
+            summary += line.strip() + ' '
+        if title == '':
+            title = doc_link
+        # "smart" upper-casing of the first character
+        if summary.startswith(title):
+            summary = summary[len(title) + 1].upper() + summary[len(title) + 2:]
+        if summary.startswith('Is the'):
+            summary = 'The' + summary[len('Is the'):]
+        doc_link = f'[{title}](./{file})'
+        lines.append([doc_link, summary.strip()])
+
+    table = ('| ' + label + ' | Description |\n' +
+             '| --- | --- |\n' +
+             '\n'.join(map(lambda line: '| ' + ' | '.join(line) + ' |', lines)))
+
+    return table
+
+
 @event_priority(9999)
-def on_page_read_source(page, **kwargs):
+def on_page_read_source(page, config, **kwargs):
     with open(page.file.abs_src_path, 'r') as content_file:
         src = content_file.read()
 
@@ -280,7 +339,7 @@ def on_page_read_source(page, **kwargs):
             r'^!\[type ([^] ]+)(?: ([^] ]+))?]$',
             re.MULTILINE,
         ),
-        lambda match: load_code_block(None, True, os.path.dirname(page.file.abs_src_path), match.group(1),
+        lambda match: load_code_block(config, None, True, os.path.dirname(page.file.abs_src_path), match.group(1),
                                       match.group(2)),
         src,
     )
@@ -291,6 +350,15 @@ def on_page_read_source(page, **kwargs):
             re.MULTILINE,
         ),
         lambda match: list_modules(page, match),
+        src,
+    )
+
+    src = re.sub(
+        re.compile(
+            r'^!\[listDocs ([^]]+)]$',
+            re.MULTILINE,
+        ),
+        lambda match: list_docs(page, match),
         src,
     )
 

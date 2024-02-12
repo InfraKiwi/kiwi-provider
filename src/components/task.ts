@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -397,7 +397,18 @@ export class Task {
     };
   }
 
-  static getTasksFromSingleOrArraySchema(val: TaskSingleOrArrayInterface): Task[] {
-    return [...getArrayFromSingleOrArray(val).map((t) => new Task(t))];
+  static async getResolvedTasksFromSingleOrArraySchema(
+    context: RunContext,
+    val: TaskSingleOrArrayInterface
+  ): Promise<Task[]> {
+    const vars = context.varsForTemplate;
+    const tasksConfigs = getArrayFromSingleOrArray(val);
+    const tasks: Task[] = [];
+    for (const tasksConfig of tasksConfigs) {
+      const resolvedConfig = await resolveTemplates(tasksConfig, vars);
+      const task = new Task(resolvedConfig);
+      tasks.push(task);
+    }
+    return tasks;
   }
 }

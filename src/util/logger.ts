@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -24,6 +24,7 @@ import { dumpYAML } from './yaml';
 import chalk from 'chalk';
 import { $enum } from 'ts-enum-util';
 import { setupUncaughtHandler } from './uncaught';
+import { inspect } from './inspect';
 
 Error.stackTraceLimit = 100;
 
@@ -148,7 +149,7 @@ const getCompactFormat = (toYAML: boolean) =>
         if (toYAML) {
           other = '\n' + dumpYAML(rest);
         } else {
-          other = ' ' + JSON.stringify(rest);
+          other = ' ' + inspect(rest);
         }
       }
 

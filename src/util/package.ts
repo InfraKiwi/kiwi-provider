@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -27,14 +27,18 @@ export enum BuildVersionMethod {
   arg = 'arg',
 }
 
-export async function getBuildVersion(
-  context: ContextLogger,
-  method?: BuildVersionMethod,
-  versionArg?: string
-): Promise<string> {
+export interface GetBuildVersionArgs {
+  method?: BuildVersionMethod;
+  versionArg?: string;
+}
+
+export async function getBuildVersion(context: ContextLogger, args?: GetBuildVersionArgs): Promise<string> {
   if (isPartOfESBuildBundle) {
     return versionKiwiProvider;
   }
+
+  // eslint-disable-next-line prefer-const
+  let { method, versionArg } = args ?? {};
 
   let version: string;
   method ??= (process.env[BuildVersionMethodEnv] as BuildVersionMethod) ?? BuildVersionMethod.package;

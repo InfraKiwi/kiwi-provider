@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -33,7 +33,7 @@ export const RecipePhaseSchema = getJoiEnumValuesAsAlternatives(RecipePhase, (en
   switch (entry) {
     case RecipePhase.bootstrap:
       return `
-  Recipes are run in the boostrap phase when the agent is being installed
+  Recipes are run in the boostrap phase when the kiwi-agent is being installed
   on the machine for the first time.
   `;
     case RecipePhase.runtime:
@@ -87,6 +87,11 @@ export const RecipeInputsSchema = joiObjectWithPattern(
     to the provided code.
     
     You can check out more examples of Joi validation at: https://joi.dev/api
+    
+    Custom cases:
+    
+    * File/directory existence validation: \`!joi joiPathExists\` 
+      (shortcut for \`!joi Joi.string().custom(joiValidateSyncFSExists)\`)
     `).example(`
     inputs:
       // Accepts an optional string

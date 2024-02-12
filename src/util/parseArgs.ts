@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -9,18 +9,18 @@ import { joiAttemptRequired, joiValidateSyncFSExists } from './joi';
 
 import { loadYAMLFromFile } from './yaml';
 
-export const parseArgsConfigOptionsConfigPathKey = 'configPath';
+export const parseArgsConfigOptionsConfigFileKey = 'configFile';
 
 export const parseArgsConfigOptions: ParseArgsOptionsConfig = {
   // Config file path
-  [parseArgsConfigOptionsConfigPathKey]: {
+  [parseArgsConfigOptionsConfigFileKey]: {
     type: 'string',
     short: 'c',
   },
 };
 
-export async function loadConfig<T>(configPath: string | undefined, schema: Joi.Schema): Promise<T> {
-  const configObject = (configPath ? await loadYAMLFromFile(configPath) : {}) ?? {};
+export async function loadConfig<T>(configFile: string | undefined, schema: Joi.Schema): Promise<T> {
+  const configObject = (configFile ? await loadYAMLFromFile(configFile) : {}) ?? {};
   return joiAttemptRequired(configObject, schema);
 }
 
@@ -32,5 +32,5 @@ export const parseArgsAppBaseOptions: ParseArgsOptionsConfig = {
 export const parseArgsAppBaseJoiObject = Joi.object()
   .append(joiParseArgsLogOptions)
   .append({
-    [parseArgsConfigOptionsConfigPathKey]: Joi.string().custom(joiValidateSyncFSExists),
+    [parseArgsConfigOptionsConfigFileKey]: Joi.string().custom(joiValidateSyncFSExists),
   });

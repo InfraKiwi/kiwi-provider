@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - id: genArtifactsMatrix
-        run: yarn ts-node cmd/ci/ciGenArtifactsMatrix.ts --configFile artifacts.yaml
+        run: yarn ts-node cmd/ci/ciGenArtifactsMatrix.ts --configFile hack/ci/artifacts.yaml
 
   gen-artifacts:
     #    if: >

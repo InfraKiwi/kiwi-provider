@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -54,7 +54,7 @@ export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryR
 
         // Task execution
         try {
-          const tasksToExecute = Task.getTasksFromSingleOrArraySchema(this.config.task);
+          const tasksToExecute = await Task.getResolvedTasksFromSingleOrArraySchema(context, this.config.task);
           const result = await Task.runTasksInContext(
             context.withVars({
               [ModuleTryContextKeyRetry]: retryIndex,
@@ -86,7 +86,7 @@ export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryR
 
     if (lastError && this.config.catch) {
       const causeChain = getErrorCauseChain(lastError);
-      const tasksToExecute = Task.getTasksFromSingleOrArraySchema(this.config.catch);
+      const tasksToExecute = await Task.getResolvedTasksFromSingleOrArraySchema(context, this.config.catch);
       const result = await Task.runTasksInContext(
         context.withVars({
           [ModuleTryContextKeyLastError]: causeChain,
@@ -102,7 +102,7 @@ export class ModuleTry extends AbstractModuleBase<ModuleTryInterface, ModuleTryR
     }
 
     if (this.config.finally) {
-      const tasksToExecute = Task.getTasksFromSingleOrArraySchema(this.config.finally);
+      const tasksToExecute = await Task.getResolvedTasksFromSingleOrArraySchema(context, this.config.finally);
       const result = await Task.runTasksInContext(
         context.withVars({
           ...(lastError

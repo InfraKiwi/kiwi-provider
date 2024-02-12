@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -88,18 +88,31 @@ export type GetInstantiatedRootRecipesQuery =
 
 export class Archive {
   readonly config: ArchiveInterface;
-  readonly assetsDir: string;
+  readonly archiveDir?: string;
 
-  constructor(config: ArchiveInterface, assetsDir: string) {
+  constructor(config: ArchiveInterface, archiveDir?: string) {
     this.config = joiAttemptRequired(config, ArchiveSchema, 'Error validating archive data: ');
-    this.assetsDir = assetsDir;
+    this.archiveDir = archiveDir;
   }
 
   static async fromDir(archiveDir: string): Promise<Archive> {
-    const archiveConfigPath = path.resolve(archiveDir, ArchiveConfigFilename);
-    const config = await loadYAMLFromFile(archiveConfigPath);
+    const archiveConfigFile = path.resolve(archiveDir, ArchiveConfigFilename);
+    const config = await loadYAMLFromFile(archiveConfigFile);
     const archive = new Archive(config, archiveDir);
     return archive;
+  }
+
+  static async fromConfigFile(configFile: string): Promise<Archive> {
+    const config = await loadYAMLFromFile(configFile);
+    const archive = new Archive(config);
+    return archive;
+  }
+
+  get #assertArchiveDir(): string {
+    if (this.archiveDir == null) {
+      throw new Error(`Archive not initialized with archiveDir`);
+    }
+    return this.archiveDir;
   }
 
   #compiledRecipeSources?: RecipeSourceList;
@@ -167,7 +180,7 @@ export class Archive {
     return recipes;
   }
 
-  // Initialize the recipe will validate all dependencies
+  // Initializing the recipe will validate all dependencies
   async instantiateRecipe(
     context: DataSourceContext,
     id: string,
@@ -182,7 +195,7 @@ export class Archive {
     let assetsDir: string | undefined;
     // Unpack any assets
     if (!dryRun && archiveEntry.assetsArchive) {
-      const fullArchivePath = path.join(this.assetsDir, archiveEntry.assetsArchive);
+      const fullArchivePath = path.join(this.#assertArchiveDir, archiveEntry.assetsArchive);
       assetsDir = await fsPromiseTmpDir({});
       await tar.x({
         cwd: assetsDir,
@@ -216,7 +229,7 @@ export class Archive {
         dependenciesBySourceArchiveConfigs[sourceId] = {};
       }
       const depRecipeConfig = archive.recipeSources[sourceId][recipeId];
-      const depRecipe = await stats.measureBlock(`dependency recipe init: ${recipeId}`, () =>
+      const depRecipe = await stats.measureBlock(context, `dependency recipe init: ${recipeId}`, () =>
         this.instantiateRecipe(context, recipeId, depRecipeConfig, dryRun)
       );
       dependenciesBySource[sourceId][recipeId] = depRecipe;
@@ -247,7 +260,9 @@ export class Archive {
   ): Promise<GetArchiveForHostResult> {
     const stats = new Stats();
 
-    const host = await stats.measureBlock('host data loading', () => inventory.getHostAndLoadVars(context, hostname));
+    const host = await stats.measureBlock(context, 'host data loading', () =>
+      inventory.getHostAndLoadVars(context, hostname)
+    );
     const archive: ArchiveInterface = deepcopy(this.config);
 
     // Keep only the vars related to the specified host
@@ -275,10 +290,6 @@ export class Archive {
         return r.targets.length > 0 && hostname in hosts;
       });
 
-    if (rootRecipesForHost.length == 0) {
-      throw new Error(`Host ${hostname} not found in any recipes' targets`);
-    }
-
     // Load all other hosts we need to load
     const otherHostsPatterns = Array.from(
       new Set(rootRecipesForHost.map((recipeId) => archive.rootRecipes[recipeId].otherHosts ?? []).flat())
@@ -303,7 +314,7 @@ export class Archive {
     for (const rootRecipeId of rootRecipesForHost) {
       const archiveEntry = archive.rootRecipes[rootRecipeId];
 
-      const recipe = await stats.measureBlock(`root recipe init: ${rootRecipeId}`, () =>
+      const recipe = await stats.measureBlock(context, `root recipe init: ${rootRecipeId}`, () =>
         this.instantiateRecipe(context, rootRecipeId, archiveEntry, true)
       );
       rootRecipes[rootRecipeId] = recipe;
@@ -383,19 +394,19 @@ export class Archive {
 
     const archive = new Archive(archiveConfig, archiveDir);
 
-    logger.info(`Archive created at ${archiveConfigFileName}`);
+    logger.info(`Archive (version ${archive.config.timestamp}) created at ${archiveConfigFileName}`);
 
     return archive;
   }
 
   async saveToTarArchive(fileName: string) {
-    const allFiles = await getAllFiles(this.assetsDir);
+    const allFiles = await getAllFiles(this.#assertArchiveDir);
 
-    // Write archive for configProvider
+    // Write archive for kiwiProvider
     await tar.c(
       {
         gzip: true,
-        cwd: this.assetsDir,
+        cwd: this.archiveDir,
         file: fileName,
       },
       allFiles

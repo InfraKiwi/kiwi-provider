@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -13,7 +13,8 @@ import { TemplateEval } from './tpl/templateEval';
 import Joi from 'joi';
 import { isShortie, shortieToObject } from './shortie';
 import { fsPromiseReadFile } from './fs';
-import { joiSchemaBuildFromString } from './tpl/templateJoi';
+import { joiSchemaBuildFromString, templateJoiMetaOriginalKey } from './tpl/templateJoi';
+import { joiFindMeta } from './joi';
 
 // ---
 
@@ -172,7 +173,13 @@ const yamlTypeJoi = new Type('!joi', {
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   represent: (data: object): any => {
-    return JSON.stringify((data as Joi.Schema).describe());
+    const schema = data as Joi.Schema;
+    const description = schema.describe();
+    const templateOriginal = joiFindMeta(description, templateJoiMetaOriginalKey);
+    if (templateOriginal) {
+      return templateOriginal;
+    }
+    return JSON.stringify(schema.describe());
   },
 });
 

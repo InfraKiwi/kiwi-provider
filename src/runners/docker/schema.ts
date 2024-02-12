@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -7,6 +7,7 @@ import Joi from 'joi';
 import { runnerRegistryEntryFactory } from '../registry';
 import { getJoiEnumKeys, joiMetaClassName } from '../../util/joi';
 import { dumpYAML } from '../../util/yaml';
+import { DataSourceHTTPRawSchema } from '../../dataSources/http/schema';
 
 export enum RunnerDockerSupportedPlatforms {
   'linux/amd64' = 'linux/amd64',
@@ -58,16 +59,24 @@ export const RunnerDockerSchema = runnerRegistryEntryFactory.createJoiEntrySchem
     `),
 
     dockerfile: Joi.object({
-      context: Joi.string().description(`The path to the docker context. Defaults to the test suite's file folder.`),
+      path: Joi.string().description(`
+        The path to the dockerfile you want to use. The default is \`\${context}/Dockerfile\`.
+        Cannot be defined together with \`inline\`.
+      `),
+      context: Joi.string().description(`
+        The path to the docker context. Defaults to the test suite's file folder.
+      `),
       inline: Joi.string().description(`
         If provided, uses this text as the content of the Dockerfile.
+        Cannot be defined together with \`path\`.
       `),
-      args: Joi.array().items(Joi.string().invalid('--platform')).description(`
+      args: Joi.array().items(Joi.string().invalid('--platform', '-f', '--file')).description(`
       An array of any other arguments you may want to pass to the docker \`build\` command.
       
       This list cannot contain any of the following, as they're already provided
       by the runner's code:
       --platform
+      --file
       
       Ref: https://docs.docker.com/engine/reference/commandline/build/
     `).example(`
@@ -77,7 +86,7 @@ export const RunnerDockerSchema = runnerRegistryEntryFactory.createJoiEntrySchem
       - --build-arg
       - HTTP_PROXY=http://10.20.30.2:1234
     `),
-    }).description(`
+    }).xor('path', 'inline').description(`
       The dockerfile configuration that will be used to build the test docker image.
       
       If not provided, \`image\` must be used.
@@ -103,9 +112,15 @@ export const RunnerDockerSchema = runnerRegistryEntryFactory.createJoiEntrySchem
     `),
 
     ready: Joi.object({
-      command: Joi.array().items(Joi.string()).min(1).required().description(`
+      command: Joi.array().items(Joi.string()).min(1).description(`
         The command/args array to use to check if the Docker container is ready
         to accept commands.
+      `),
+      http: DataSourceHTTPRawSchema.description(`
+        An HTTP call to make to verify the health of the container.
+        
+        NOTE: it is your responsibility to use the right address:port combination
+        when making the HTTP call, which will be executed from OUTSIDE the container.
       `),
       timeout: Joi.number().integer().min(1).default(RunnerDockerReadyTimeoutDefault).optional().description(`
         How many milliseconds to wait before declaring the runner invalid.
@@ -115,8 +130,8 @@ export const RunnerDockerSchema = runnerRegistryEntryFactory.createJoiEntrySchem
         How frequently, in milliseconds, to check for the runner readiness
         using the \`ready.command\` command.
       `),
-    }).description(`
-      If provided, defines a command the runner uses to verify the Docker container
+    }).xor('command', 'http').description(`
+      If provided, defines a command/http request the runner uses to verify the Docker container
       has started and is ready to accept commands.
     `),
 

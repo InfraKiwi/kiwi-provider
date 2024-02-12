@@ -1,9 +1,9 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-import type { RunnerContext, RunnerRunRecipesResult } from '../abstractRunner';
+import type { RunnerContext, RunnerRunRecipesResult, RunnerSetupOptions } from '../abstractRunner';
 import { AbstractRunner } from '../abstractRunner';
 import { runnerRegistryEntryFactory } from '../registry';
 import type { RunnerLocalInterface } from './schema.gen';
@@ -26,12 +26,21 @@ export class RunnerLocal extends AbstractRunner<RunnerLocalInterface> {
   #nodeBin?: string;
   #cjsBundle?: string;
 
-  async setUp(context: ContextLogger): Promise<void> {
+  async setUp(context: ContextLogger, options?: RunnerSetupOptions): Promise<void> {
     await super.setUp(context);
-    await this.#prepareEnvironment(context);
+    await this.#prepareEnvironment(context, options);
   }
 
-  async #prepareEnvironment(context: ContextLogger) {
+  async #prepareEnvironment(context: ContextLogger, options?: RunnerSetupOptions) {
+    this.#workDir = await fsPromiseTmpDir({ keep: false });
+
+    if (options?.skipKiwiSetup) {
+      context.logger.verbose('Local runner set up (skipped kiwi setup)', {
+        workDir: this.#assertWorkDir(),
+      });
+      return;
+    }
+
     /*
      * We need to set up the environment inside the container, meaning that we need a properly working
      * nodejs executable.

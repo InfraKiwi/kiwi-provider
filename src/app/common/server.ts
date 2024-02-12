@@ -1,5 +1,5 @@
 /*
- * (c) 2023 Alberto Marchetti (info@cmaster11.me)
+ * (c) 2024 Alberto Marchetti (info@cmaster11.me)
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
@@ -11,7 +11,7 @@ import type { ContextLogger } from '../../util/context';
 import type { Logger } from 'winston';
 import bodyParser from 'body-parser';
 import Joi from 'joi';
-import { getServerListenerSchemaObject } from './server.schema';
+import { getServerListenerSchemaObject, NotifyHealthMethod } from './server.schema';
 import type { ServerListenerInterface, ServerListenerWrapperInterface } from './server.schema.gen';
 import { localhost127 } from '../../util/constants';
 import type { Server } from 'node:http';
@@ -19,12 +19,10 @@ import { getRoutes } from '../../util/expressRoutes';
 import { getBuildVersion } from '../../util/package';
 import { lookpath } from 'lookpath';
 import { execCmd } from '../../util/exec';
-
-const NOTIFY_HEALTH_METHOD_ENV_VAR = 'NOTIFY_HEALTH_METHOD';
-
-enum NotifyHealthMethod {
-  'systemd-notify' = 'systemd-notify',
-}
+import { inspect } from '../../util/inspect';
+import type { DataSourceHTTPRawInterface } from '../../dataSources/http/schema.gen';
+import { DataSourceHTTP } from '../../dataSources/http';
+import { getErrorCauseChain } from '../../util/error';
 
 export interface NewServerArgs {
   auditRequestOptions?: CommonOptions;
@@ -99,6 +97,10 @@ export function newServer(context: ContextLogger, args: NewServerArgs): Express 
     res.status(200).json(await getBuildVersion(context));
   });
 
+  app.use('/health', (req, res) => {
+    res.status(200).send('Ok');
+  });
+
   return app;
 }
 
@@ -116,27 +118,45 @@ async function notifyHealthySystemDNotify(context: ContextLogger) {
   });
 }
 
-async function notifyHealthy(context: ContextLogger) {
-  const method = process.env[NOTIFY_HEALTH_METHOD_ENV_VAR];
-  if (method == null) {
-    return;
-  }
+async function notifyHealthyHTTP(context: ContextLogger, http: DataSourceHTTPRawInterface) {
+  context.logger.info(`Notifying health with method ${NotifyHealthMethod.http}`, { http });
+  await new DataSourceHTTP(http).load(context);
+}
 
-  switch (method as NotifyHealthMethod) {
-    case NotifyHealthMethod['systemd-notify']:
-      await notifyHealthySystemDNotify(context);
-      return;
-    default:
-      throw new Error(`Unsupported NotifyHealthMethod ${method}`);
+async function notifyHealthy(context: ContextLogger, health: NonNullable<ServerListenerInterface['health']>) {
+  if (NotifyHealthMethod['systemd-notify'] in health) {
+    await notifyHealthySystemDNotify(context);
+  } else if (NotifyHealthMethod.http in health) {
+    await notifyHealthyHTTP(context, health.http);
+  } else {
+    throw new Error(`Unsupported listener health configuration: ${inspect(health)}`);
   }
 }
 
-export function appListen(context: ContextLogger, app: Express, config: ServerListenerInterface): Server {
-  const server = app.listen(config.port, config.addr ?? localhost127, () => {
-    context.logger.info('Server listening', { address: server.address() });
-    getRoutes(app).forEach((route) => context.logger.info(`${route}`));
-
-    notifyHealthy(context).catch((ex) => context.logger.error('Failed to notify healthy server', ex));
+export async function appListen(
+  context: ContextLogger,
+  app: Express,
+  config: ServerListenerInterface
+): Promise<Server> {
+  // Add the catch-all error handler
+  app.use(function errorHandler(err: Error, req: express.Request, res: express.Response, next: express.NextFunction) {
+    res.status(500);
+    res.json({ error: getErrorCauseChain(err) });
   });
-  return server;
+
+  let server: Server;
+  return new Promise((res, rej) => {
+    server = app.listen(config.port ?? 0, config.addr ?? localhost127, () => {
+      context.logger.info('Server listening', { address: server.address() });
+      getRoutes(app).forEach((route) => context.logger.info(`${route}`));
+
+      if (config.health) {
+        notifyHealthy(context, config.health).catch((ex) =>
+          context.logger.error('Failed to notify healthy server', ex)
+        );
+      }
+
+      res(server);
+    });
+  });
 }

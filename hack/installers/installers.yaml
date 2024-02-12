@@ -1,0 +1,18 @@
+scripts:
+- src: install.agent.sh
+  dest: src/app/kiwiProvider/viewsAgentDistribution/install.gen.sh
+
+# Note: install.cli.sh is handled in ciGenDevArtifacts.ts for now
+
+#- src: install.cli.sh
+#  dest: hack/installers/gen/cli.gen.sh
+#  template: true
+
+headers:
+  - |
+    #!/usr/bin/env sh
+
+    #
+    # (c) 2024 Alberto Marchetti (info@cmaster11.me)
+    # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+    #

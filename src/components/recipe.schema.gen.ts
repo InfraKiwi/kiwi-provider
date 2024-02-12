@@ -3,7 +3,7 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-// Generated with: yarn gen -> cmd/schemaGen.ts
+// Generated with: yarn gen -> cmd/ci/ciSchemaGen.ts
 
 import type { RecipeSourceListInterface } from '../recipeSources/recipeSourceList.schema.gen';
 import type { TaskInterface } from './task.schema.gen';
@@ -55,7 +55,7 @@ export interface RecipeForArchiveInterface {
   phase?:
 
     /**
-     * Recipes are run in the boostrap phase when the agent is being installed
+     * Recipes are run in the boostrap phase when the kiwi-agent is being installed
      * on the machine for the first time.
      */
     | 'bootstrap'
@@ -118,6 +118,11 @@ export interface RecipeInputsInterface {
      *
      * You can check out more examples of Joi validation at: https://joi.dev/api
      *
+     * Custom cases:
+     *
+     * * File/directory existence validation: `!joi joiPathExists`
+     *   (shortcut for `!joi Joi.string().custom(joiValidateSyncFSExists)`)
+     *
      * @example
      * inputs:
      *   // Accepts an optional string
@@ -128,7 +133,7 @@ export interface RecipeInputsInterface {
       | any;
 }
 // [block RecipeInputsInterface end]
-//meta:RecipeInputsInterface:[{"unknownType":{"type":"alternatives","matches":[{"schema":{"type":"string","flags":{"only":true,"description":"\n    A string that represents a raw type, e.g. string, number, etc.\n    If ending with `?`, mark the input as optional.\n    "},"allow":["alternatives","alternatives?","any","any?","array","array?","boolean","boolean?","date","date?","function","function?","link","link?","number","number?","object","object?","string","string?","symbol","symbol?","binary","binary?","alt","alt?","bool","bool?","func","func?"]}},{"schema":{"type":"any","flags":{"description":"\n    A Joi validation schema in form of JS code.\n     \n    Must be defined using the `!joi` YAML tag, which makes the `Joi` \n    namespace available to use and automatically prepends a `return` keyword\n    to the provided code.\n    \n    You can check out more examples of Joi validation at: https://joi.dev/api\n    "},"rules":[{"name":"custom","args":{}}],"examples":["\n    inputs:\n      // Accepts an optional string\n      hello: string?\n      // Fully validates that `world` will be a string of min 3 and max 30 chars\n      world: !joi Joi.string().min(3).max(30)\n    "]}}]}},{"className":"RecipeInputsInterface"}]
+//meta:RecipeInputsInterface:[{"unknownType":{"type":"alternatives","matches":[{"schema":{"type":"string","flags":{"only":true,"description":"\n    A string that represents a raw type, e.g. string, number, etc.\n    If ending with `?`, mark the input as optional.\n    "},"allow":["alternatives","alternatives?","any","any?","array","array?","boolean","boolean?","date","date?","function","function?","link","link?","number","number?","object","object?","string","string?","symbol","symbol?","binary","binary?","alt","alt?","bool","bool?","func","func?"]}},{"schema":{"type":"any","flags":{"description":"\n    A Joi validation schema in form of JS code.\n     \n    Must be defined using the `!joi` YAML tag, which makes the `Joi` \n    namespace available to use and automatically prepends a `return` keyword\n    to the provided code.\n    \n    You can check out more examples of Joi validation at: https://joi.dev/api\n    \n    Custom cases:\n    \n    * File/directory existence validation: `!joi joiPathExists` \n      (shortcut for `!joi Joi.string().custom(joiValidateSyncFSExists)`)\n    "},"rules":[{"name":"custom","args":{}}],"examples":["\n    inputs:\n      // Accepts an optional string\n      hello: string?\n      // Fully validates that `world` will be a string of min 3 and max 30 chars\n      world: !joi Joi.string().min(3).max(30)\n    "]}}]}},{"className":"RecipeInputsInterface"}]
 
 // [block RecipeInterface begin]
 export interface RecipeInterface {
@@ -152,7 +157,7 @@ export interface RecipeInterface {
   phase?:
 
     /**
-     * Recipes are run in the boostrap phase when the agent is being installed
+     * Recipes are run in the boostrap phase when the kiwi-agent is being installed
      * on the machine for the first time.
      */
     | 'bootstrap'
@@ -278,7 +283,7 @@ export type RecipePhaseSchema =
 
 
   /**
-   * Recipes are run in the boostrap phase when the agent is being installed
+   * Recipes are run in the boostrap phase when the kiwi-agent is being installed
    * on the machine for the first time.
    */
   | 'bootstrap'

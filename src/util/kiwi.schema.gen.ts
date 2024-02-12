@@ -3,7 +3,7 @@
  * GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
  */
 
-// Generated with: yarn gen -> cmd/schemaGen.ts
+// Generated with: yarn gen -> cmd/ci/ciSchemaGen.ts
 
 // [block KiwiInfoInterface begin]
 /**
@@ -18,7 +18,7 @@ export interface KiwiInfoInterface {
   /**
    * The path of the config file used at the start of the app, if any was defined.
    */
-  configPath?: string;
+  configFile?: string;
 }
 // [block KiwiInfoInterface end]
 //meta:KiwiInfoInterface:[{"className":"KiwiInfoInterface"}]

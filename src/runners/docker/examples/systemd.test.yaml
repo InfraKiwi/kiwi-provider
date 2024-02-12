@@ -2,9 +2,7 @@
 runner:
   docker:
     dockerfile:
-      args:
-        - -f
-        - files/systemd.Dockerfile
+      path: files/systemd.Dockerfile
 
     runArgs:
       - --stop-signal=SIGRTMIN+3
