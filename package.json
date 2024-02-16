@@ -81,7 +81,7 @@
     "joi-to-typescript": "https://github.com/cmaster11/joi-to-typescript.git#release-ffd3f85e0df7426232bbc634d4d9a0d5a624f525",
     "prettier": "^3.2.5",
     "prisma": "^5.9.1",
-    "sass": "^1.70.0",
+    "sass": "^1.71.0",
     "ts-enum-util": "https://github.com/cmaster11/ts-enum-util.git#release-14215888128839e0aa808d82cb64f72843984708",
     "ts-jest": "^29.1.2",
     "ts-jest-mock": "^1.4.0",
