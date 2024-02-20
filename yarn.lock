@@ -1812,15 +1812,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@prisma/client@npm:^5.9.1":
-  version: 5.9.1
-  resolution: "@prisma/client@npm:5.9.1"
+"@prisma/client@npm:^5.10.0":
+  version: 5.10.0
+  resolution: "@prisma/client@npm:5.10.0"
   peerDependencies:
     prisma: "*"
   peerDependenciesMeta:
     prisma:
       optional: true
-  checksum: 10c0/5447007e42d507e45960210d804736000b53556b076dd15797dfaed0c58e462dc24eb27e9c6636b8a145dd1a103fc7f6cd876f1906217e8fd8b74c6533169287
+  checksum: 10c0/0da10611068102ce2f682e48075180be2758fd2f5ff8bd78bdb2bb1ced4c488e66c8d06dd12f9826570a05da360c12e378be2176c0fcc63e16cb47d0e81c3418
   languageName: node
   linkType: hard
 
@@ -6711,7 +6711,7 @@ __metadata:
     "@actions/core": "npm:^1.10.1"
     "@aws-sdk/client-s3": "npm:^3.511.0"
     "@jest/globals": "npm:^29.7.0"
-    "@prisma/client": "npm:^5.9.1"
+    "@prisma/client": "npm:^5.10.0"
     "@stylistic/eslint-plugin": "npm:^1.6.1"
     "@types/debug": "npm:^4.1.12"
     "@types/eslint": "npm:^8.56.2"
