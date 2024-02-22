@@ -22,7 +22,7 @@
     "glob": "^10.3.10",
     "globrex": "^0.1.2",
     "http-proxy-middleware": "^2.0.6",
-    "joi": "17.12.1",
+    "joi": "17.12.2",
     "js-convert-case": "^4.2.0",
     "js-yaml": "^4.1.0",
     "jsonpath-plus": "^8.0.0",
