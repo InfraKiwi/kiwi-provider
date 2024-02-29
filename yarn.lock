@@ -7048,7 +7048,7 @@ __metadata:
     semver: "npm:^7.6.0"
     systeminformation: "npm:^5.22.0"
     tar: "npm:^6.2.0"
-    tmp: "npm:^0.2.1"
+    tmp: "npm:^0.2.3"
     traverse: "npm:^0.6.8"
     triple-beam: "npm:^1.4.1"
     ts-enum-util: "https://github.com/cmaster11/ts-enum-util.git#release-14215888128839e0aa808d82cb64f72843984708"
@@ -8325,7 +8325,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rimraf@npm:^3.0.0, rimraf@npm:^3.0.2":
+"rimraf@npm:^3.0.2":
   version: 3.0.2
   resolution: "rimraf@npm:3.0.2"
   dependencies:
@@ -9000,12 +9000,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tmp@npm:^0.2.1":
-  version: 0.2.1
-  resolution: "tmp@npm:0.2.1"
-  dependencies:
-    rimraf: "npm:^3.0.0"
-  checksum: 10c0/67607aa012059c9ce697bee820ee51bc0f39b29a8766def4f92d3f764d67c7cf9205d537d24e0cb1ce9685c40d4c628ead010910118ea18348666b5c46ed9123
+"tmp@npm:^0.2.3":
+  version: 0.2.3
+  resolution: "tmp@npm:0.2.3"
+  checksum: 10c0/3e809d9c2f46817475b452725c2aaa5d11985cf18d32a7a970ff25b568438e2c076c2e8609224feef3b7923fa9749b74428e3e634f6b8e520c534eef2fd24125
   languageName: node
   linkType: hard
 
