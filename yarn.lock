@@ -6968,10 +6968,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsonpath-plus@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "jsonpath-plus@npm:8.0.0"
-  checksum: 10c0/1b8300c90e412c7ebe5740532620af2c79b12f859ab874334d3efa71b048d69be7a7cd555058b17f6a8a51fd36a1d475f5fdab2758cd20c0cfc5cd444fc618d7
+"jsonpath-plus@npm:^8.1.0":
+  version: 8.1.0
+  resolution: "jsonpath-plus@npm:8.1.0"
+  bin:
+    jsonpath: bin/jsonpath-cli.js
+    jsonpath-plus: bin/jsonpath-cli.js
+  checksum: 10c0/4fa14f95621a6c91140795c22977b0584238335111aaf15e2370142fa8617925cd65ababc39949560d28d0913ac199f459ff16565c68b27c77c75b97c5b7a97a
   languageName: node
   linkType: hard
 
@@ -7035,7 +7038,7 @@ __metadata:
     joi-to-typescript: "https://github.com/cmaster11/joi-to-typescript.git#release-e0f34163aec72f55bb7260c19872242f2bc11dd6"
     js-convert-case: "npm:^4.2.0"
     js-yaml: "npm:^4.1.0"
-    jsonpath-plus: "npm:^8.0.0"
+    jsonpath-plus: "npm:^8.1.0"
     lookpath: "npm:^1.2.2"
     mkdirp: "npm:^3.0.1"
     multer: "npm:^1.4.5-lts.1"
