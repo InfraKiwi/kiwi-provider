@@ -7046,7 +7046,7 @@ __metadata:
     prisma: "npm:^5.10.2"
     sass: "npm:^1.71.1"
     semver: "npm:^7.6.0"
-    systeminformation: "npm:^5.22.0"
+    systeminformation: "npm:^5.22.2"
     tar: "npm:^6.2.0"
     tmp: "npm:^0.2.1"
     traverse: "npm:^0.6.8"
@@ -8944,12 +8944,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"systeminformation@npm:^5.22.0":
-  version: 5.22.0
-  resolution: "systeminformation@npm:5.22.0"
+"systeminformation@npm:^5.22.2":
+  version: 5.22.2
+  resolution: "systeminformation@npm:5.22.2"
   bin:
     systeminformation: lib/cli.js
-  checksum: 10c0/d25426aa5daa6aa4cc7c14c4bf04a692187d2115178b085608064871ca7e619f477a9765e575aeaf9c791d99d9dfd06e4fd1015f7b1049853d794999b73a7b31
+  checksum: 10c0/57eec39c1e662f15ea5899d89b6fa04b4a8473ba054d0f59a0cef2d9c5201dd5958e50f8fad5c8045878b96536165364c9eeaf7ccf6e71c77fb1b68d0b416296
   conditions: (os=darwin | os=linux | os=win32 | os=freebsd | os=openbsd | os=netbsd | os=sunos | os=android)
   languageName: node
   linkType: hard
