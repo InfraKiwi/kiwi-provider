@@ -64,7 +64,7 @@
     "@types/unzipper": "^0",
     "@types/yauzl-promise": "^4.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
-    "@typescript-eslint/parser": "^7.0.2",
+    "@typescript-eslint/parser": "^7.3.0",
     "chokidar": "^3.6.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
