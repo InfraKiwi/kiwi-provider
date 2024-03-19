@@ -86,7 +86,7 @@
     "sass": "^1.71.1",
     "ts-enum-util": "https://github.com/cmaster11/ts-enum-util.git#release-14215888128839e0aa808d82cb64f72843984708",
     "ts-jest": "^29.1.2",
-    "ts-jest-mock": "^1.4.0",
+    "ts-jest-mock": "^1.4.1",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"

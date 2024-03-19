@@ -7053,7 +7053,7 @@ __metadata:
     triple-beam: "npm:^1.4.1"
     ts-enum-util: "https://github.com/cmaster11/ts-enum-util.git#release-14215888128839e0aa808d82cb64f72843984708"
     ts-jest: "npm:^29.1.2"
-    ts-jest-mock: "npm:^1.4.0"
+    ts-jest-mock: "npm:^1.4.1"
     ts-loader: "npm:^9.5.1"
     ts-node: "npm:^10.9.2"
     tslib: "npm:^2.6.2"
@@ -9078,10 +9078,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-jest-mock@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "ts-jest-mock@npm:1.4.0"
-  checksum: 10c0/dc5dbb2d775b93f9ae91775ba7cac37ea16b3919598701ed484f22b0b195740c3cca8a37c12d6d4d3de1ad0c9b30e5c2bbd7c1f003da99f413733482f551ee3a
+"ts-jest-mock@npm:^1.4.1":
+  version: 1.4.1
+  resolution: "ts-jest-mock@npm:1.4.1"
+  checksum: 10c0/ddd4a163a9a445895b16dcbdd1118b317db4ec67d1070e2078dde1d7ba24a5416ec0131ae85b12c2f60da939e383b946979ee042f4272faa0dc827d073eb5ed8
   languageName: node
   linkType: hard
 
