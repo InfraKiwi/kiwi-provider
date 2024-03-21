@@ -89,7 +89,7 @@
     "ts-jest-mock": "^1.4.0",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.3"
   },
   "scripts": {
     "cli": "ts-node cmd/kiwiCLI.ts",
