@@ -17,7 +17,7 @@
     "console-table-printer": "^2.12.0",
     "debug": "^4.3.4",
     "exponential-backoff": "^3.1.1",
-    "express": ">=5.0.0-beta.1",
+    "express": ">=5.0.0-beta.2",
     "express-requests-logger": "https://github.com/cmaster11/express-request-logger.git#release-191b5a983e3dbd8e0696ad56c1e026fb059c051b",
     "form-data": "^4.0.0",
     "glob": "^10.3.10",
