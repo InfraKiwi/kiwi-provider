@@ -35,7 +35,7 @@
     "postject": "^1.0.0-alpha.6",
     "semver": "^7.6.0",
     "systeminformation": "^5.22.0",
-    "tar": "^6.2.0",
+    "tar": "^6.2.1",
     "tmp": "^0.2.1",
     "traverse": "^0.6.8",
     "triple-beam": "^1.4.1",
