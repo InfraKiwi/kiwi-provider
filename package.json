@@ -40,7 +40,7 @@
     "traverse": "^0.6.8",
     "triple-beam": "^1.4.1",
     "tslib": "^2.6.2",
-    "winston": "^3.11.0",
+    "winston": "^3.13.0",
     "yauzl-promise": "https://github.com/cmaster11/yauzl-promise.git#release-93dd2e796bfe445ae30247f93597c2f0793afd22"
   },
   "devDependencies": {
